@@ -24,15 +24,18 @@ typedef struct welvet_status {
   char message[256];
 } welvet_status;
 
-/* Dense forward FormatNone × dtype (0–33), float32 activation host.
- * W_init is logical float32 [out*in] (encoded to dtype like Go NewConfigured).
- * bias may be NULL; x/pre/post are float32. act matches Go ActivationType. */
+/* backend: 0 = CPU tiled (exact Go CPU path), 1 = imported SIMD DotTile path */
 WELVET_API welvet_status welvet_dense_forward_f32(
+    int32_t batch, int32_t in, int32_t out, int32_t act, int32_t dtype, int32_t backend,
+    const float* W_init, const double* bias, size_t bias_len,
+    const float* x, float* pre, float* post);
+
+/* Back-compat wrappers (backend=CPU, dtype=Float32 for weights helper). */
+WELVET_API welvet_status welvet_dense_forward_f32_cpu(
     int32_t batch, int32_t in, int32_t out, int32_t act, int32_t dtype,
     const float* W_init, const double* bias, size_t bias_len,
     const float* x, float* pre, float* post);
 
-/* Back-compat: dtype = Float32 (1). */
 WELVET_API welvet_status welvet_dense_forward_f32_weights(
     int32_t batch, int32_t in, int32_t out, int32_t act,
     const float* W, const double* bias, size_t bias_len,

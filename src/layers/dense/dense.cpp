@@ -80,4 +80,12 @@ Status forward_f32(const Layer& layer, const TensorF32& input, TensorF32* pre, T
   return Status::Ok();
 }
 
+Status forward(const Layer& layer, const TensorF32& input, TensorF32* pre, TensorF32* post) {
+  if (layer.backend == Backend::SIMD) {
+    return forward_f32_simd(layer, input, pre, post);
+  }
+  return forward_f32(layer, input, pre, post);
+}
+
 } // namespace welvet::dense
+

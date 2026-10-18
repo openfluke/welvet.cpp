@@ -23,7 +23,7 @@ Applications can choose **automatic placement** or **force an explicit backend**
 
 ## Support scorecard — so far
 
-**Version `0.1.1` — M1 Dense FormatNone×34 forward (CPU serial).** Engine board **15 / 100**, extensions **6 / 100**, combined **21 / 200**. Live inventory: `GAPS.md` / `welvet_dense_fwd --gaps` / `welvet_dense_fwd --version` (every unfinished item is `gap?`).
+**Version `0.1.2` — M1 Dense FormatNone×34 forward + imported SIMD DotTile/DotI8** (from `welvet-to-rust_n_cpp/welvet_cpp`, code only). Engine board **18 / 100**, extensions **6 / 100**, combined **24 / 200**. Live inventory: `GAPS.md` / `welvet_dense_fwd --gaps` / `welvet_dense_fwd --version`.
 
 - [ ] **Layers:** Dense FormatNone×34 forward (CPU serial) only — **1 / 23** kinds have any forward; backward still 0; seqmix helper tracked separately.
 - [x] **Dtypes:** FormatNone pack/decode + Dense MatVec for **all 34** storage types (quant formats still `gap?`).
@@ -43,7 +43,7 @@ Applications can choose **automatic placement** or **force an explicit backend**
 
 | Compute target | Forward | Backward | Weight updates | Supported cards / devices so far |
 |---|:---:|:---:|:---:|---|
-| Native CPU — x86-64 / Arm64 | 🚧 | ⬜ | ⬜ | Dense FormatNone×34 serial forward (v0.1.1); dX/dW/update pending |
+| Native CPU — x86-64 / Arm64 | 🚧 | ⬜ | ⬜ | Dense FormatNone×34 serial + imported SIMD (v0.1.2); dX/dW/update pending |
 | NVIDIA GPU | ⬜ | ⬜ | ⬜ | None validated |
 | AMD GPU | ⬜ | ⬜ | ⬜ | None validated |
 | Intel GPU | ⬜ | ⬜ | ⬜ | None validated |
@@ -62,9 +62,9 @@ The long-term destination is a standalone C++ Welvet engine that discovers avail
 
 | Project state | Readout |
 |---|---|
-| **Version** | **`0.1.1-m1-dense-forward-34dtypes`** (`welvet_dense_fwd --version` / CMake `0.1.1`) |
-| **Runway** | **15 / 100 engine + 6 / 100 extensions = 21 / 200** |
-| **Milestone** | **M1 in progress** — Dense FormatNone×34 forward; exact_bit vs Go Welvet in `w2a` `Go_v_Cpp` |
+| **Version** | **`0.1.2-m1-dense-simd-imported`** (`welvet_dense_fwd --version` / CMake `0.1.2`) |
+| **Runway** | **18 / 100 engine + 6 / 100 extensions = 24 / 200** |
+| **Milestone** | **M1 in progress** — Dense FormatNone×34 CPU + imported SIMD kernels; exact_bit vs Go on CPU path |
 | **Scope** | Full Welvet engine rebuild: architecture, runtime, layers, numerical types, training, systems, model/IO; extended hardware, integration and distribution |
 | **Platforms** | Linux (host build) · macOS / Windows / Android / iOS (toolchain placeholders) |
 | **Hardware families** | Native CPU · NVIDIA · AMD · Intel GPU/NPU · Apple GPU/Neural Engine · Qualcomm GPU/NPU · Google TPU |
@@ -173,7 +173,7 @@ This mirrors the **ten categories and exact weights** of Go Welvet's main versio
 | # | Go Welvet scoreboard category | Weight | C++ acceptance target | Status | Earned |
 |---:|---|---:|---|:---:|---:|
 | 1 | **Foundation** | 15 | Core tensors, 34 numerical dtypes, weights, activations, layout, tiling, CPU/SIMD/device abstraction and ownership | 🚧 | 8 |
-| 2 | **Dense MatVec microkernel** | 15 | Shared Dense compute across numerical dtypes; forward, dX, dW/db, updates; SC/MC/SIMD and declared device paths | 🚧 | 7 |
+| 2 | **Dense MatVec microkernel** | 15 | Shared Dense compute across numerical dtypes; forward, dX, dW/db, updates; SC/MC/SIMD and declared device paths | 🚧 | 10 |
 | 3 | **Transformer stack** | 14 | MHA, SwiGLU, RMSNorm, LayerNorm, Softmax, Embedding, Sequential, Residual, Stack and seqmix | ⬜ | 0 |
 | 4 | **CNN / RNN / LSTM** | 6 | CNN1–3, RNN, LSTM; numerical coverage, applicable forward/backward, state and train grids | ⬜ | 0 |
 | 5 | **Extended layers** | 7 | GDN, ConvT1–3, Mamba, KMeans, Parallel, Metacognition; applicable gradients and state | ⬜ | 0 |
@@ -182,9 +182,9 @@ This mirrors the **ten categories and exact weights** of Go Welvet's main versio
 | 8 | **Model / IO** | 8 | Tokenizer, ENTITY, transformer execution, sampling, HF inspection/loading and model construction | ⬜ | 0 |
 | 9 | **Training credit** | 8 | NormalBP/StepBP/MeshBP, Tween families, proxies, sparse/alternating credit, cameral BranchModes and CamSync | ⬜ | 0 |
 | 10 | **Peak fused / no host ALU** | 14 | Validated native/SIMD/device kernels, attention/RoPE, norms, activations, conv/recurrence, embedding and decoder fusion | ⬜ | 0 |
-| | **Engine rebuild total** | **100** | | **🚧** | **15 / 100** |
+| | **Engine rebuild total** | **100** | | **🚧** | **18 / 100** |
 
-Partial credit notes (v0.1.1): Foundation **8/15** = FormatNone×34 codecs, activations, f32 act tensors, WeightStore encode/decode/MatVec — not tiling/SIMD/device ownership. Dense **7/15** = FormatNone×34 serial forward + bias/act, exact_bit vs Go — not dX/dW/db, updates, SC/MC/SIMD/device.
+Partial credit notes (v0.1.2): Foundation **8/15** = FormatNone×34 codecs, activations, f32 act tensors, WeightStore encode/decode/MatVec. Dense **10/15** = FormatNone×34 serial forward (exact_bit vs Go) + imported SIMD DotTile/DotI8/packed expand (`Backend::SIMD`) — not dX/dW/db, updates, SC/MC.
 
 Post-v1 Go features are included in the relevant categories: Lucy/LPD and Lean in model construction, CamSync in training credit, and train/action FlightRole in runtime scheduling. The original Go board excludes applications and unfinished stubs; those stay separately visible below rather than receiving inherited engine credit.
 
@@ -204,7 +204,7 @@ Post-v1 Go features are included in the relevant categories: Lucy/LPD and Lean i
 | 10 | Hardware validation + performance | 8 | Real-device matrices, provenance, transfer-inclusive timings and released-artifact checks | 🚧 | 2 |
 | | **Extension total** | **100** | | **🚧** | **6 / 100** |
 
-**Combined runway: 21 / 200.** Partial notes (v0.1.1): C ABI **3/10** = Dense forward + `welvet_dense_fwd` (no NAC/Go wrapper). Platforms **1/10** = Linux host. Validation **2/8** = `w2a` Go_v_Cpp exact_bit×34 + speed/`%Δ` spectrum (CPU only). Core kernel correctness and CPU execution belong to the engine board. Extension credit measures new adapter/integration/delivery gates; one test must not be counted twice as the same deliverable.
+**Combined runway: 24 / 200.** Partial notes (v0.1.2): C ABI **3/10** = Dense forward + `welvet_dense_fwd` (no NAC/Go wrapper). Platforms **1/10** = Linux host. Validation **2/8** = `w2a` Go_v_Cpp exact_bit×34 + speed/`%Δ` spectrum (CPU path). Imported SIMD lives under `include/welvet/simd/` + `include/welvet/imported/` (from `welvet-to-rust_n_cpp`).
 
 “All GPUs/NPUs/TPUs” is the expansion ambition. Each supported device model, numerical type, layer, shape and pass must have an explicit tested capability profile. A working inference partition cannot earn training credit. Additional vendors and device generations can extend the coverage inventory without quietly changing these fixed weights.
 
@@ -635,20 +635,22 @@ Device development and API prototyping can proceed alongside engine work. Native
 
 ```text
 include/welvet/          public C++ engine API
+include/welvet/simd/     DotTile / DotI8 / rows (copied from welvet-to-rust_n_cpp)
+include/welvet/imported/ decode + packed expand + gemvSIMD + train stubs (copied)
 include/welvet_c.h       stable C ABI
-src/core/               tensors, dtypes, activations, status
-src/weights/            FormatNone Float32 MatVec (f64 accumulate)
-src/layers/dense/       Dense forward (serial CPU)
-src/backends/           CPU + gap? vendor load placeholders (NVIDIA/AMD/Intel/Apple/QCOM/TPU)
+src/core/               tensors, dtypes, activations, codecs
+src/weights/            FormatNone×34 encode/decode + serial MatVec
+src/layers/dense/       Dense forward (CPU + SIMD bridge)
+src/backends/           CPU + gap? vendor load placeholders
 src/gaps/               rebuild census (gap? / done)
 src/interop/            C ABI implementation
 cmake/                  android/ios toolchain placeholders
 tools/dense_fwd/        binary wire tool for w2a Go_v_Cpp
-examples/dense_forward/ standalone 1×1×1 smoke
+examples/dense_forward/ standalone smoke
 GAPS.md                 human-readable gap census
 ```
 
-Still `gap?`: tiling, simd, remaining layers, architecture, runtime, systems, model, lucy, fusedgpu, bindings/go, full multi-OS CI artifacts.
+Still `gap?`: Dense backward/updates, remaining layers, architecture, runtime, systems, model, lucy, fusedgpu, bindings/go, wire imported tuned_*/backward_native, full multi-OS CI.
 
 
 ## Source of truth and runway maintenance

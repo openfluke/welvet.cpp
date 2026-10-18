@@ -32,7 +32,10 @@ const std::vector<Entry>& build() {
       // --- Dense remaining ---
       {"dense.backward", "layers", "gap? Dense dX/dW/db + act deriv", false},
       {"dense.forward.mc", "layers", "gap? Dense multicore tiled forward", false},
-      {"dense.forward.simd", "layers", "gap? Dense SIMD Plan-9 DotTile", false},
+      {"dense.forward.simd", "layers", "imported DotTile/DotI8 gemvSIMD (welvet-to-rust_n_cpp)", true},
+      {"simd.dot_tile", "simd", "imported AVX2/NEON f32AccF64 + rowsF32/F64", true},
+      {"simd.dot_i8", "simd", "imported AVX2 DotI8Tile", true},
+      {"simd.packed_expand", "simd", "imported packed FP8/FP4/NF4 expand kernels", true},
       {"dense.forward.webgpu", "layers", "gap? Dense WebGPU path (native equiv)", false},
       {"dense.all_quants", "layers", "gap? Dense × all quant formats", false},
 
@@ -68,7 +71,8 @@ const std::vector<Entry>& build() {
       {"runtime.training", "runtime", "gap? training modes / credit", false},
       {"runtime.step_mesh", "runtime", "gap? Step / Mesh scheduling", false},
       {"tiling.cpu", "tiling", "gap? CPU tile partition helpers", false},
-      {"simd.x86_arm", "simd", "gap? x86-64/Arm64 DotTile primitives", false},
+      {"simd.x86_arm", "simd", "imported DotTile (x86 AVX2 + arm64 NEON stubs)", true},
+      {"train.tuned_outer", "training", "gap? wire imported tuned_outer/tuned_tile/backward_native", false},
 
       // --- Systems / model ---
       {"systems.dna", "systems", "gap? DNA", false},

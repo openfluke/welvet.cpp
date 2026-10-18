@@ -1,14 +1,14 @@
 // Binary wire tool for w2a go_v_cpp exact parity + timing.
 //
-// stdin  (little-endian) WVD2:
-//   magic "WVD2" (4)
-//   i32 batch, in, out, act, dtype
+// stdin  (little-endian) WVD3:
+//   magic "WVD3" (4)
+//   i32 batch, in, out, act, dtype, backend   // backend 0=cpu 1=simd
 //   f32 W_init[out*in]
 //   u32 bias_len
 //   f64 bias[bias_len]
 //   f32 x[batch*in]
 //
-// WVD1 accepted as dtype=Float32 (legacy).
+// WVD2 accepted as backend=CPU. WVD1 accepted as dtype=Float32 backend=CPU.
 //
 // stdout:
 //   optional bench header "WVB1" + i64 ns + i32 iters
@@ -60,20 +60,25 @@ int main(int argc, char** argv) {
     std::fprintf(stderr, "welvet_dense_fwd: short magic\n");
     return 2;
   }
+  const bool v3 = std::memcmp(magic, "WVD3", 4) == 0;
   const bool v2 = std::memcmp(magic, "WVD2", 4) == 0;
   const bool v1 = std::memcmp(magic, "WVD1", 4) == 0;
-  if (!v1 && !v2) {
-    std::fprintf(stderr, "welvet_dense_fwd: bad magic (want WVD1/WVD2)\n");
+  if (!v1 && !v2 && !v3) {
+    std::fprintf(stderr, "welvet_dense_fwd: bad magic (want WVD1/WVD2/WVD3)\n");
     return 2;
   }
 
-  int32_t batch = 0, in = 0, out = 0, act = 0, dtype = 1;
+  int32_t batch = 0, in = 0, out = 0, act = 0, dtype = 1, backend = 0;
   if (!read_exact(&batch, 1) || !read_exact(&in, 1) || !read_exact(&out, 1) || !read_exact(&act, 1)) {
     std::fprintf(stderr, "welvet_dense_fwd: short header\n");
     return 2;
   }
-  if (v2 && !read_exact(&dtype, 1)) {
+  if ((v2 || v3) && !read_exact(&dtype, 1)) {
     std::fprintf(stderr, "welvet_dense_fwd: short dtype\n");
+    return 2;
+  }
+  if (v3 && !read_exact(&backend, 1)) {
+    std::fprintf(stderr, "welvet_dense_fwd: short backend\n");
     return 2;
   }
   if (batch <= 0 || in <= 0 || out <= 0) {
@@ -109,8 +114,8 @@ int main(int argc, char** argv) {
   const double* bias_ptr = bias_len ? bias.data() : nullptr;
 
   auto once = [&]() -> welvet_status {
-    return welvet_dense_forward_f32(batch, in, out, act, dtype, W.data(), bias_ptr, bias_len,
-                                    x.data(), pre.data(), post.data());
+    return welvet_dense_forward_f32(batch, in, out, act, dtype, backend, W.data(), bias_ptr,
+                                    bias_len, x.data(), pre.data(), post.data());
   };
 
   if (bench_iters > 0) {

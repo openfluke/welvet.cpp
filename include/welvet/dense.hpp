@@ -1,6 +1,7 @@
 #pragma once
 
 #include "welvet/activate.hpp"
+#include "welvet/backend.hpp"
 #include "welvet/dtype.hpp"
 #include "welvet/status.hpp"
 #include "welvet/tensor.hpp"
@@ -13,7 +14,8 @@ struct Layer {
   int output_height = 0;
   Activation activation = Activation::Linear;
   WeightStore weights;
-  bool multi_core = false; // gap? tiled multicore path — serial used for exact parity
+  Backend backend = Backend::CPUTiled; // CPUTiled = exact Go CPU path; SIMD = imported DotTile
+  bool multi_core = false;             // gap? tiled multicore path
 };
 
 Status new_layer(int in_h, int out_h, Activation act, DType dt, const float* init_or_null,
@@ -22,7 +24,13 @@ Status new_layer(int in_h, int out_h, Activation act, DType dt, const float* ini
 Status new_f32(int in_h, int out_h, Activation act, Layer* layer);
 
 // ForwardCPUTiled-equivalent for FormatNone × any dtype (serial MatVec + bias + act).
-// Activation host type is float32 (matches w2a dense smoke Numeric float32 acts).
 Status forward_f32(const Layer& layer, const TensorF32& input, TensorF32* pre, TensorF32* post);
 
+// Imported SIMD GEMV (welvet-to-rust_n_cpp DotTile / DotI8 / packed expand).
+Status forward_f32_simd(const Layer& layer, const TensorF32& input, TensorF32* pre, TensorF32* post);
+
+// Dispatch by layer.backend.
+Status forward(const Layer& layer, const TensorF32& input, TensorF32* pre, TensorF32* post);
+
 } // namespace welvet::dense
+

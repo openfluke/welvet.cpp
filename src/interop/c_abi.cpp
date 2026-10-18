@@ -21,8 +21,9 @@ welvet_status to_c(const welvet::Status& st) {
 extern "C" {
 
 welvet_status welvet_dense_forward_f32(int32_t batch, int32_t in, int32_t out, int32_t act,
-                                       int32_t dtype, const float* W_init, const double* bias,
-                                       size_t bias_len, const float* x, float* pre, float* post) {
+                                       int32_t dtype, int32_t backend, const float* W_init,
+                                       const double* bias, size_t bias_len, const float* x,
+                                       float* pre, float* post) {
   if (batch <= 0 || in <= 0 || out <= 0 || !W_init || !x || !pre || !post) {
     welvet_status st{};
     st.code = 1;
@@ -35,6 +36,12 @@ welvet_status welvet_dense_forward_f32(int32_t batch, int32_t in, int32_t out, i
     std::snprintf(st.message, sizeof(st.message), "bad dtype %d", dtype);
     return st;
   }
+  if (backend != 0 && backend != 1) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "bad backend %d (0=cpu,1=simd)", backend);
+    return st;
+  }
 
   welvet::dense::Layer layer;
   auto st = welvet::dense::new_layer(in, out, static_cast<welvet::Activation>(act),
@@ -42,6 +49,7 @@ welvet_status welvet_dense_forward_f32(int32_t batch, int32_t in, int32_t out, i
   if (!st) {
     return to_c(st);
   }
+  layer.backend = backend == 1 ? welvet::Backend::SIMD : welvet::Backend::CPUTiled;
   if (bias && bias_len > 0) {
     layer.weights.bias.assign(bias, bias + bias_len);
   }
@@ -51,7 +59,7 @@ welvet_status welvet_dense_forward_f32(int32_t batch, int32_t in, int32_t out, i
   input.data.assign(x, x + static_cast<std::size_t>(batch * in));
 
   welvet::TensorF32 pre_t, post_t;
-  st = welvet::dense::forward_f32(layer, input, &pre_t, &post_t);
+  st = welvet::dense::forward(layer, input, &pre_t, &post_t);
   if (!st) {
     return to_c(st);
   }
@@ -60,14 +68,21 @@ welvet_status welvet_dense_forward_f32(int32_t batch, int32_t in, int32_t out, i
   return to_c(welvet::Status::Ok());
 }
 
+welvet_status welvet_dense_forward_f32_cpu(int32_t batch, int32_t in, int32_t out, int32_t act,
+                                           int32_t dtype, const float* W_init, const double* bias,
+                                           size_t bias_len, const float* x, float* pre, float* post) {
+  return welvet_dense_forward_f32(batch, in, out, act, dtype, /*cpu*/ 0, W_init, bias, bias_len, x,
+                                  pre, post);
+}
+
 welvet_status welvet_dense_forward_f32_weights(int32_t batch, int32_t in, int32_t out, int32_t act,
                                                const float* W, const double* bias, size_t bias_len,
                                                const float* x, float* pre, float* post) {
-  return welvet_dense_forward_f32(batch, in, out, act, /*Float32*/ 1, W, bias, bias_len, x, pre,
-                                  post);
+  return welvet_dense_forward_f32(batch, in, out, act, /*Float32*/ 1, /*cpu*/ 0, W, bias, bias_len,
+                                  x, pre, post);
 }
 
-const char* welvet_version(void) { return "0.1.1-m1-dense-forward-34dtypes"; }
+const char* welvet_version(void) { return "0.1.2-m1-dense-simd-imported"; }
 
 int32_t welvet_gap_count(void) { return static_cast<int32_t>(welvet::gaps::count_gaps()); }
 

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(welvet VERSION 0.1.1 LANGUAGES CXX)
+project(welvet VERSION 0.1.2 LANGUAGES CXX)
 
 # One tree → many OS: Linux, macOS, Windows, Android, iOS (toolchains under cmake/).
 set(CMAKE_CXX_STANDARD 20)
@@ -16,6 +16,7 @@ option(WELVET_ENABLE_METAL "gap? Apple Metal backend" OFF)
 option(WELVET_ENABLE_ONEAPI "gap? Intel oneAPI/Level Zero backend" OFF)
 option(WELVET_ENABLE_QNN "gap? Qualcomm QNN/NPU backend" OFF)
 option(WELVET_ENABLE_TPU "gap? Google TPU backend" OFF)
+option(WELVET_ENABLE_AVX2 "Enable AVX2/FMA/F16C for imported SIMD kernels" ON)
 
 if(APPLE)
   set(WELVET_PLATFORM_APPLE ON)
@@ -38,6 +39,7 @@ set(WELVET_CORE_SOURCES
   src/weights/store.cpp
   src/weights/native_codec.cpp
   src/layers/dense/dense.cpp
+  src/layers/dense/simd_bridge.cpp
   src/backends/registry.cpp
   src/backends/cpu.cpp
   src/backends/nvidia.cpp
@@ -67,6 +69,13 @@ target_compile_definitions(welvet_obj
     $<$<BOOL:${WELVET_PLATFORM_ANDROID}>:WELVET_OS_ANDROID=1>
     $<$<BOOL:${IOS}>:WELVET_OS_IOS=1>
 )
+if(WELVET_ENABLE_AVX2 AND CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+  if(MSVC)
+    target_compile_options(welvet_obj PRIVATE /arch:AVX2)
+  else()
+    target_compile_options(welvet_obj PRIVATE -mavx2 -mfma -mf16c -ffp-contract=off)
+  endif()
+endif()
 
 if(WELVET_BUILD_SHARED)
   add_library(welvet SHARED $<TARGET_OBJECTS:welvet_obj>)

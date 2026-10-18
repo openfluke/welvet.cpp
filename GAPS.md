@@ -1,6 +1,8 @@
 # welvet.cpp gap census
 
-**Version `0.1.1-m1-dense-forward-34dtypes`** — see main [README](README.md) scoreboard (**15 / 100** engine + **6 / 100** extensions = **21 / 200**).
+**Version `0.1.2-m1-dense-simd-imported`** — see main [README](README.md) scoreboard (**18 / 100** engine + **6 / 100** extensions = **24 / 200**).
+
+SIMD/GEMV code under `include/welvet/simd/` + `include/welvet/imported/` was **copied** from `welvet-to-rust_n_cpp/welvet_cpp` (kernels only — not that tree’s docs).
 
 Every unimplemented rebuild item is marked **`gap?`**. Implemented M1 slices flip to **done**.
 
