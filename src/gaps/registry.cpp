@@ -17,7 +17,11 @@ const std::vector<Entry>& build() {
       {"dense.forward.f32_cpu", "layers", "Dense ForwardCPUTiled serial FormatNone×34", true},
       {"dense.all_dtypes", "layers", "Dense FormatNone × 34 dtypes forward", true},
       {"abi.dense_forward_f32", "interop", "C ABI welvet_dense_forward_f32 (+dtype)", true},
+      {"abi.arch_topology", "interop", "C ABI welvet_arch_topology + WVA1/WVF1 tool", true},
       {"backends.cpu", "backends", "Native CPU target available", true},
+      {"core.layer_types", "core", "LayerType 0–22 + LayerMeta descriptor", true},
+      {"arch.volume", "architecture", "Grid/Cell/Coord/HopOrder/remote links", true},
+      {"runtime.forward.dense", "runtime", "volume Forward Dense-only hop walker", true},
 
       // --- Core / dtypes ---
       {"core.numeric.acts", "core", "gap? all 15 Go Numeric activation host types", false},
@@ -64,12 +68,12 @@ const std::vector<Entry>& build() {
       {"layer.stack", "layers", "gap? Stack nested ops", false},
       {"layer.seqmix", "layers", "gap? seqmix helper", false},
 
-      // --- Architecture / runtime ---
-      {"arch.volume", "architecture", "gap? volumes/cells/topology", false},
-      {"runtime.forward", "runtime", "gap? volume Forward dispatcher", false},
+      // --- Architecture / runtime remaining ---
+      {"runtime.forward", "runtime", "gap? volume Forward all layer kinds (Dense done)", false},
       {"runtime.backward", "runtime", "gap? volume Backward dispatcher", false},
       {"runtime.training", "runtime", "gap? training modes / credit", false},
       {"runtime.step_mesh", "runtime", "gap? Step / Mesh scheduling", false},
+      {"arch.branches", "architecture", "gap? ParallelBranches/SequentialLayers combine", false},
       {"tiling.cpu", "tiling", "gap? CPU tile partition helpers", false},
       {"simd.x86_arm", "simd", "imported DotTile (x86 AVX2 + arm64 NEON stubs)", true},
       {"train.tuned_outer", "training", "gap? wire imported tuned_outer/tuned_tile/backward_native", false},

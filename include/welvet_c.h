@@ -41,6 +41,17 @@ WELVET_API welvet_status welvet_dense_forward_f32_weights(
     const float* W, const double* bias, size_t bias_len,
     const float* x, float* pre, float* post);
 
+/* Architecture baseline: Depth×Rows×Cols×LayersPerCell + remote links.
+ * links: n_links × 8 i32 = src z,y,x,l + tgt z,y,x,l
+ * out_coords:  n_cells × 4 i32 (z,y,x,l) hop order
+ * out_indices: n_cells × i32 Index(z,y,x,l)
+ * out_remote:  n_cells × 5 i32 (is_remote, tz,ty,tx,tl)
+ */
+WELVET_API welvet_status welvet_arch_topology(
+    int32_t depth, int32_t rows, int32_t cols, int32_t layers_per_cell,
+    const int32_t* links, int32_t n_links, int32_t* out_n_cells, int32_t* out_coords,
+    int32_t* out_indices, int32_t* out_remote);
+
 WELVET_API const char* welvet_version(void);
 WELVET_API int32_t welvet_gap_count(void);
 WELVET_API void welvet_print_gaps(void);

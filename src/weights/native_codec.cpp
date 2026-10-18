@@ -227,7 +227,10 @@ Status pack_native(DType dt, const float* w, int n, std::vector<uint8_t>* out, f
     if (s == 0) s = 1;
     out->resize(n * 4);
     for (int i = 0; i < n; ++i) {
-      const int32_t q = static_cast<int32_t>(std::round(w[i] / s * 2147483647.0));
+      // Go: Round(float64(v/scale*2147483647)) with float32 arithmetic first
+      // (2147483647 is not exact in f32 → 2147483648).
+      const float qf = w[i] / s * 2147483647.0f;
+      const int32_t q = static_cast<int32_t>(std::round(static_cast<double>(qf)));
       put_u32(*out, i * 4, static_cast<uint32_t>(q));
     }
     *scale = s / 2147483647.0f;
@@ -238,7 +241,9 @@ Status pack_native(DType dt, const float* w, int n, std::vector<uint8_t>* out, f
     if (s == 0) s = 1;
     out->resize(n * 2);
     for (int i = 0; i < n; ++i) {
-      const int q = static_cast<int>(clamp_i(std::round(w[i] / s * 32767.0), -32768, 32767));
+      // Go: Round(float64(v/scale*32767)) with float32 arithmetic first.
+      const float qf = w[i] / s * 32767.0f;
+      const int q = static_cast<int>(clamp_i(std::round(static_cast<double>(qf)), -32768, 32767));
       put_u16(*out, i * 2, static_cast<uint16_t>(static_cast<int16_t>(q)));
     }
     *scale = s / 32767.0f;
@@ -388,12 +393,13 @@ Status pack_native(DType dt, const float* w, int n, std::vector<uint8_t>* out, f
       *scale = s / 1e6f;
     } else {
       out->resize(n * 4);
-      const double maxq = 2147483647.0;
       for (int i = 0; i < n; ++i) {
-        const int32_t q = static_cast<int32_t>(clamp_i(std::round(w[i] / s * maxq), -maxq, maxq));
+        const float qf = w[i] / s * 2147483647.0f;
+        const int32_t q = static_cast<int32_t>(
+            clamp_i(std::round(static_cast<double>(qf)), -2147483647.0, 2147483647.0));
         put_u32(*out, i * 4, static_cast<uint32_t>(q));
       }
-      *scale = s / static_cast<float>(maxq);
+      *scale = s / 2147483647.0f;
     }
     return Status::Ok();
   }

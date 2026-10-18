@@ -1,5 +1,6 @@
 #include "welvet_c.h"
 
+#include "welvet/architecture.hpp"
 #include "welvet/dense.hpp"
 #include "welvet/gaps.hpp"
 
@@ -82,7 +83,53 @@ welvet_status welvet_dense_forward_f32_weights(int32_t batch, int32_t in, int32_
                                   x, pre, post);
 }
 
-const char* welvet_version(void) { return "0.1.2-m1-dense-simd-imported"; }
+welvet_status welvet_arch_topology(int32_t depth, int32_t rows, int32_t cols,
+                                   int32_t layers_per_cell, const int32_t* links, int32_t n_links,
+                                   int32_t* out_n_cells, int32_t* out_coords, int32_t* out_indices,
+                                   int32_t* out_remote) {
+  if (!out_n_cells || !out_coords || !out_indices || !out_remote) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "nil output buffers");
+    return st;
+  }
+  if (n_links < 0 || (n_links > 0 && !links)) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "bad links");
+    return st;
+  }
+
+  auto g = welvet::architecture::new_grid(depth, rows, cols, layers_per_cell);
+  for (int32_t i = 0; i < n_links; ++i) {
+    const int32_t* L = links + static_cast<std::size_t>(i) * 8;
+    auto st = welvet::architecture::set_remote_link(g, L[0], L[1], L[2], L[3], L[4], L[5], L[6],
+                                                    L[7]);
+    if (!st) {
+      return to_c(st);
+    }
+  }
+
+  const auto hops = welvet::architecture::hop_order(g);
+  *out_n_cells = static_cast<int32_t>(hops.size());
+  for (std::size_t i = 0; i < hops.size(); ++i) {
+    const auto& c = hops[i];
+    out_coords[i * 4 + 0] = c.z;
+    out_coords[i * 4 + 1] = c.y;
+    out_coords[i * 4 + 2] = c.x;
+    out_coords[i * 4 + 3] = c.l;
+    out_indices[i] = welvet::architecture::index(g, c.z, c.y, c.x, c.l);
+    const welvet::architecture::Cell* cell = welvet::architecture::at(g, c.z, c.y, c.x, c.l);
+    out_remote[i * 5 + 0] = cell && cell->is_remote_link ? 1 : 0;
+    out_remote[i * 5 + 1] = cell ? cell->target_z : 0;
+    out_remote[i * 5 + 2] = cell ? cell->target_y : 0;
+    out_remote[i * 5 + 3] = cell ? cell->target_x : 0;
+    out_remote[i * 5 + 4] = cell ? cell->target_l : 0;
+  }
+  return to_c(welvet::Status::Ok());
+}
+
+const char* welvet_version(void) { return "0.1.3-m1-arch-baseline"; }
 
 int32_t welvet_gap_count(void) { return static_cast<int32_t>(welvet::gaps::count_gaps()); }
 
