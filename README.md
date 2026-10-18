@@ -23,19 +23,19 @@ Applications can choose **automatic placement** or **force an explicit backend**
 
 ## Support scorecard — so far
 
-**C++ engine rebuild: 0 / 100 points. Hardware, integration, and distribution extensions: 0 / 100 points. Combined runway: 0 / 200. No buildable C++ engine or validated compute devices exist in this checkout yet.** Check a box only after the corresponding implementation and validation evidence exists.
+**Version `0.1.1` — M1 Dense FormatNone×34 forward (CPU serial).** Engine board **15 / 100**, extensions **6 / 100**, combined **21 / 200**. Live inventory: `GAPS.md` / `welvet_dense_fwd --gaps` / `welvet_dense_fwd --version` (every unfinished item is `gap?`).
 
-- [ ] **Layers:** 0 / 23 registered kinds complete — forward and applicable backward; seqmix helper tracked separately.
-- [ ] **Dtypes:** 0 / 34 storage types complete.
-- [ ] **Forward compute:** 0 / 23 registered layer kinds validated.
+- [ ] **Layers:** Dense FormatNone×34 forward (CPU serial) only — **1 / 23** kinds have any forward; backward still 0; seqmix helper tracked separately.
+- [x] **Dtypes:** FormatNone pack/decode + Dense MatVec for **all 34** storage types (quant formats still `gap?`).
+- [x] **Forward compute:** Dense FormatNone×34 CPU serial validated via `w2a` `Go_v_Cpp` **exact_bit** spectrum (other 22 kinds pending).
 - [ ] **Backward compute:** 0 / 23 registered layer kinds have their applicable gradient contracts validated.
-- [ ] **Compute targets:** 0 / 10 target profiles validated — see the hardware summary below.
-- [ ] **Platforms:** 0 / 5 OS families validated — Linux, macOS, Windows, Android, iOS.
+- [ ] **Compute targets:** CPU host path only; vendor accel loaders are `gap?` placeholders — see the hardware summary below.
+- [ ] **Platforms:** Linux host build path present; macOS / Windows / Android / iOS toolchains are placeholders — **1 / 5** OS families buildable (not yet multi-OS CI validated).
 - [ ] **Runtime / architecture:** standalone volume execution, forward/backward, training, Step and Mesh pending.
 - [ ] **Systems:** DNA, evolution, Tween, TANHI and telemetry pending.
 - [ ] **Model / IO:** tokenizer, ENTITY, transformer, sampling and HF support pending.
 - [ ] **Post-v1 engine features:** Lucy/LPD, Lean, CamSync and train/action scheduling pending.
-- [ ] **Native use / integration:** direct C++ API, C ABI / FFI, resident weights and optional Go delegation pending.
+- [x] **Native use / integration (partial):** C++ API + C ABI for Dense forward + `welvet_dense_fwd` tool; Go delegation / NAC still `gap?`.
 
 ### Supported cards / compute
 
@@ -43,7 +43,7 @@ Applications can choose **automatic placement** or **force an explicit backend**
 
 | Compute target | Forward | Backward | Weight updates | Supported cards / devices so far |
 |---|:---:|:---:|:---:|---|
-| Native CPU — x86-64 / Arm64 | ⬜ | ⬜ | ⬜ | None validated |
+| Native CPU — x86-64 / Arm64 | 🚧 | ⬜ | ⬜ | Dense FormatNone×34 serial forward (v0.1.1); dX/dW/update pending |
 | NVIDIA GPU | ⬜ | ⬜ | ⬜ | None validated |
 | AMD GPU | ⬜ | ⬜ | ⬜ | None validated |
 | Intel GPU | ⬜ | ⬜ | ⬜ | None validated |
@@ -62,13 +62,14 @@ The long-term destination is a standalone C++ Welvet engine that discovers avail
 
 | Project state | Readout |
 |---|---|
-| **Runway** | **0 / 100 engine + 0 / 100 extensions = 0 / 200** |
-| **Milestone** | Planning; full C++ rebuild, no implementation release claimed |
+| **Version** | **`0.1.1-m1-dense-forward-34dtypes`** (`welvet_dense_fwd --version` / CMake `0.1.1`) |
+| **Runway** | **15 / 100 engine + 6 / 100 extensions = 21 / 200** |
+| **Milestone** | **M1 in progress** — Dense FormatNone×34 forward; exact_bit vs Go Welvet in `w2a` `Go_v_Cpp` |
 | **Scope** | Full Welvet engine rebuild: architecture, runtime, layers, numerical types, training, systems, model/IO; extended hardware, integration and distribution |
-| **Platforms** | Linux · macOS · Windows · Android · iOS |
+| **Platforms** | Linux (host build) · macOS / Windows / Android / iOS (toolchain placeholders) |
 | **Hardware families** | Native CPU · NVIDIA · AMD · Intel GPU/NPU · Apple GPU/Neural Engine · Qualcomm GPU/NPU · Google TPU |
 | **Baseline inspected** | Welvet source identifying itself as v1.1.3; 18 October 2026 |
-| **What exists here today** | Research and comparison documents under [`docs/`](docs/README.md); no buildable C++ engine, library or public ABI in this checkout |
+| **What exists here today** | Buildable `libwelvet` + C ABI + `welvet_dense_fwd`; Dense FormatNone×34 forward; `GAPS.md` census; research notes under [`docs/`](docs/README.md) |
 
 This README is the **runway**: the implementation contract and scorecard for where welvet.cpp is going. Every unchecked cell is planned work. Welvet's Go engine score does not transfer to the C++ rebuild, and historical benchmark reports do not count as a shipped native backend.
 
@@ -171,8 +172,8 @@ This mirrors the **ten categories and exact weights** of Go Welvet's main versio
 
 | # | Go Welvet scoreboard category | Weight | C++ acceptance target | Status | Earned |
 |---:|---|---:|---|:---:|---:|
-| 1 | **Foundation** | 15 | Core tensors, 34 numerical dtypes, weights, activations, layout, tiling, CPU/SIMD/device abstraction and ownership | ⬜ | 0 |
-| 2 | **Dense MatVec microkernel** | 15 | Shared Dense compute across numerical dtypes; forward, dX, dW/db, updates; SC/MC/SIMD and declared device paths | ⬜ | 0 |
+| 1 | **Foundation** | 15 | Core tensors, 34 numerical dtypes, weights, activations, layout, tiling, CPU/SIMD/device abstraction and ownership | 🚧 | 8 |
+| 2 | **Dense MatVec microkernel** | 15 | Shared Dense compute across numerical dtypes; forward, dX, dW/db, updates; SC/MC/SIMD and declared device paths | 🚧 | 7 |
 | 3 | **Transformer stack** | 14 | MHA, SwiGLU, RMSNorm, LayerNorm, Softmax, Embedding, Sequential, Residual, Stack and seqmix | ⬜ | 0 |
 | 4 | **CNN / RNN / LSTM** | 6 | CNN1–3, RNN, LSTM; numerical coverage, applicable forward/backward, state and train grids | ⬜ | 0 |
 | 5 | **Extended layers** | 7 | GDN, ConvT1–3, Mamba, KMeans, Parallel, Metacognition; applicable gradients and state | ⬜ | 0 |
@@ -181,7 +182,9 @@ This mirrors the **ten categories and exact weights** of Go Welvet's main versio
 | 8 | **Model / IO** | 8 | Tokenizer, ENTITY, transformer execution, sampling, HF inspection/loading and model construction | ⬜ | 0 |
 | 9 | **Training credit** | 8 | NormalBP/StepBP/MeshBP, Tween families, proxies, sparse/alternating credit, cameral BranchModes and CamSync | ⬜ | 0 |
 | 10 | **Peak fused / no host ALU** | 14 | Validated native/SIMD/device kernels, attention/RoPE, norms, activations, conv/recurrence, embedding and decoder fusion | ⬜ | 0 |
-| | **Engine rebuild total** | **100** | | **⬜** | **0 / 100** |
+| | **Engine rebuild total** | **100** | | **🚧** | **15 / 100** |
+
+Partial credit notes (v0.1.1): Foundation **8/15** = FormatNone×34 codecs, activations, f32 act tensors, WeightStore encode/decode/MatVec — not tiling/SIMD/device ownership. Dense **7/15** = FormatNone×34 serial forward + bias/act, exact_bit vs Go — not dX/dW/db, updates, SC/MC/SIMD/device.
 
 Post-v1 Go features are included in the relevant categories: Lucy/LPD and Lean in model construction, CamSync in training credit, and train/action FlightRole in runtime scheduling. The original Go board excludes applications and unfinished stubs; those stay separately visible below rather than receiving inherited engine credit.
 
@@ -196,12 +199,12 @@ Post-v1 Go features are included in the relevant categories: Lucy/LPD and Lean i
 | 5 | Qualcomm GPU + NPU | 10 | Independently reported mobile GPU and NPU operation/pass support | ⬜ | 0 |
 | 6 | Google TPU | 10 | Supported runtime bridge, compiled partitions and explicit local/remote execution | ⬜ | 0 |
 | 7 | Heterogeneous placement + residency | 12 | Capability-driven partitions, resident weights, cross-device forward/backward and coherent updates | ⬜ | 0 |
-| 8 | Public C++ API + C ABI / Go FFI | 10 | Direct native use, stable versioned C boundary and optional Go delegation | ⬜ | 0 |
-| 9 | Platform binaries + distribution | 10 | Linux/macOS/Windows/Android/iOS, clean-environment load and standalone execution | ⬜ | 0 |
-| 10 | Hardware validation + performance | 8 | Real-device matrices, provenance, transfer-inclusive timings and released-artifact checks | ⬜ | 0 |
-| | **Extension total** | **100** | | **⬜** | **0 / 100** |
+| 8 | Public C++ API + C ABI / Go FFI | 10 | Direct native use, stable versioned C boundary and optional Go delegation | 🚧 | 3 |
+| 9 | Platform binaries + distribution | 10 | Linux/macOS/Windows/Android/iOS, clean-environment load and standalone execution | 🚧 | 1 |
+| 10 | Hardware validation + performance | 8 | Real-device matrices, provenance, transfer-inclusive timings and released-artifact checks | 🚧 | 2 |
+| | **Extension total** | **100** | | **🚧** | **6 / 100** |
 
-**Combined runway: 0 / 200.** Core kernel correctness and CPU execution belong to the engine board. Extension credit measures new adapter/integration/delivery gates; one test must not be counted twice as the same deliverable. Split multi-target rows into fixed sub-gates before earning points.
+**Combined runway: 21 / 200.** Partial notes (v0.1.1): C ABI **3/10** = Dense forward + `welvet_dense_fwd` (no NAC/Go wrapper). Platforms **1/10** = Linux host. Validation **2/8** = `w2a` Go_v_Cpp exact_bit×34 + speed/`%Δ` spectrum (CPU only). Core kernel correctness and CPU execution belong to the engine board. Extension credit measures new adapter/integration/delivery gates; one test must not be counted twice as the same deliverable.
 
 “All GPUs/NPUs/TPUs” is the expansion ambition. Each supported device model, numerical type, layer, shape and pass must have an explicit tested capability profile. A working inference partition cannot earn training credit. Additional vendors and device generations can extend the coverage inventory without quietly changing these fixed weights.
 
@@ -211,7 +214,7 @@ Post-v1 Go features are included in the relevant categories: Lucy/LPD and Lean i
 
 | Go reference | C++ rebuild target | Status |
 |---|---|:---:|
-| `core/` | Tensor representation, all 34 dtypes, numerical conversions, activations, execution configuration and layer identifiers | ⬜ |
+| `core/` | Tensor representation, all 34 dtypes, numerical conversions, activations, execution configuration and layer identifiers | 🚧 |
 | `weights/` | Authoritative dtype-native parameter storage, MatVec/transpose, gradient/update operations, snapshots and store traversal | ⬜ |
 | `tiling/` | Single/multicore tiling, tails, workspace budgets and deterministic scheduling policy | ⬜ |
 | `simd/` | Equivalent x86-64/Arm64 kernels and instruction detection; no Go runtime dependency | ⬜ |
@@ -295,11 +298,11 @@ Numerical dtype, activation type, accumulator type, gradient type, and update ty
 
 ## Layer runway
 
-All rows below are unimplemented C++ engine targets. `dX` means the input-gradient contract; `dW/db` includes every trainable parameter, not just Dense children. State gradients and auxiliary losses follow Welvet's semantics.
+Dense FormatNone×34 forward is implemented (v0.1.1); remaining rows are unimplemented C++ engine targets. `dX` means the input-gradient contract; `dW/db` includes every trainable parameter, not just Dense children. State gradients and auxiliary losses follow Welvet's semantics.
 
 | ID | Layer | Forward target | Backward target | Native F | Native B | Device coverage |
 |---:|---|---|---|:---:|:---:|:---:|
-| 0 | **Dense** | GEMV/GEMM, bias, activation | dX, dW, db, activation derivative | ⬜ | ⬜ | ⬜ |
+| 0 | **Dense** | GEMV/GEMM, bias, activation | dX, dW, db, activation derivative | 🚧 | ⬜ | ⬜ |
 | 1 | **MultiHeadAttention** | Q/K/V/O, attention, masks, RoPE, cache | Projection + attention + RoPE gradients | ⬜ | ⬜ | ⬜ |
 | 2 | **SwiGLU** | Gate/up/down projections, SiLU product | All projections and product/SiLU derivatives | ⬜ | ⬜ | ⬜ |
 | 3 | **RMSNorm** | RMS reduction and scale | dX and scale gradient | ⬜ | ⬜ | ⬜ |
@@ -328,7 +331,7 @@ All rows below are unimplemented C++ engine targets. `dX` means the input-gradie
 
 | Family | Required details before completion | Status |
 |---|---|:---:|
-| Dense | Transpose, batch, tails, strides, bias, activation, dX-only, dW-only, update-only, dtype boundaries | ⬜ |
+| Dense | Transpose, batch, tails, strides, bias, activation, dX-only, dW-only, update-only, dtype boundaries | 🚧 |
 | Attention | Causal/cross/GQA and variants supported by Welvet; masks, ALiBi, sliding windows, dropout/RNG, KV invalidation | ⬜ |
 | Norms | Epsilon, reduction axes, small variance, large values, saved statistics and parameter gradients | ⬜ |
 | Softmax | Stable reductions; masked rows; temperature; Sparsemax/Entmax/Gumbel contracts where present | ⬜ |
@@ -344,42 +347,44 @@ Shared Dense acceleration earns projection credit. It does not establish that at
 
 Weights remain in the selected numerical dtype. Storage precision is independent of activation, accumulator, gradient, and update precision. Every backend must publish these choices. No automatic FP32 conversion may masquerade as native FP64, integer, low-bit, or complex arithmetic.
 
+FormatNone pack → MatVec → Dense forward validated **exact_bit** vs Go for all 34 (v0.1.1 / `w2a` Go_v_Cpp). Quant formats, backward, and storage-preserving updates remain `gap?`.
+
 | ID | DType | Representation/round trip | Forward | Backward | Storage-preserving update | Device profile |
 |---:|---|:---:|:---:|:---:|:---:|:---:|
-| 0 | Float64 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 1 | Float32 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 2 | Float16 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 3 | BFloat16 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 4 | FP8E4M3 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 5 | FP8E5M2 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 6 | Int64 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 7 | Int32 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 8 | Int16 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 9 | Int8 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 10 | Uint64 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 11 | Uint32 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 12 | Uint16 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 13 | Uint8 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 14 | Int4 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 15 | Uint4 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 16 | FP4 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 17 | Int2 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 18 | Uint2 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 19 | Ternary | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 20 | Binary | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 21 | Int | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 22 | Uint | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 23 | Uintptr | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 24 | Complex64 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 25 | Complex128 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 26 | NF4 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 27 | FP6 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 28 | Int6 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 29 | Uint6 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 30 | Int5 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 31 | Uint5 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 32 | Int3 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 33 | Uint3 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| 0 | Float64 | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
+| 1 | Float32 | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
+| 2 | Float16 | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
+| 3 | BFloat16 | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
+| 4 | FP8E4M3 | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
+| 5 | FP8E5M2 | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
+| 6 | Int64 | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
+| 7 | Int32 | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
+| 8 | Int16 | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
+| 9 | Int8 | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
+| 10 | Uint64 | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
+| 11 | Uint32 | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
+| 12 | Uint16 | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
+| 13 | Uint8 | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
+| 14 | Int4 | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
+| 15 | Uint4 | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
+| 16 | FP4 | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
+| 17 | Int2 | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
+| 18 | Uint2 | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
+| 19 | Ternary | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
+| 20 | Binary | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
+| 21 | Int | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
+| 22 | Uint | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
+| 23 | Uintptr | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
+| 24 | Complex64 | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
+| 25 | Complex128 | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
+| 26 | NF4 | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
+| 27 | FP6 | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
+| 28 | Int6 | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
+| 29 | Uint6 | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
+| 30 | Int5 | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
+| 31 | Uint5 | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
+| 32 | Int3 | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
+| 33 | Uint3 | ✅ | ✅ | ⬜ | ⬜ | ⬜ |
 
 ### Numerical semantics gates
 
@@ -613,7 +618,7 @@ A C++ implementation is not automatically faster than Welvet's Go SIMD. Existing
 | Milestone | Concrete outcome | Exit evidence | Status |
 |---|---|---|:---:|
 | M0 — Engine contract | Pin Go revision, enumerate all subsystems, freeze numerical semantics and both boards' sub-gates | Reviewed source inventory and cross-language fixtures | ⬜ |
-| M1 — C++ foundation | Native build, tensors, dtype-native weights and Dense forward | Standalone C++ `1×1×1` example, no Go runtime | ⬜ |
+| M1 — C++ foundation | Native build, tensors, dtype-native weights and Dense forward | Standalone C++ example + `w2a` Go_v_Cpp exact_bit×34 | 🚧 |
 | M2 — Native training | Dense dX/dW/db/update, ownership and resident state | Multi-step parity and save/reload | ⬜ |
 | M3 — Numerical breadth | All 34 numerical dtypes and declared arithmetic/update paths | Dtype/pass matrix across CPU/SIMD | ⬜ |
 | M4 — Layer breadth | Transformer, CNN/ConvT, recurrence, extended and composed layers | All applicable layer forward/backward gates | ⬜ |
@@ -626,31 +631,25 @@ A C++ implementation is not automatically faster than Welvet's Go SIMD. Existing
 
 Device development and API prototyping can proceed alongside engine work. Native standalone functionality remains a required outcome; successful Go-to-C++ delegation cannot substitute for missing C++ runtime, systems or model/IO features.
 
-## Proposed source layout
-
-This is a future layout, not a list of files already implemented:
+## Source layout (M1 scaffold)
 
 ```text
 include/welvet/          public C++ engine API
 include/welvet_c.h       stable C ABI
-src/core/               tensors, numerical types, descriptors, errors
-src/weights/            dtype-native parameters, conversions, updates
-src/tiling/             single/multicore compute partitioning
-src/simd/               x86-64/Arm64 native primitives
-src/layers/             every Welvet layer and composition helper
-src/architecture/       volumes, cells, topology and graph links
-src/runtime/            dispatch, forward, backward, training, Step/Mesh
-src/systems/            DNA, evolution, Tween, TANHI, telemetry
-src/model/              tokenizer, ENTITY, HF, transformer, sampling, speech
-src/lucy/               LPD, Lean, model construction and scoring
-src/backends/           CPU/device adapters, capabilities and queues
-src/fusedgpu/           fused device execution paths
-src/interop/            C ABI implementation and ownership translation
-bindings/go/            optional Go Welvet delegation wrapper
-cmake/                  toolchains, build options and artifact configuration
-examples/               standalone native model/training and FFI examples
-docs/                   design notes and historical experiments
+src/core/               tensors, dtypes, activations, status
+src/weights/            FormatNone Float32 MatVec (f64 accumulate)
+src/layers/dense/       Dense forward (serial CPU)
+src/backends/           CPU + gap? vendor load placeholders (NVIDIA/AMD/Intel/Apple/QCOM/TPU)
+src/gaps/               rebuild census (gap? / done)
+src/interop/            C ABI implementation
+cmake/                  android/ios toolchain placeholders
+tools/dense_fwd/        binary wire tool for w2a Go_v_Cpp
+examples/dense_forward/ standalone 1×1×1 smoke
+GAPS.md                 human-readable gap census
 ```
+
+Still `gap?`: tiling, simd, remaining layers, architecture, runtime, systems, model, lucy, fusedgpu, bindings/go, full multi-OS CI artifacts.
+
 
 ## Source of truth and runway maintenance
 
