@@ -181,6 +181,13 @@ WELVET_API welvet_status welvet_residual_forward_f32(
     int32_t batch, int32_t seq, int32_t dim, int32_t depth, int32_t child_act, int32_t dtype,
     int32_t backend, const float* packed, const float* x, float* pre, float* post);
 
+/* Mamba minimal SSM. packed: InProj[2*Inner×D]|OutProj[D×Inner]|ALog[Inner]|DSkip[Inner]
+ * x: [batch*seq*d_model]; pre/post: same layout. Inner = expand*d_model (expand≤0 → 2).
+ */
+WELVET_API welvet_status welvet_mamba_forward_f32(
+    int32_t batch, int32_t seq, int32_t d_model, int32_t d_state, int32_t expand, int32_t dtype,
+    int32_t backend, const float* packed, const float* x, float* pre, float* post);
+
 WELVET_API const char* welvet_version(void);
 WELVET_API int32_t welvet_gap_count(void);
 WELVET_API void welvet_print_gaps(void);

@@ -16,6 +16,7 @@
 #include "welvet/mha.hpp"
 #include "welvet/rmsnorm.hpp"
 #include "welvet/rnn.hpp"
+#include "welvet/mamba.hpp"
 #include "welvet/residual.hpp"
 #include "welvet/sequential.hpp"
 #include "welvet/softmax.hpp"
@@ -910,7 +911,43 @@ welvet_status welvet_residual_forward_f32(int32_t batch, int32_t seq, int32_t di
   return to_c(welvet::Status::Ok());
 }
 
-const char* welvet_version(void) { return "0.1.15-m1-res"; }
+welvet_status welvet_mamba_forward_f32(int32_t batch, int32_t seq, int32_t d_model, int32_t d_state,
+                                       int32_t expand, int32_t dtype, int32_t backend,
+                                       const float* packed, const float* x, float* pre,
+                                       float* post) {
+  if (batch <= 0 || seq <= 0 || d_model <= 0 || d_state <= 0 || !packed || !x || !pre || !post) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "mamba: invalid argument");
+    return st;
+  }
+  if (backend != 0 && backend != 1) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "mamba: bad backend");
+    return st;
+  }
+  welvet::mamba::Config cfg;
+  cfg.d_model = d_model;
+  cfg.d_state = d_state;
+  cfg.expand = expand;
+  cfg.seq_len = seq;
+  welvet::mamba::Layer layer;
+  auto st = welvet::mamba::new_configured(cfg, static_cast<welvet::DType>(dtype), packed, &layer);
+  if (!st) return to_c(st);
+  layer.backend = backend == 1 ? welvet::Backend::SIMD : welvet::Backend::CPUTiled;
+  welvet::TensorF32 input;
+  input.shape = {batch, seq, d_model};
+  input.data.assign(x, x + static_cast<std::size_t>(batch * seq * d_model));
+  welvet::TensorF32 pre_t, post_t;
+  st = welvet::mamba::forward(layer, input, &pre_t, &post_t);
+  if (!st) return to_c(st);
+  std::memcpy(pre, pre_t.data.data(), pre_t.data.size() * sizeof(float));
+  std::memcpy(post, post_t.data.data(), post_t.data.size() * sizeof(float));
+  return to_c(welvet::Status::Ok());
+}
+
+const char* welvet_version(void) { return "0.1.16-m1-mamba"; }
 
 int32_t welvet_gap_count(void) { return static_cast<int32_t>(welvet::gaps::count_gaps()); }
 

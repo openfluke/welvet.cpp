@@ -23,9 +23,9 @@ Applications can choose **automatic placement** or **force an explicit backend**
 
 ## Support scorecard — so far
 
-**Version `0.1.15` — M1 Dense + architecture + transformer (+ Sequential + Residual) + CNN + ConvT + RNN + LSTM + Embedding + Softmax + KMeans forward**. Engine board **44 / 100**, extensions **13 / 100**, combined **57 / 200**. Live inventory: `GAPS.md` / `welvet_dense_fwd --gaps` / `welvet_dense_fwd --version`.
+**Version `0.1.16` — M1 Dense + architecture + transformer (+ Sequential + Residual) + CNN + ConvT + RNN + LSTM + Embedding + Softmax + KMeans + Mamba forward**. Engine board **45 / 100**, extensions **13 / 100**, combined **58 / 200**. Live inventory: `GAPS.md` / `welvet_dense_fwd --gaps` / `welvet_dense_fwd --version`.
 
-- [ ] **Layers:** Dense + MHA + SwiGLU + norms + Softmax + Sequential + Residual + CNN1/2/3 + ConvT1/2/3 + RNN + LSTM + Embedding + KMeans forward — **18 / 23** kinds have any forward; backward still 0; seqmix helper tracked separately.
+- [ ] **Layers:** Dense + MHA + SwiGLU + norms + Softmax + Sequential + Residual + CNN1/2/3 + ConvT1/2/3 + RNN + LSTM + Embedding + KMeans + Mamba forward — **19 / 23** kinds have any forward; backward still 0; seqmix helper tracked separately.
 - [x] **Dtypes:** FormatNone pack/decode + Dense MatVec for **all 34** storage types (quant formats still `gap?`).
 - [x] **Forward compute:** Dense FormatNone×34 CPU/SIMD validated via `w2a` `Go_v_Cpp` **exact_bit** spectrum (other 22 kinds pending).
 - [ ] **Backward compute:** 0 / 23 registered layer kinds have their applicable gradient contracts validated.
@@ -62,14 +62,14 @@ The long-term destination is a standalone C++ Welvet engine that discovers avail
 
 | Project state | Readout |
 |---|---|
-| **Version** | **`0.1.15-m1-res`** (`welvet_dense_fwd --version` / CMake `0.1.15`) |
-| **Runway** | **44 / 100 engine + 13 / 100 extensions = 57 / 200** |
-| **Milestone** | **M1.13** — Dense + architecture + transformer (+ Sequential + Residual) + CNN + ConvT + RNN + LSTM + Embedding + Softmax + KMeans (FormatNone×34) |
+| **Version** | **`0.1.16-m1-mamba`** (`welvet_dense_fwd --version` / CMake `0.1.16`) |
+| **Runway** | **45 / 100 engine + 13 / 100 extensions = 58 / 200** |
+| **Milestone** | **M1.14** — Dense + architecture + transformer (+ Sequential + Residual) + CNN + ConvT + RNN + LSTM + Embedding + Softmax + KMeans + Mamba (FormatNone×34) |
 | **Scope** | Full Welvet engine rebuild: architecture, runtime, layers, numerical types, training, systems, model/IO; extended hardware, integration and distribution |
 | **Platforms** | Linux (host build) · macOS / Windows / Android / iOS (toolchain placeholders) |
 | **Hardware families** | Native CPU · NVIDIA · AMD · Intel GPU/NPU · Apple GPU/Neural Engine · Qualcomm GPU/NPU · Google TPU |
 | **Baseline inspected** | Welvet source identifying itself as v1.1.3; 18 October 2026 |
-| **What exists here today** | Buildable `libwelvet` + C ABI + `welvet_dense_fwd` (…/WKM/WSQ/WRE); Dense FormatNone×34 + architecture Grid + Dense volume Forward + MHA/SwiGLU/norms/Softmax/Sequential/Residual + CNN + ConvT + RNN + LSTM + Embedding + KMeans; `GAPS.md` census; research notes under [`docs/`](docs/README.md) |
+| **What exists here today** | Buildable `libwelvet` + C ABI + `welvet_dense_fwd` (…/WKM/WSQ/WRE/WMB); Dense FormatNone×34 + architecture Grid + Dense volume Forward + MHA/SwiGLU/norms/Softmax/Sequential/Residual + CNN + ConvT + RNN + LSTM + Embedding + KMeans + Mamba; `GAPS.md` census; research notes under [`docs/`](docs/README.md) |
 
 This README is the **runway**: the implementation contract and scorecard for where welvet.cpp is going. Every unchecked cell is planned work. Welvet's Go engine score does not transfer to the C++ rebuild, and historical benchmark reports do not count as a shipped native backend.
 
@@ -176,15 +176,15 @@ This mirrors the **ten categories and exact weights** of Go Welvet's main versio
 | 2 | **Dense MatVec microkernel** | 15 | Shared Dense compute across numerical dtypes; forward, dX, dW/db, updates; SC/MC/SIMD and declared device paths | 🚧 | 10 |
 | 3 | **Transformer stack** | 14 | MHA, SwiGLU, RMSNorm, LayerNorm, Softmax, Embedding, Sequential, Residual, Stack and seqmix | 🚧 | 13 |
 | 4 | **CNN / RNN / LSTM** | 6 | CNN1–3, RNN, LSTM; numerical coverage, applicable forward/backward, state and train grids | 🚧 | 5 |
-| 5 | **Extended layers** | 7 | GDN, ConvT1–3, Mamba, KMeans, Parallel, Metacognition; applicable gradients and state | 🚧 | 4 |
+| 5 | **Extended layers** | 7 | GDN, ConvT1–3, Mamba, KMeans, Parallel, Metacognition; applicable gradients and state | 🚧 | 5 |
 | 6 | **Runtime + architecture** | 8 | Standalone volumetric grid, dispatch, forward, backward, training, Step/Mesh, links and execution ordering | 🚧 | 3 |
 | 7 | **Systems** | 5 | DNA, evolution, Tween, TANHI and telemetry implemented in C++ | ⬜ | 0 |
 | 8 | **Model / IO** | 8 | Tokenizer, ENTITY, transformer execution, sampling, HF inspection/loading and model construction | ⬜ | 0 |
 | 9 | **Training credit** | 8 | NormalBP/StepBP/MeshBP, Tween families, proxies, sparse/alternating credit, cameral BranchModes and CamSync | ⬜ | 0 |
 | 10 | **Peak fused / no host ALU** | 14 | Validated native/SIMD/device kernels, attention/RoPE, norms, activations, conv/recurrence, embedding and decoder fusion | ⬜ | 0 |
-| | **Engine rebuild total** | **100** | | **🚧** | **44 / 100** |
+| | **Engine rebuild total** | **100** | | **🚧** | **45 / 100** |
 
-Partial credit notes (v0.1.15): Foundation **9/15**, Dense **10/15**, Runtime+architecture **3/8**, Transformer **13/14** = + Sequential + Residual Dense F(x)+x (FormatNone×34 exact_bit) — not Stack/NewFromOps/backward; CNN/RNN/LSTM **5/6**; Extended **4/7**.
+Partial credit notes (v0.1.16): Foundation **9/15**, Dense **10/15**, Runtime+architecture **3/8**, Transformer **13/14** = Sequential + Residual (FormatNone×34 exact_bit) — not Stack/NewFromOps/backward; CNN/RNN/LSTM **5/6**; Extended **5/7** = + Mamba minimal SSM (not GDN/Parallel/Metacognition/Mamba-N).
 
 Post-v1 Go features are included in the relevant categories: Lucy/LPD and Lean in model construction, CamSync in training credit, and train/action FlightRole in runtime scheduling. The original Go board excludes applications and unfinished stubs; those stay separately visible below rather than receiving inherited engine credit.
 
@@ -204,7 +204,7 @@ Post-v1 Go features are included in the relevant categories: Lucy/LPD and Lean i
 | 10 | Hardware validation + performance | 8 | Real-device matrices, provenance, transfer-inclusive timings and released-artifact checks | 🚧 | 3 |
 | | **Extension total** | **100** | | **🚧** | **13 / 100** |
 
-**Combined runway: 57 / 200.** Partial notes (v0.1.15): C ABI adds Residual (`WRE1`). Validation covers Dense×34, volume 3×3×3×34, MHA/SwiGLU/norms/Softmax/Sequential/Residual/CNN/ConvT/RNN/LSTM/Embedding/KMeans. Imported SIMD under `include/welvet/simd/` + `imported/`.
+**Combined runway: 58 / 200.** Partial notes (v0.1.16): C ABI adds Mamba (`WMB1`). Validation covers Dense×34, volume 3×3×3×34, MHA/SwiGLU/norms/Softmax/Sequential/Residual/CNN/ConvT/RNN/LSTM/Embedding/KMeans/Mamba. Imported SIMD under `include/welvet/simd/` + `imported/`.
 
 “All GPUs/NPUs/TPUs” is the expansion ambition. Each supported device model, numerical type, layer, shape and pass must have an explicit tested capability profile. A working inference partition cannot earn training credit. Additional vendors and device generations can extend the coverage inventory without quietly changing these fixed weights.
 
@@ -322,7 +322,7 @@ Dense FormatNone×34 forward is implemented (v0.1.1); remaining rows are unimple
 | 17 | **Sequential** | Ordered child operation chain | Reverse chain over arbitrary supported children | 🚧 | ⬜ | ⬜ |
 | 18 | **Residual** | F(x) + skip with shape checks | Branch derivative + skip gradient | 🚧 | ⬜ | ⬜ |
 | 19 | **Metacognition** | Observed computation and rule application | Welvet-defined trainable paths and state | ⬜ | ⬜ | ⬜ |
-| 20 | **Mamba** | Selective state-space scan and projections | Scan/state/projection gradients | ⬜ | ⬜ | ⬜ |
+| 20 | **Mamba** | Selective state-space scan and projections | Scan/state/projection gradients | 🚧 | ⬜ | ⬜ |
 | 21 | **GDN** | Gated DeltaNet state update and output | Match Welvet truncated-BPTT contract | ⬜ | ⬜ | ⬜ |
 | 22 | **Stack** | Heterogeneous nested operation chain | Nested child credit and parameter enumeration | ⬜ | ⬜ | ⬜ |
 | helper | **seqmix** | Welvet sequence-mixing helpers | Gradients for delegated helper operations | ⬜ | ⬜ | ⬜ |
