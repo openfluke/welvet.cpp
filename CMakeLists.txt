@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(welvet VERSION 0.1.19 LANGUAGES CXX)
+project(welvet VERSION 0.1.20 LANGUAGES CXX)
 
 # One tree → many OS: Linux, macOS, Windows, Android, iOS (toolchains under cmake/).
 set(CMAKE_CXX_STANDARD 20)
@@ -60,6 +60,7 @@ set(WELVET_CORE_SOURCES
   src/layers/mamba/mamba.cpp
   src/layers/metacognition/metacognition.cpp
   src/layers/gdn/gdn.cpp
+  src/layers/parallel/parallel.cpp
   src/architecture/grid.cpp
   src/runtime/forward.cpp
   src/backends/registry.cpp

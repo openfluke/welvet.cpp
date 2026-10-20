@@ -213,6 +213,15 @@ WELVET_API int32_t welvet_seqmix_mha_kind(void);
 WELVET_API int32_t welvet_seqmix_mamba_kind(void);
 WELVET_API int32_t welvet_seqmix_gdn_kind(void);
 
+/* Parallel Dense branches. combine: 0 concat,1 add,2 avg,3 filter,4 max,5 sparsek,6 disagree.
+ * packed: Branches×[OutFeat×Dim] (+ Gate[Branches×Dim] if filter).
+ * x: [batch*seq*dim]; pre=x copy; post=[batch*seq*OutDim].
+ */
+WELVET_API welvet_status welvet_parallel_forward_f32(
+    int32_t batch, int32_t seq, int32_t dim, int32_t out_feat, int32_t branches, int32_t combine,
+    int32_t sparse_k, int32_t dtype, int32_t backend, double disagree_beta, const float* packed,
+    const float* x, float* pre, float* post);
+
 WELVET_API const char* welvet_version(void);
 WELVET_API int32_t welvet_gap_count(void);
 WELVET_API void welvet_print_gaps(void);
