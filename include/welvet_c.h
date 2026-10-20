@@ -188,6 +188,13 @@ WELVET_API welvet_status welvet_mamba_forward_f32(
     int32_t batch, int32_t seq, int32_t d_model, int32_t d_state, int32_t expand, int32_t dtype,
     int32_t backend, const float* packed, const float* x, float* pre, float* post);
 
+/* Metacognition Observed Dense Dim→Dim + default stability rules (first fwd = Dense while cool).
+ * packed: [Dim×Dim]; x: [batch*seq*dim] (seq=1 → [batch*dim]); pre/post same layout.
+ */
+WELVET_API welvet_status welvet_metacognition_forward_f32(
+    int32_t batch, int32_t seq, int32_t dim, int32_t dtype, int32_t backend, const float* packed,
+    const float* x, float* pre, float* post);
+
 WELVET_API const char* welvet_version(void);
 WELVET_API int32_t welvet_gap_count(void);
 WELVET_API void welvet_print_gaps(void);
