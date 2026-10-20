@@ -159,6 +159,14 @@ WELVET_API welvet_status welvet_softmax_forward_f32(
     int32_t rank, const int32_t* shape, const uint8_t* mask, int32_t mask_len, const int32_t* hier,
     int32_t hier_len, const float* x, float* pre, float* post);
 
+/* Soft KMeans. W: [K*D] centers, x: flat input last-dim=D.
+ * output_mode: 0=probabilities (out K), 1=features (out D). pre/post length batch*out_dim
+ */
+WELVET_API welvet_status welvet_kmeans_forward_f32(
+    int32_t n, int32_t feature_dim, int32_t num_clusters, int32_t output_mode, int32_t act,
+    double temperature, int32_t dtype, int32_t backend, int32_t rank, const int32_t* shape,
+    const float* W, const float* x, float* pre, float* post);
+
 WELVET_API const char* welvet_version(void);
 WELVET_API int32_t welvet_gap_count(void);
 WELVET_API void welvet_print_gaps(void);

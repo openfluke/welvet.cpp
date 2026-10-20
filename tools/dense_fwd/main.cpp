@@ -14,6 +14,7 @@
 //   WLS1 — LSTM forward
 //   WEM1 — Embedding gather forward
 //   WSM1 — Softmax forward (all Kind variants)
+//   WKM1 — KMeans soft assignment forward
 //
 // WVA1 stdin:
 //   magic "WVA1"
@@ -1052,6 +1053,50 @@ int run_softmax(int bench_iters) {
   return write_sm_out(pre, post);
 }
 
+int write_km_out(const std::vector<float>& pre, const std::vector<float>& post) {
+  const int32_t pre_n = static_cast<int32_t>(pre.size());
+  const int32_t post_n = static_cast<int32_t>(post.size());
+  if (!write_magic("WKMO") || !write_exact(&pre_n, 1) || !write_exact(pre.data(), pre.size()) ||
+      !write_exact(&post_n, 1) || !write_exact(post.data(), post.size())) {
+    return 2;
+  }
+  return 0;
+}
+
+int run_kmeans(int bench_iters) {
+  int32_t n = 0, feature_dim = 0, num_clusters = 0, output_mode = 0, act = -1, dtype = 1,
+          backend = 0, rank = 0;
+  double temperature = 1.0;
+  if (!read_exact(&n, 1) || !read_exact(&feature_dim, 1) || !read_exact(&num_clusters, 1) ||
+      !read_exact(&output_mode, 1) || !read_exact(&act, 1) || !read_exact(&temperature, 1) ||
+      !read_exact(&dtype, 1) || !read_exact(&backend, 1) || !read_exact(&rank, 1)) {
+    std::fprintf(stderr, "welvet_dense_fwd: short WKM1 header\n");
+    return 2;
+  }
+  if (rank < 1 || rank > 8) {
+    std::fprintf(stderr, "welvet_dense_fwd: bad kmeans rank\n");
+    return 2;
+  }
+  std::vector<int32_t> shape(static_cast<std::size_t>(rank));
+  if (!read_exact(shape.data(), shape.size())) return 2;
+  std::vector<float> W(static_cast<std::size_t>(num_clusters * feature_dim));
+  if (!read_exact(W.data(), W.size())) return 2;
+  std::vector<float> x(static_cast<std::size_t>(n));
+  if (!read_exact(x.data(), x.size())) return 2;
+  int batch = 1;
+  for (int i = 0; i < rank - 1; ++i) batch *= shape[static_cast<std::size_t>(i)];
+  const int out_dim = output_mode == 1 ? feature_dim : num_clusters;
+  std::vector<float> pre(static_cast<std::size_t>(batch * out_dim));
+  std::vector<float> post(pre.size());
+  auto once = [&]() -> welvet_status {
+    return welvet_kmeans_forward_f32(n, feature_dim, num_clusters, output_mode, act, temperature,
+                                     dtype, backend, rank, shape.data(), W.data(), x.data(),
+                                     pre.data(), post.data());
+  };
+  if (int rc = bench_or_once(bench_iters, once, pre, post); rc != 0) return rc;
+  return write_km_out(pre, post);
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -1123,12 +1168,15 @@ int main(int argc, char** argv) {
   if (std::memcmp(magic, "WSM1", 4) == 0) {
     return run_softmax(bench_iters);
   }
+  if (std::memcmp(magic, "WKM1", 4) == 0) {
+    return run_kmeans(bench_iters);
+  }
   const bool v3 = std::memcmp(magic, "WVD3", 4) == 0;
   const bool v2 = std::memcmp(magic, "WVD2", 4) == 0;
   const bool v1 = std::memcmp(magic, "WVD1", 4) == 0;
   if (!v1 && !v2 && !v3) {
     std::fprintf(stderr, "welvet_dense_fwd: bad magic (want WVD*/WVA1/WVF1/WVM1/WVS1/WVR1/WVL1/"
-                         "WVC1/2/3/WVT1/2/3/WRN1/WLS1/WEM1/WSM1)\n");
+                         "WVC1/2/3/WVT1/2/3/WRN1/WLS1/WEM1/WSM1/WKM1)\n");
     return 2;
   }
   return run_dense(v1, v2, v3, bench_iters);
