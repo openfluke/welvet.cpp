@@ -14,6 +14,7 @@
 #   ./scripts/linux_build_w2a.sh --embedding  # Embedding only
 #   ./scripts/linux_build_w2a.sh --softmax    # Softmax all Kind variants
 #   ./scripts/linux_build_w2a.sh --kmeans     # KMeans soft assignment
+#   ./scripts/linux_build_w2a.sh --sequential # Sequential Dense chain
 #   ./scripts/linux_build_w2a.sh --go-v-cpp   # same as default
 #   ./scripts/linux_build_w2a.sh --all        # entire w2a go test ./...
 #   BUILD_DIR=/tmp/welvet-build ./scripts/linux_build_w2a.sh
@@ -41,8 +42,9 @@ for arg in "$@"; do
     --embedding) MODE="embedding" ;;
     --softmax) MODE="softmax" ;;
     --kmeans) MODE="kmeans" ;;
+    --sequential) MODE="sequential" ;;
     -h|--help)
-      sed -n '2,24p' "$0"
+      sed -n '2,25p' "$0"
       exit 0
       ;;
     *)
@@ -121,6 +123,10 @@ case "$MODE" in
   kmeans)
     echo "==> w2a go_v_cpp KMeans"
     go test ./tests/go_v_cpp/ -run '^TestGoVCppKMeans$' -v -count=1
+    ;;
+  sequential)
+    echo "==> w2a go_v_cpp Sequential"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppSequential$' -v -count=1
     ;;
   all)
     echo "==> w2a full suite (go test ./...)"

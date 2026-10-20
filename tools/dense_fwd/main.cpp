@@ -15,6 +15,7 @@
 //   WEM1 — Embedding gather forward
 //   WSM1 — Softmax forward (all Kind variants)
 //   WKM1 — KMeans soft assignment forward
+//   WSQ1 — Sequential Dense chain forward
 //
 // WVA1 stdin:
 //   magic "WVA1"
@@ -1097,6 +1098,39 @@ int run_kmeans(int bench_iters) {
   return write_km_out(pre, post);
 }
 
+int write_sq_out(const std::vector<float>& pre, const std::vector<float>& post) {
+  const int32_t pre_n = static_cast<int32_t>(pre.size());
+  const int32_t post_n = static_cast<int32_t>(post.size());
+  if (!write_magic("WSQO") || !write_exact(&pre_n, 1) || !write_exact(pre.data(), pre.size()) ||
+      !write_exact(&post_n, 1) || !write_exact(post.data(), post.size())) {
+    return 2;
+  }
+  return 0;
+}
+
+int run_sequential(int bench_iters) {
+  int32_t batch = 0, seq = 0, dim = 0, depth = 0, child_act = -1, dtype = 1, backend = 0;
+  if (!read_exact(&batch, 1) || !read_exact(&seq, 1) || !read_exact(&dim, 1) ||
+      !read_exact(&depth, 1) || !read_exact(&child_act, 1) || !read_exact(&dtype, 1) ||
+      !read_exact(&backend, 1)) {
+    std::fprintf(stderr, "welvet_dense_fwd: short WSQ1 header\n");
+    return 2;
+  }
+  const int wn = depth * dim * dim;
+  std::vector<float> packed(static_cast<std::size_t>(wn));
+  if (!read_exact(packed.data(), packed.size())) return 2;
+  std::vector<float> x(static_cast<std::size_t>(batch * seq * dim));
+  if (!read_exact(x.data(), x.size())) return 2;
+  std::vector<float> pre(x.size());
+  std::vector<float> post(x.size());
+  auto once = [&]() -> welvet_status {
+    return welvet_sequential_forward_f32(batch, seq, dim, depth, child_act, dtype, backend,
+                                         packed.data(), x.data(), pre.data(), post.data());
+  };
+  if (int rc = bench_or_once(bench_iters, once, pre, post); rc != 0) return rc;
+  return write_sq_out(pre, post);
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -1171,12 +1205,15 @@ int main(int argc, char** argv) {
   if (std::memcmp(magic, "WKM1", 4) == 0) {
     return run_kmeans(bench_iters);
   }
+  if (std::memcmp(magic, "WSQ1", 4) == 0) {
+    return run_sequential(bench_iters);
+  }
   const bool v3 = std::memcmp(magic, "WVD3", 4) == 0;
   const bool v2 = std::memcmp(magic, "WVD2", 4) == 0;
   const bool v1 = std::memcmp(magic, "WVD1", 4) == 0;
   if (!v1 && !v2 && !v3) {
     std::fprintf(stderr, "welvet_dense_fwd: bad magic (want WVD*/WVA1/WVF1/WVM1/WVS1/WVR1/WVL1/"
-                         "WVC1/2/3/WVT1/2/3/WRN1/WLS1/WEM1/WSM1/WKM1)\n");
+                         "WVC1/2/3/WVT1/2/3/WRN1/WLS1/WEM1/WSM1/WKM1/WSQ1)\n");
     return 2;
   }
   return run_dense(v1, v2, v3, bench_iters);
