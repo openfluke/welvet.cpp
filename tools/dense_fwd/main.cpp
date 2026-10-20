@@ -13,6 +13,7 @@
 //   WRN1 — RNN forward
 //   WLS1 — LSTM forward
 //   WEM1 — Embedding gather forward
+//   WSM1 — Softmax forward (all Kind variants)
 //
 // WVA1 stdin:
 //   magic "WVA1"
@@ -1004,6 +1005,53 @@ int run_embedding(int bench_iters) {
   return write_emb_out(pre, post);
 }
 
+int write_sm_out(const std::vector<float>& pre, const std::vector<float>& post) {
+  const int32_t pre_n = static_cast<int32_t>(pre.size());
+  const int32_t post_n = static_cast<int32_t>(post.size());
+  if (!write_magic("WSMO") || !write_exact(&pre_n, 1) || !write_exact(pre.data(), pre.size()) ||
+      !write_exact(&post_n, 1) || !write_exact(post.data(), post.size())) {
+    return 2;
+  }
+  return 0;
+}
+
+int run_softmax(int bench_iters) {
+  int32_t n = 0, dim = 0, seq = 0, kind = 0, rows = 0, cols = 0, gumbel_seed = 0, dtype = 1,
+          backend = 0, rank = 0, mask_len = 0, hier_len = 0;
+  double temperature = 1.0, entmax_alpha = 0.0;
+  if (!read_exact(&n, 1) || !read_exact(&dim, 1) || !read_exact(&seq, 1) || !read_exact(&kind, 1) ||
+      !read_exact(&rows, 1) || !read_exact(&cols, 1) || !read_exact(&temperature, 1) ||
+      !read_exact(&entmax_alpha, 1) || !read_exact(&gumbel_seed, 1) || !read_exact(&dtype, 1) ||
+      !read_exact(&backend, 1) || !read_exact(&rank, 1)) {
+    std::fprintf(stderr, "welvet_dense_fwd: short WSM1 header\n");
+    return 2;
+  }
+  if (rank < 1 || rank > 8) {
+    std::fprintf(stderr, "welvet_dense_fwd: bad softmax rank\n");
+    return 2;
+  }
+  std::vector<int32_t> shape(static_cast<std::size_t>(rank));
+  if (!read_exact(shape.data(), shape.size())) return 2;
+  if (!read_exact(&mask_len, 1)) return 2;
+  std::vector<uint8_t> mask(static_cast<std::size_t>(mask_len > 0 ? mask_len : 0));
+  if (mask_len > 0 && !read_exact(mask.data(), mask.size())) return 2;
+  if (!read_exact(&hier_len, 1)) return 2;
+  std::vector<int32_t> hier(static_cast<std::size_t>(hier_len > 0 ? hier_len : 0));
+  if (hier_len > 0 && !read_exact(hier.data(), hier.size())) return 2;
+  std::vector<float> x(static_cast<std::size_t>(n));
+  if (!read_exact(x.data(), x.size())) return 2;
+  std::vector<float> pre(static_cast<std::size_t>(n));
+  std::vector<float> post(pre.size());
+  auto once = [&]() -> welvet_status {
+    return welvet_softmax_forward_f32(
+        n, dim, seq, kind, rows, cols, temperature, entmax_alpha, gumbel_seed, dtype, backend, rank,
+        shape.data(), mask_len > 0 ? mask.data() : nullptr, mask_len,
+        hier_len > 0 ? hier.data() : nullptr, hier_len, x.data(), pre.data(), post.data());
+  };
+  if (int rc = bench_or_once(bench_iters, once, pre, post); rc != 0) return rc;
+  return write_sm_out(pre, post);
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -1072,12 +1120,15 @@ int main(int argc, char** argv) {
   if (std::memcmp(magic, "WEM1", 4) == 0) {
     return run_embedding(bench_iters);
   }
+  if (std::memcmp(magic, "WSM1", 4) == 0) {
+    return run_softmax(bench_iters);
+  }
   const bool v3 = std::memcmp(magic, "WVD3", 4) == 0;
   const bool v2 = std::memcmp(magic, "WVD2", 4) == 0;
   const bool v1 = std::memcmp(magic, "WVD1", 4) == 0;
   if (!v1 && !v2 && !v3) {
     std::fprintf(stderr, "welvet_dense_fwd: bad magic (want WVD*/WVA1/WVF1/WVM1/WVS1/WVR1/WVL1/"
-                         "WVC1/2/3/WVT1/2/3/WRN1/WLS1/WEM1)\n");
+                         "WVC1/2/3/WVT1/2/3/WRN1/WLS1/WEM1/WSM1)\n");
     return 2;
   }
   return run_dense(v1, v2, v3, bench_iters);

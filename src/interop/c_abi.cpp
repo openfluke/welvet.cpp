@@ -15,6 +15,7 @@
 #include "welvet/mha.hpp"
 #include "welvet/rmsnorm.hpp"
 #include "welvet/rnn.hpp"
+#include "welvet/softmax.hpp"
 #include "welvet/swiglu.hpp"
 
 #include <cstdio>
@@ -728,7 +729,64 @@ welvet_status welvet_embedding_forward_f32(int32_t batch, int32_t vocab, int32_t
   return to_c(welvet::Status::Ok());
 }
 
-const char* welvet_version(void) { return "0.1.11-m1-emb"; }
+welvet_status welvet_softmax_forward_f32(int32_t n, int32_t dim, int32_t seq_len, int32_t kind,
+                                         int32_t rows, int32_t cols, double temperature,
+                                         double entmax_alpha, int32_t gumbel_seed, int32_t dtype,
+                                         int32_t backend, int32_t rank, const int32_t* shape,
+                                         const uint8_t* mask, int32_t mask_len, const int32_t* hier,
+                                         int32_t hier_len, const float* x, float* pre, float* post) {
+  if (n <= 0 || dim <= 0 || !x || !pre || !post || rank < 1 || !shape) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "softmax: invalid argument");
+    return st;
+  }
+  if (backend != 0 && backend != 1) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "softmax: bad backend");
+    return st;
+  }
+  welvet::softmax::Config cfg;
+  cfg.dim = dim;
+  cfg.seq_len = seq_len <= 0 ? 1 : seq_len;
+  cfg.rows = rows;
+  cfg.cols = cols;
+  cfg.temperature = temperature;
+  cfg.kind = static_cast<welvet::softmax::Kind>(kind);
+  cfg.entmax_alpha = entmax_alpha;
+  cfg.gumbel_seed = static_cast<uint32_t>(gumbel_seed);
+  if (mask && mask_len > 0) {
+    cfg.mask.resize(static_cast<std::size_t>(mask_len));
+    for (int32_t i = 0; i < mask_len; ++i) {
+      cfg.mask[static_cast<std::size_t>(i)] = mask[i] != 0;
+    }
+  }
+  if (hier && hier_len > 0) {
+    cfg.hierarchy_levels.assign(hier, hier + hier_len);
+  }
+  welvet::softmax::Layer layer;
+  auto st = welvet::softmax::new_configured(cfg, static_cast<welvet::DType>(dtype), &layer);
+  if (!st) return to_c(st);
+  layer.backend = backend == 1 ? welvet::Backend::SIMD : welvet::Backend::CPUTiled;
+  welvet::TensorF32 input;
+  input.shape.assign(shape, shape + rank);
+  input.data.assign(x, x + static_cast<std::size_t>(n));
+  welvet::TensorF32 pre_t, post_t;
+  st = welvet::softmax::forward(layer, input, &pre_t, &post_t);
+  if (!st) return to_c(st);
+  if (static_cast<int>(pre_t.data.size()) != n || static_cast<int>(post_t.data.size()) != n) {
+    welvet_status err{};
+    err.code = 1;
+    std::snprintf(err.message, sizeof(err.message), "softmax: unexpected out len");
+    return err;
+  }
+  std::memcpy(pre, pre_t.data.data(), pre_t.data.size() * sizeof(float));
+  std::memcpy(post, post_t.data.data(), post_t.data.size() * sizeof(float));
+  return to_c(welvet::Status::Ok());
+}
+
+const char* welvet_version(void) { return "0.1.12-m1-softmax"; }
 
 int32_t welvet_gap_count(void) { return static_cast<int32_t>(welvet::gaps::count_gaps()); }
 

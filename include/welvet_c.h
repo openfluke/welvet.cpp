@@ -148,6 +148,17 @@ WELVET_API welvet_status welvet_embedding_forward_f32(
     int32_t act, int32_t dtype, int32_t backend, const float* W, const float* x, float* pre,
     float* post);
 
+/* Softmax (weightless). All Kind variants. x: [n] flat or shaped via rank/dims.
+ * kind: 0 std 1 temp 2 gumbel 3 masked 4 sparse 5 entmax 6 grid 7 hierarchical
+ * mask: uint8 0/1 length mask_len (KindMasked); hier: int32 levels (KindHierarchical)
+ * pre/post: probabilities, length n
+ */
+WELVET_API welvet_status welvet_softmax_forward_f32(
+    int32_t n, int32_t dim, int32_t seq_len, int32_t kind, int32_t rows, int32_t cols,
+    double temperature, double entmax_alpha, int32_t gumbel_seed, int32_t dtype, int32_t backend,
+    int32_t rank, const int32_t* shape, const uint8_t* mask, int32_t mask_len, const int32_t* hier,
+    int32_t hier_len, const float* x, float* pre, float* post);
+
 WELVET_API const char* welvet_version(void);
 WELVET_API int32_t welvet_gap_count(void);
 WELVET_API void welvet_print_gaps(void);
