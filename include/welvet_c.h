@@ -70,6 +70,14 @@ WELVET_API welvet_status welvet_swiglu_forward_f32(
     int32_t backend, const float* Gate, const float* Up, const float* Down, const float* x,
     float* pre, float* post);
 
+/* RMSNorm baseline. gamma: [dim], x: [batch*seq*dim]
+ * pre (x̂): [batch*seq*dim], post (γ⊙x̂): [batch*seq*dim]
+ * eps<=0 → 1e-6
+ */
+WELVET_API welvet_status welvet_rmsnorm_forward_f32(
+    int32_t batch, int32_t seq, int32_t dim, double eps, int32_t dtype, int32_t backend,
+    const float* gamma, const float* x, float* pre, float* post);
+
 WELVET_API const char* welvet_version(void);
 WELVET_API int32_t welvet_gap_count(void);
 WELVET_API void welvet_print_gaps(void);
