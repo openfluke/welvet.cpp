@@ -3,6 +3,7 @@
 #include "welvet/architecture.hpp"
 #include "welvet/dense.hpp"
 #include "welvet/gaps.hpp"
+#include "welvet/layernorm.hpp"
 #include "welvet/mha.hpp"
 #include "welvet/rmsnorm.hpp"
 #include "welvet/swiglu.hpp"
@@ -276,7 +277,54 @@ welvet_status welvet_rmsnorm_forward_f32(int32_t batch, int32_t seq, int32_t dim
   return to_c(welvet::Status::Ok());
 }
 
-const char* welvet_version(void) { return "0.1.6-m1-rmsnorm"; }
+welvet_status welvet_layernorm_forward_f32(int32_t batch, int32_t seq, int32_t dim, double eps,
+                                           int32_t dtype, int32_t backend, const float* gamma,
+                                           const float* beta, const float* x, float* pre,
+                                           float* post) {
+  if (batch <= 0 || seq <= 0 || dim <= 0 || !gamma || !beta || !x || !pre || !post) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "layernorm: invalid argument");
+    return st;
+  }
+  if (backend != 0 && backend != 1) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "layernorm: bad backend");
+    return st;
+  }
+
+  welvet::layernorm::Config cfg;
+  cfg.dim = dim;
+  cfg.eps = eps;
+
+  welvet::layernorm::Layer layer;
+  auto st =
+      welvet::layernorm::new_configured(cfg, static_cast<welvet::DType>(dtype), gamma, beta, &layer);
+  if (!st) {
+    return to_c(st);
+  }
+  layer.backend = backend == 1 ? welvet::Backend::SIMD : welvet::Backend::CPUTiled;
+
+  welvet::TensorF32 input;
+  if (seq == 1) {
+    input.shape = {batch, dim};
+  } else {
+    input.shape = {batch, seq, dim};
+  }
+  input.data.assign(x, x + static_cast<std::size_t>(batch * seq * dim));
+
+  welvet::TensorF32 pre_t, post_t;
+  st = welvet::layernorm::forward(layer, input, &pre_t, &post_t);
+  if (!st) {
+    return to_c(st);
+  }
+  std::memcpy(pre, pre_t.data.data(), pre_t.data.size() * sizeof(float));
+  std::memcpy(post, post_t.data.data(), post_t.data.size() * sizeof(float));
+  return to_c(welvet::Status::Ok());
+}
+
+const char* welvet_version(void) { return "0.1.7-m1-layernorm"; }
 
 int32_t welvet_gap_count(void) { return static_cast<int32_t>(welvet::gaps::count_gaps()); }
 

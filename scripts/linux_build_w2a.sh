@@ -2,12 +2,13 @@
 # Linux: build welvet.cpp, then run w2a Go↔C++ validation.
 #
 # Usage:
-#   ./scripts/linux_build_w2a.sh              # build + full go_v_cpp (dense/arch/mha/swiglu/rmsnorm)
-#   ./scripts/linux_build_w2a.sh --mha        # build + MHA go_v_cpp only
-#   ./scripts/linux_build_w2a.sh --swiglu     # build + SwiGLU go_v_cpp only
-#   ./scripts/linux_build_w2a.sh --rmsnorm    # build + RMSNorm go_v_cpp only
+#   ./scripts/linux_build_w2a.sh              # build + full go_v_cpp suite
+#   ./scripts/linux_build_w2a.sh --mha        # MHA only
+#   ./scripts/linux_build_w2a.sh --swiglu     # SwiGLU only
+#   ./scripts/linux_build_w2a.sh --rmsnorm    # RMSNorm only
+#   ./scripts/linux_build_w2a.sh --layernorm  # LayerNorm only
 #   ./scripts/linux_build_w2a.sh --go-v-cpp   # same as default
-#   ./scripts/linux_build_w2a.sh --all        # build + entire w2a go test ./...
+#   ./scripts/linux_build_w2a.sh --all        # entire w2a go test ./...
 #   BUILD_DIR=/tmp/welvet-build ./scripts/linux_build_w2a.sh
 #
 # Expects sibling checkout: ../w2a (override with W2A_ROOT).
@@ -25,8 +26,9 @@ for arg in "$@"; do
     --mha) MODE="mha" ;;
     --swiglu) MODE="swiglu" ;;
     --rmsnorm) MODE="rmsnorm" ;;
+    --layernorm) MODE="layernorm" ;;
     -h|--help)
-      sed -n '2,16p' "$0"
+      sed -n '2,17p' "$0"
       exit 0
       ;;
     *)
@@ -59,7 +61,7 @@ export WELVET_DENSE_FWD="$TOOL"
 cd "$W2A_ROOT"
 case "$MODE" in
   go_v_cpp)
-    echo "==> w2a go_v_cpp full (dense + arch + mha + swiglu + rmsnorm)"
+    echo "==> w2a go_v_cpp full (dense + arch + mha + swiglu + rmsnorm + layernorm)"
     go test ./tests/go_v_cpp/ -run '^TestGoVCpp$' -v -count=1
     ;;
   mha)
@@ -73,6 +75,10 @@ case "$MODE" in
   rmsnorm)
     echo "==> w2a go_v_cpp RMSNorm only"
     go test ./tests/go_v_cpp/ -run '^TestGoVCppRMSNorm$' -v -count=1
+    ;;
+  layernorm)
+    echo "==> w2a go_v_cpp LayerNorm only"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppLayerNorm$' -v -count=1
     ;;
   all)
     echo "==> w2a full suite (go test ./...)"
