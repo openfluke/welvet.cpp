@@ -1,6 +1,9 @@
 #include "welvet_c.h"
 
 #include "welvet/architecture.hpp"
+#include "welvet/cnn1.hpp"
+#include "welvet/cnn2.hpp"
+#include "welvet/cnn3.hpp"
 #include "welvet/dense.hpp"
 #include "welvet/gaps.hpp"
 #include "welvet/layernorm.hpp"
@@ -324,7 +327,154 @@ welvet_status welvet_layernorm_forward_f32(int32_t batch, int32_t seq, int32_t d
   return to_c(welvet::Status::Ok());
 }
 
-const char* welvet_version(void) { return "0.1.7-m1-layernorm"; }
+welvet_status welvet_cnn1_forward_f32(int32_t batch, int32_t in_c, int32_t filters, int32_t seq_len,
+                                      int32_t kernel, int32_t stride, int32_t padding, int32_t act,
+                                      int32_t dtype, int32_t backend, const float* W,
+                                      const double* bias, size_t bias_len, const float* x,
+                                      float* pre, float* post) {
+  if (batch <= 0 || in_c <= 0 || filters <= 0 || seq_len <= 0 || kernel <= 0 || !W || !x || !pre ||
+      !post) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "cnn1: invalid argument");
+    return st;
+  }
+  if (backend != 0 && backend != 1) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "cnn1: bad backend");
+    return st;
+  }
+
+  welvet::cnn1::Config cfg;
+  cfg.in_channels = in_c;
+  cfg.filters = filters;
+  cfg.seq_len = seq_len;
+  cfg.kernel = kernel;
+  cfg.stride = stride;
+  cfg.padding = padding;
+  cfg.activation = static_cast<welvet::Activation>(act);
+
+  welvet::cnn1::Layer layer;
+  auto st = welvet::cnn1::new_configured(cfg, static_cast<welvet::DType>(dtype), W, &layer);
+  if (!st) return to_c(st);
+  if (bias && bias_len > 0) {
+    layer.proj.weights.bias.assign(bias, bias + bias_len);
+  }
+  layer.backend = backend == 1 ? welvet::Backend::SIMD : welvet::Backend::CPUTiled;
+
+  welvet::TensorF32 input;
+  input.shape = {batch, in_c, seq_len};
+  input.data.assign(x, x + static_cast<std::size_t>(batch * in_c * seq_len));
+
+  welvet::TensorF32 pre_t, post_t;
+  st = welvet::cnn1::forward(layer, input, &pre_t, &post_t);
+  if (!st) return to_c(st);
+  std::memcpy(pre, pre_t.data.data(), pre_t.data.size() * sizeof(float));
+  std::memcpy(post, post_t.data.data(), post_t.data.size() * sizeof(float));
+  return to_c(welvet::Status::Ok());
+}
+
+welvet_status welvet_cnn2_forward_f32(int32_t batch, int32_t in_c, int32_t filters, int32_t height,
+                                      int32_t width, int32_t kernel, int32_t stride, int32_t padding,
+                                      int32_t act, int32_t dtype, int32_t backend, const float* W,
+                                      const double* bias, size_t bias_len, const float* x,
+                                      float* pre, float* post) {
+  if (batch <= 0 || in_c <= 0 || filters <= 0 || height <= 0 || width <= 0 || kernel <= 0 || !W ||
+      !x || !pre || !post) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "cnn2: invalid argument");
+    return st;
+  }
+  if (backend != 0 && backend != 1) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "cnn2: bad backend");
+    return st;
+  }
+
+  welvet::cnn2::Config cfg;
+  cfg.in_channels = in_c;
+  cfg.filters = filters;
+  cfg.height = height;
+  cfg.width = width;
+  cfg.kernel = kernel;
+  cfg.stride = stride;
+  cfg.padding = padding;
+  cfg.activation = static_cast<welvet::Activation>(act);
+
+  welvet::cnn2::Layer layer;
+  auto st = welvet::cnn2::new_configured(cfg, static_cast<welvet::DType>(dtype), W, &layer);
+  if (!st) return to_c(st);
+  if (bias && bias_len > 0) {
+    layer.proj.weights.bias.assign(bias, bias + bias_len);
+  }
+  layer.backend = backend == 1 ? welvet::Backend::SIMD : welvet::Backend::CPUTiled;
+
+  welvet::TensorF32 input;
+  input.shape = {batch, in_c, height, width};
+  input.data.assign(x, x + static_cast<std::size_t>(batch * in_c * height * width));
+
+  welvet::TensorF32 pre_t, post_t;
+  st = welvet::cnn2::forward(layer, input, &pre_t, &post_t);
+  if (!st) return to_c(st);
+  std::memcpy(pre, pre_t.data.data(), pre_t.data.size() * sizeof(float));
+  std::memcpy(post, post_t.data.data(), post_t.data.size() * sizeof(float));
+  return to_c(welvet::Status::Ok());
+}
+
+welvet_status welvet_cnn3_forward_f32(int32_t batch, int32_t in_c, int32_t filters, int32_t depth,
+                                      int32_t height, int32_t width, int32_t kernel, int32_t stride,
+                                      int32_t padding, int32_t act, int32_t dtype, int32_t backend,
+                                      const float* W, const double* bias, size_t bias_len,
+                                      const float* x, float* pre, float* post) {
+  if (batch <= 0 || in_c <= 0 || filters <= 0 || depth <= 0 || height <= 0 || width <= 0 ||
+      kernel <= 0 || !W || !x || !pre || !post) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "cnn3: invalid argument");
+    return st;
+  }
+  if (backend != 0 && backend != 1) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "cnn3: bad backend");
+    return st;
+  }
+
+  welvet::cnn3::Config cfg;
+  cfg.in_channels = in_c;
+  cfg.filters = filters;
+  cfg.depth = depth;
+  cfg.height = height;
+  cfg.width = width;
+  cfg.kernel = kernel;
+  cfg.stride = stride;
+  cfg.padding = padding;
+  cfg.activation = static_cast<welvet::Activation>(act);
+
+  welvet::cnn3::Layer layer;
+  auto st = welvet::cnn3::new_configured(cfg, static_cast<welvet::DType>(dtype), W, &layer);
+  if (!st) return to_c(st);
+  if (bias && bias_len > 0) {
+    layer.proj.weights.bias.assign(bias, bias + bias_len);
+  }
+  layer.backend = backend == 1 ? welvet::Backend::SIMD : welvet::Backend::CPUTiled;
+
+  welvet::TensorF32 input;
+  input.shape = {batch, in_c, depth, height, width};
+  input.data.assign(x, x + static_cast<std::size_t>(batch * in_c * depth * height * width));
+
+  welvet::TensorF32 pre_t, post_t;
+  st = welvet::cnn3::forward(layer, input, &pre_t, &post_t);
+  if (!st) return to_c(st);
+  std::memcpy(pre, pre_t.data.data(), pre_t.data.size() * sizeof(float));
+  std::memcpy(post, post_t.data.data(), post_t.data.size() * sizeof(float));
+  return to_c(welvet::Status::Ok());
+}
+
+const char* welvet_version(void) { return "0.1.8-m1-cnn"; }
 
 int32_t welvet_gap_count(void) { return static_cast<int32_t>(welvet::gaps::count_gaps()); }
 

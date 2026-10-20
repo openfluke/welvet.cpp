@@ -7,6 +7,7 @@
 #   ./scripts/linux_build_w2a.sh --swiglu     # SwiGLU only
 #   ./scripts/linux_build_w2a.sh --rmsnorm    # RMSNorm only
 #   ./scripts/linux_build_w2a.sh --layernorm  # LayerNorm only
+#   ./scripts/linux_build_w2a.sh --cnn        # CNN1/2/3 only
 #   ./scripts/linux_build_w2a.sh --go-v-cpp   # same as default
 #   ./scripts/linux_build_w2a.sh --all        # entire w2a go test ./...
 #   BUILD_DIR=/tmp/welvet-build ./scripts/linux_build_w2a.sh
@@ -27,8 +28,9 @@ for arg in "$@"; do
     --swiglu) MODE="swiglu" ;;
     --rmsnorm) MODE="rmsnorm" ;;
     --layernorm) MODE="layernorm" ;;
+    --cnn) MODE="cnn" ;;
     -h|--help)
-      sed -n '2,17p' "$0"
+      sed -n '2,18p' "$0"
       exit 0
       ;;
     *)
@@ -61,7 +63,7 @@ export WELVET_DENSE_FWD="$TOOL"
 cd "$W2A_ROOT"
 case "$MODE" in
   go_v_cpp)
-    echo "==> w2a go_v_cpp full (dense + arch + mha + swiglu + rmsnorm + layernorm)"
+    echo "==> w2a go_v_cpp full (dense + arch + transformer + cnn)"
     go test ./tests/go_v_cpp/ -run '^TestGoVCpp$' -v -count=1
     ;;
   mha)
@@ -79,6 +81,10 @@ case "$MODE" in
   layernorm)
     echo "==> w2a go_v_cpp LayerNorm only"
     go test ./tests/go_v_cpp/ -run '^TestGoVCppLayerNorm$' -v -count=1
+    ;;
+  cnn)
+    echo "==> w2a go_v_cpp CNN1/2/3 only"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppCNN$' -v -count=1
     ;;
   all)
     echo "==> w2a full suite (go test ./...)"

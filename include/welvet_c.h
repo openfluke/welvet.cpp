@@ -86,6 +86,30 @@ WELVET_API welvet_status welvet_layernorm_forward_f32(
     int32_t batch, int32_t seq, int32_t dim, double eps, int32_t dtype, int32_t backend,
     const float* gamma, const float* beta, const float* x, float* pre, float* post);
 
+/* CNN1 Conv1d. W: [filters*inC*k], x: [batch*inC*seq]
+ * pre/post loom: [batch*filters*outLen]
+ */
+WELVET_API welvet_status welvet_cnn1_forward_f32(
+    int32_t batch, int32_t in_c, int32_t filters, int32_t seq_len, int32_t kernel, int32_t stride,
+    int32_t padding, int32_t act, int32_t dtype, int32_t backend, const float* W,
+    const double* bias, size_t bias_len, const float* x, float* pre, float* post);
+
+/* CNN2 Conv2d (square kernel). W: [filters*inC*k*k], x: [batch*inC*H*W]
+ * pre/post loom: [batch*filters*outH*outW]
+ */
+WELVET_API welvet_status welvet_cnn2_forward_f32(
+    int32_t batch, int32_t in_c, int32_t filters, int32_t height, int32_t width, int32_t kernel,
+    int32_t stride, int32_t padding, int32_t act, int32_t dtype, int32_t backend, const float* W,
+    const double* bias, size_t bias_len, const float* x, float* pre, float* post);
+
+/* CNN3 Conv3d (cubic kernel). W: [filters*inC*k³], x: [batch*inC*D*H*W]
+ * pre/post loom: [batch*filters*outD*outH*outW]
+ */
+WELVET_API welvet_status welvet_cnn3_forward_f32(
+    int32_t batch, int32_t in_c, int32_t filters, int32_t depth, int32_t height, int32_t width,
+    int32_t kernel, int32_t stride, int32_t padding, int32_t act, int32_t dtype, int32_t backend,
+    const float* W, const double* bias, size_t bias_len, const float* x, float* pre, float* post);
+
 WELVET_API const char* welvet_version(void);
 WELVET_API int32_t welvet_gap_count(void);
 WELVET_API void welvet_print_gaps(void);
