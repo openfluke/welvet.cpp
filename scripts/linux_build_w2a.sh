@@ -8,6 +8,7 @@
 #   ./scripts/linux_build_w2a.sh --rmsnorm    # RMSNorm only
 #   ./scripts/linux_build_w2a.sh --layernorm  # LayerNorm only
 #   ./scripts/linux_build_w2a.sh --cnn        # CNN1/2/3 only
+#   ./scripts/linux_build_w2a.sh --convt      # ConvT1/2/3 only
 #   ./scripts/linux_build_w2a.sh --go-v-cpp   # same as default
 #   ./scripts/linux_build_w2a.sh --all        # entire w2a go test ./...
 #   BUILD_DIR=/tmp/welvet-build ./scripts/linux_build_w2a.sh
@@ -29,8 +30,9 @@ for arg in "$@"; do
     --rmsnorm) MODE="rmsnorm" ;;
     --layernorm) MODE="layernorm" ;;
     --cnn) MODE="cnn" ;;
+    --convt) MODE="convt" ;;
     -h|--help)
-      sed -n '2,18p' "$0"
+      sed -n '2,19p' "$0"
       exit 0
       ;;
     *)
@@ -85,6 +87,10 @@ case "$MODE" in
   cnn)
     echo "==> w2a go_v_cpp CNN1/2/3 only"
     go test ./tests/go_v_cpp/ -run '^TestGoVCppCNN$' -v -count=1
+    ;;
+  convt)
+    echo "==> w2a go_v_cpp ConvT1/2/3 only"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppConvT$' -v -count=1
     ;;
   all)
     echo "==> w2a full suite (go test ./...)"
