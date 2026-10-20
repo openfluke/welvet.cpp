@@ -4,6 +4,7 @@
 #include "welvet/dense.hpp"
 #include "welvet/dtype.hpp"
 #include "welvet/layer.hpp"
+#include "welvet/seqmix.hpp"
 #include "welvet/status.hpp"
 #include "welvet/tensor.hpp"
 
@@ -30,6 +31,8 @@ struct Layer {
   std::vector<float> d_skip; // [Inner], always f32
   Backend backend = Backend::CPUTiled;
   LayerMeta meta{};
+
+  static constexpr seqmix::Kind kind() { return seqmix::mamba_kind(); }
 };
 
 // packed: InProj[2*Inner×D] | OutProj[D×Inner] | ALog[Inner] | DSkip[Inner] (f32).

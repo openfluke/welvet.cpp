@@ -2,6 +2,7 @@
 
 #include "welvet/dense.hpp"
 #include "welvet/layer.hpp"
+#include "welvet/seqmix.hpp"
 #include "welvet/status.hpp"
 #include "welvet/tensor.hpp"
 
@@ -74,6 +75,9 @@ struct Layer {
   dense::Layer Q, K, V, O;
   Backend backend = Backend::CPUTiled;
   LayerMeta meta{};
+
+  // Go names this MixerKind(); same KindAttention tag.
+  static constexpr seqmix::Kind mixer_kind() { return seqmix::mha_mixer_kind(); }
 };
 
 // Build MHA with FormatNone projections (row-major out×in init, may be null → zeros).

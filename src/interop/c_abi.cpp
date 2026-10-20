@@ -19,6 +19,7 @@
 #include "welvet/gdn.hpp"
 #include "welvet/mamba.hpp"
 #include "welvet/metacognition.hpp"
+#include "welvet/seqmix.hpp"
 #include "welvet/residual.hpp"
 #include "welvet/sequential.hpp"
 #include "welvet/softmax.hpp"
@@ -1027,7 +1028,35 @@ welvet_status welvet_gdn_forward_f32(int32_t batch, int32_t seq, int32_t hidden,
   return to_c(welvet::Status::Ok());
 }
 
-const char* welvet_version(void) { return "0.1.18-m1-gdn"; }
+welvet_status welvet_seqmix_kind_name(int32_t kind, char* buf, int32_t buf_len) {
+  if (!buf || buf_len <= 0) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "seqmix: bad buf");
+    return st;
+  }
+  const char* name = welvet::seqmix::kind_name(static_cast<welvet::seqmix::Kind>(kind));
+  if (!name) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "seqmix: unknown kind %d", static_cast<int>(kind));
+    return st;
+  }
+  std::snprintf(buf, static_cast<std::size_t>(buf_len), "%s", name);
+  return to_c(welvet::Status::Ok());
+}
+
+int32_t welvet_seqmix_mha_kind(void) {
+  return static_cast<int32_t>(welvet::seqmix::mha_mixer_kind());
+}
+int32_t welvet_seqmix_mamba_kind(void) {
+  return static_cast<int32_t>(welvet::seqmix::mamba_kind());
+}
+int32_t welvet_seqmix_gdn_kind(void) {
+  return static_cast<int32_t>(welvet::seqmix::gdn_kind());
+}
+
+const char* welvet_version(void) { return "0.1.19-m1-seqmix"; }
 
 int32_t welvet_gap_count(void) { return static_cast<int32_t>(welvet::gaps::count_gaps()); }
 

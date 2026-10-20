@@ -39,6 +39,8 @@ const std::vector<Entry>& build() {
        "C ABI welvet_metacognition_forward_f32 + WMC1 tool", true},
       {"abi.gdn_forward_f32", "interop",
        "C ABI welvet_gdn_forward_f32 + WGD1 tool (Float32 FormatNone)", true},
+      {"abi.seqmix_kind", "interop",
+       "C ABI welvet_seqmix_kind_name + mixer tags + WSX1 smoke", true},
       {"backends.cpu", "backends", "Native CPU target available", true},
       {"core.layer_types", "core", "LayerType 0–22 + LayerMeta descriptor", true},
       {"arch.volume", "architecture", "Grid/Cell/Coord/HopOrder/remote links", true},
@@ -120,7 +122,9 @@ const std::vector<Entry>& build() {
       {"layer.gdn.dtype34", "layers", "gap? GDN ×34 dtypes (Go Float32-only today)", false},
       {"layer.gdn.backward", "layers", "gap? GDN truncated-BPTT backward", false},
       {"layer.stack", "layers", "gap? Stack nested ops", false},
-      {"layer.seqmix", "layers", "gap? seqmix helper", false},
+      {"layer.seqmix", "layers",
+       "seqmix Kind/Contract helper + MHA/Mamba/GDN tags (no Forward)", true},
+      {"layer.seqmix.conv_mix", "layers", "gap? seqmix KindConvMix implementor", false},
 
       // --- Architecture / runtime remaining ---
       {"runtime.forward", "runtime", "gap? volume Forward all layer kinds (Dense done)", false},

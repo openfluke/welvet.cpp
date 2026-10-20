@@ -3,6 +3,7 @@
 #include "welvet/backend.hpp"
 #include "welvet/dtype.hpp"
 #include "welvet/layer.hpp"
+#include "welvet/seqmix.hpp"
 #include "welvet/status.hpp"
 #include "welvet/tensor.hpp"
 
@@ -40,6 +41,8 @@ struct Layer {
   std::vector<float> norm_gamma;  // [hdV]
   Backend backend = Backend::CPUTiled;
   LayerMeta meta{};
+
+  static constexpr seqmix::Kind kind() { return seqmix::gdn_kind(); }
 };
 
 // packed: InQKV|InZ|InB|InA|Out|ConvWeight|ALog|DtBias|NormGamma (all f32).

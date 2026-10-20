@@ -20,6 +20,7 @@
 //   WMB1 — Mamba minimal SSM forward
 //   WMC1 — Metacognition Observed Dense + rules forward
 //   WGD1 — GDN (Gated DeltaNet) Float32 forward
+//   WSX1 — seqmix Kind name smoke (no tensors)
 //
 // WVA1 stdin:
 //   magic "WVA1"
@@ -1276,6 +1277,34 @@ int run_gdn(int bench_iters) {
   return write_gd_out(pre, post);
 }
 
+int run_seqmix(int /*bench_iters*/) {
+  int32_t n = 0;
+  if (!read_exact(&n, 1) || n < 0 || n > 64) {
+    std::fprintf(stderr, "welvet_dense_fwd: short/bad WSX1 header\n");
+    return 2;
+  }
+  std::vector<int32_t> kinds(static_cast<std::size_t>(n));
+  if (n > 0 && !read_exact(kinds.data(), kinds.size())) return 2;
+  if (!write_magic("WSXO") || !write_exact(&n, 1)) return 2;
+  for (int32_t k : kinds) {
+    char name[64]{};
+    welvet_status st = welvet_seqmix_kind_name(k, name, static_cast<int32_t>(sizeof(name)));
+    if (st.code != 0) {
+      std::fprintf(stderr, "welvet_dense_fwd: seqmix kind %d: %s\n", static_cast<int>(k),
+                   st.message);
+      return 2;
+    }
+    const int32_t len = static_cast<int32_t>(std::strlen(name));
+    if (!write_exact(&len, 1) || !write_exact(name, static_cast<std::size_t>(len))) return 2;
+  }
+  // Mixer tags: mha, mamba, gdn
+  const int32_t tags[3] = {welvet_seqmix_mha_kind(), welvet_seqmix_mamba_kind(),
+                           welvet_seqmix_gdn_kind()};
+  const int32_t n_tags = 3;
+  if (!write_exact(&n_tags, 1) || !write_exact(tags, 3)) return 2;
+  return 0;
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -1365,12 +1394,15 @@ int main(int argc, char** argv) {
   if (std::memcmp(magic, "WGD1", 4) == 0) {
     return run_gdn(bench_iters);
   }
+  if (std::memcmp(magic, "WSX1", 4) == 0) {
+    return run_seqmix(bench_iters);
+  }
   const bool v3 = std::memcmp(magic, "WVD3", 4) == 0;
   const bool v2 = std::memcmp(magic, "WVD2", 4) == 0;
   const bool v1 = std::memcmp(magic, "WVD1", 4) == 0;
   if (!v1 && !v2 && !v3) {
     std::fprintf(stderr, "welvet_dense_fwd: bad magic (want WVD*/WVA1/WVF1/WVM1/WVS1/WVR1/WVL1/"
-                         "WVC1/2/3/WVT1/2/3/WRN1/WLS1/WEM1/WSM1/WKM1/WSQ1/WRE1/WMB1/WMC1/WGD1)\n");
+                         "WVC1/2/3/WVT1/2/3/WRN1/WLS1/WEM1/WSM1/WKM1/WSQ1/WRE1/WMB1/WMC1/WGD1/WSX1)\n");
     return 2;
   }
   return run_dense(v1, v2, v3, bench_iters);
