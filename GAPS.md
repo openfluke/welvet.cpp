@@ -33,4 +33,6 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 
 See `src/gaps/registry.cpp`.
 
+Training runway checklist (leaf NormalBP → TrainModes): [`docs/TRAINING_CHECKLIST.md`](docs/TRAINING_CHECKLIST.md).
+
 Note: Go Parallel also has a large **w2a/suites/parallel** suite (cameral/poly/train). C++ M1 is Dense combine host via **go_v_cpp** `WPL1` only.
