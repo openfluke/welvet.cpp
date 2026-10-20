@@ -126,6 +126,20 @@ WELVET_API welvet_status welvet_convt3_forward_f32(
     int32_t kernel, int32_t stride, int32_t padding, int32_t output_padding, int32_t act,
     int32_t dtype, int32_t backend, const float* W, const float* x, float* pre, float* post);
 
+/* RNN. packed: [IH (H×In) | HH (H×H) | bias (H)], x: [batch*seq*in]
+ * pre/post: [batch*seq*H]
+ */
+WELVET_API welvet_status welvet_rnn_forward_f32(
+    int32_t batch, int32_t input_size, int32_t hidden_size, int32_t seq_len, int32_t dtype,
+    int32_t backend, const float* packed, const float* x, float* pre, float* post);
+
+/* LSTM. packed: [i|f|g|o] each [IH|HH|bias], x: [batch*seq*in]
+ * pre: [batch*seq*5H]=[i,f,g,o,c], post: [batch*seq*H]
+ */
+WELVET_API welvet_status welvet_lstm_forward_f32(
+    int32_t batch, int32_t input_size, int32_t hidden_size, int32_t seq_len, int32_t dtype,
+    int32_t backend, const float* packed, const float* x, float* pre, float* post);
+
 WELVET_API const char* welvet_version(void);
 WELVET_API int32_t welvet_gap_count(void);
 WELVET_API void welvet_print_gaps(void);

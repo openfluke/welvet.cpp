@@ -9,6 +9,8 @@
 #   ./scripts/linux_build_w2a.sh --layernorm  # LayerNorm only
 #   ./scripts/linux_build_w2a.sh --cnn        # CNN1/2/3 only
 #   ./scripts/linux_build_w2a.sh --convt      # ConvT1/2/3 only
+#   ./scripts/linux_build_w2a.sh --rnn        # RNN only
+#   ./scripts/linux_build_w2a.sh --lstm       # LSTM only
 #   ./scripts/linux_build_w2a.sh --go-v-cpp   # same as default
 #   ./scripts/linux_build_w2a.sh --all        # entire w2a go test ./...
 #   BUILD_DIR=/tmp/welvet-build ./scripts/linux_build_w2a.sh
@@ -31,8 +33,10 @@ for arg in "$@"; do
     --layernorm) MODE="layernorm" ;;
     --cnn) MODE="cnn" ;;
     --convt) MODE="convt" ;;
+    --rnn) MODE="rnn" ;;
+    --lstm) MODE="lstm" ;;
     -h|--help)
-      sed -n '2,19p' "$0"
+      sed -n '2,21p' "$0"
       exit 0
       ;;
     *)
@@ -65,7 +69,7 @@ export WELVET_DENSE_FWD="$TOOL"
 cd "$W2A_ROOT"
 case "$MODE" in
   go_v_cpp)
-    echo "==> w2a go_v_cpp full (dense + arch + transformer + cnn)"
+    echo "==> w2a go_v_cpp full (dense + arch + transformer + cnn + convt + rnn + lstm)"
     go test ./tests/go_v_cpp/ -run '^TestGoVCpp$' -v -count=1
     ;;
   mha)
@@ -91,6 +95,14 @@ case "$MODE" in
   convt)
     echo "==> w2a go_v_cpp ConvT1/2/3 only"
     go test ./tests/go_v_cpp/ -run '^TestGoVCppConvT$' -v -count=1
+    ;;
+  rnn)
+    echo "==> w2a go_v_cpp RNN only"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppRNN$' -v -count=1
+    ;;
+  lstm)
+    echo "==> w2a go_v_cpp LSTM only"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppLSTM$' -v -count=1
     ;;
   all)
     echo "==> w2a full suite (go test ./...)"
