@@ -52,6 +52,16 @@ WELVET_API welvet_status welvet_arch_topology(
     const int32_t* links, int32_t n_links, int32_t* out_n_cells, int32_t* out_coords,
     int32_t* out_indices, int32_t* out_remote);
 
+/* MHA self-attn baseline (ModeSelf). mask/pos match Go mha.MaskKind/PosKind.
+ * Q: [q_dim*d], K/V: [kv_dim*d], O: [d*q_dim], x: [batch*seq*d]
+ * pre: [batch*seq*q_dim], post: [batch*seq*d]
+ */
+WELVET_API welvet_status welvet_mha_forward_f32(
+    int32_t batch, int32_t seq, int32_t d_model, int32_t num_heads, int32_t num_kv_heads,
+    int32_t head_dim, int32_t max_seq_len, int32_t mask, int32_t pos, int32_t dtype,
+    int32_t backend, const float* Q, const float* K, const float* V, const float* O,
+    const float* x, float* pre, float* post);
+
 WELVET_API const char* welvet_version(void);
 WELVET_API int32_t welvet_gap_count(void);
 WELVET_API void welvet_print_gaps(void);

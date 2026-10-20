@@ -23,9 +23,9 @@ Applications can choose **automatic placement** or **force an explicit backend**
 
 ## Support scorecard — so far
 
-**Version `0.1.3` — M1 Dense FormatNone×34 + imported SIMD + architecture baseline** (Grid/Cell/HopOrder/remote links + Dense-only volume Forward). Engine board **22 / 100**, extensions **8 / 100**, combined **30 / 200**. Live inventory: `GAPS.md` / `welvet_dense_fwd --gaps` / `welvet_dense_fwd --version`.
+**Version `0.1.4` — M1 Dense + architecture + MHA ModeSelf forward**. Engine board **26 / 100**, extensions **8 / 100**, combined **34 / 200**. Live inventory: `GAPS.md` / `welvet_dense_fwd --gaps` / `welvet_dense_fwd --version`.
 
-- [ ] **Layers:** Dense FormatNone×34 forward (CPU + SIMD) only — **1 / 23** kinds have any forward; backward still 0; seqmix helper tracked separately.
+- [ ] **Layers:** Dense + MHA ModeSelf forward — **2 / 23** kinds have any forward; backward still 0; seqmix helper tracked separately.
 - [x] **Dtypes:** FormatNone pack/decode + Dense MatVec for **all 34** storage types (quant formats still `gap?`).
 - [x] **Forward compute:** Dense FormatNone×34 CPU/SIMD validated via `w2a` `Go_v_Cpp` **exact_bit** spectrum (other 22 kinds pending).
 - [ ] **Backward compute:** 0 / 23 registered layer kinds have their applicable gradient contracts validated.
@@ -62,9 +62,9 @@ The long-term destination is a standalone C++ Welvet engine that discovers avail
 
 | Project state | Readout |
 |---|---|
-| **Version** | **`0.1.3-m1-arch-baseline`** (`welvet_dense_fwd --version` / CMake `0.1.3`) |
-| **Runway** | **22 / 100 engine + 8 / 100 extensions = 30 / 200** |
-| **Milestone** | **M1.1** — Dense FormatNone×34 + SIMD + architecture Grid baseline + Dense volume Forward |
+| **Version** | **`0.1.4-m1-mha`** (`welvet_dense_fwd --version` / CMake `0.1.4`) |
+| **Runway** | **26 / 100 engine + 8 / 100 extensions = 34 / 200** |
+| **Milestone** | **M1.2** — Dense + architecture + MHA ModeSelf (causal/bi, RoPE, GQA, FormatNone×34) |
 | **Scope** | Full Welvet engine rebuild: architecture, runtime, layers, numerical types, training, systems, model/IO; extended hardware, integration and distribution |
 | **Platforms** | Linux (host build) · macOS / Windows / Android / iOS (toolchain placeholders) |
 | **Hardware families** | Native CPU · NVIDIA · AMD · Intel GPU/NPU · Apple GPU/Neural Engine · Qualcomm GPU/NPU · Google TPU |
@@ -174,7 +174,7 @@ This mirrors the **ten categories and exact weights** of Go Welvet's main versio
 |---:|---|---:|---|:---:|---:|
 | 1 | **Foundation** | 15 | Core tensors, 34 numerical dtypes, weights, activations, layout, tiling, CPU/SIMD/device abstraction and ownership | 🚧 | 9 |
 | 2 | **Dense MatVec microkernel** | 15 | Shared Dense compute across numerical dtypes; forward, dX, dW/db, updates; SC/MC/SIMD and declared device paths | 🚧 | 10 |
-| 3 | **Transformer stack** | 14 | MHA, SwiGLU, RMSNorm, LayerNorm, Softmax, Embedding, Sequential, Residual, Stack and seqmix | ⬜ | 0 |
+| 3 | **Transformer stack** | 14 | MHA, SwiGLU, RMSNorm, LayerNorm, Softmax, Embedding, Sequential, Residual, Stack and seqmix | 🚧 | 4 |
 | 4 | **CNN / RNN / LSTM** | 6 | CNN1–3, RNN, LSTM; numerical coverage, applicable forward/backward, state and train grids | ⬜ | 0 |
 | 5 | **Extended layers** | 7 | GDN, ConvT1–3, Mamba, KMeans, Parallel, Metacognition; applicable gradients and state | ⬜ | 0 |
 | 6 | **Runtime + architecture** | 8 | Standalone volumetric grid, dispatch, forward, backward, training, Step/Mesh, links and execution ordering | 🚧 | 3 |
@@ -182,9 +182,9 @@ This mirrors the **ten categories and exact weights** of Go Welvet's main versio
 | 8 | **Model / IO** | 8 | Tokenizer, ENTITY, transformer execution, sampling, HF inspection/loading and model construction | ⬜ | 0 |
 | 9 | **Training credit** | 8 | NormalBP/StepBP/MeshBP, Tween families, proxies, sparse/alternating credit, cameral BranchModes and CamSync | ⬜ | 0 |
 | 10 | **Peak fused / no host ALU** | 14 | Validated native/SIMD/device kernels, attention/RoPE, norms, activations, conv/recurrence, embedding and decoder fusion | ⬜ | 0 |
-| | **Engine rebuild total** | **100** | | **🚧** | **22 / 100** |
+| | **Engine rebuild total** | **100** | | **🚧** | **26 / 100** |
 
-Partial credit notes (v0.1.3): Foundation **9/15** = FormatNone×34 codecs, activations, LayerType/LayerMeta, WeightStore encode/decode/MatVec. Dense **10/15** = FormatNone×34 serial + imported SIMD. Runtime+architecture **3/8** = Grid/Cell/HopOrder/remote links + Dense-only volume Forward — not backward, training, Step/Mesh, or other layer kinds.
+Partial credit notes (v0.1.4): Foundation **9/15**, Dense **10/15**, Runtime+architecture **3/8**, Transformer **4/14** = MHA ModeSelf forward (causal/bi + RoPE/none + GQA, FormatNone×34 exact_bit) — not cross/bwd/dropout/QKNorm or other transformer layers.
 
 Post-v1 Go features are included in the relevant categories: Lucy/LPD and Lean in model construction, CamSync in training credit, and train/action FlightRole in runtime scheduling. The original Go board excludes applications and unfinished stubs; those stay separately visible below rather than receiving inherited engine credit.
 
@@ -204,7 +204,7 @@ Post-v1 Go features are included in the relevant categories: Lucy/LPD and Lean i
 | 10 | Hardware validation + performance | 8 | Real-device matrices, provenance, transfer-inclusive timings and released-artifact checks | 🚧 | 3 |
 | | **Extension total** | **100** | | **🚧** | **8 / 100** |
 
-**Combined runway: 30 / 200.** Partial notes (v0.1.3): C ABI **4/10** = Dense + arch topology + volume Dense tool (no NAC/Go wrapper). Platforms **1/10** = Linux host. Validation **3/8** = `w2a` Go_v_Cpp exact_bit×34 + architecture topology/volume cases. Imported SIMD under `include/welvet/simd/` + `imported/`.
+**Combined runway: 34 / 200.** Partial notes (v0.1.4): C ABI includes Dense + arch + MHA (`WVM1`). Validation covers Dense×34, volume 3×3×3×34, MHA ModeSelf×34. Imported SIMD under `include/welvet/simd/` + `imported/`.
 
 “All GPUs/NPUs/TPUs” is the expansion ambition. Each supported device model, numerical type, layer, shape and pass must have an explicit tested capability profile. A working inference partition cannot earn training credit. Additional vendors and device generations can extend the coverage inventory without quietly changing these fixed weights.
 

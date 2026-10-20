@@ -18,6 +18,7 @@ const std::vector<Entry>& build() {
       {"dense.all_dtypes", "layers", "Dense FormatNone × 34 dtypes forward", true},
       {"abi.dense_forward_f32", "interop", "C ABI welvet_dense_forward_f32 (+dtype)", true},
       {"abi.arch_topology", "interop", "C ABI welvet_arch_topology + WVA1/WVF1 tool", true},
+      {"abi.mha_forward_f32", "interop", "C ABI welvet_mha_forward_f32 + WVM1 tool", true},
       {"backends.cpu", "backends", "Native CPU target available", true},
       {"core.layer_types", "core", "LayerType 0–22 + LayerMeta descriptor", true},
       {"arch.volume", "architecture", "Grid/Cell/Coord/HopOrder/remote links", true},
@@ -44,7 +45,9 @@ const std::vector<Entry>& build() {
       {"dense.all_quants", "layers", "gap? Dense × all quant formats", false},
 
       // --- Other layers (23 kinds) ---
-      {"layer.mha", "layers", "gap? MultiHeadAttention F/B", false},
+      {"layer.mha", "layers", "MHA ModeSelf forward (causal/bi, RoPE/none, GQA) FormatNone×34", true},
+      {"layer.mha.cross", "layers", "gap? MHA ModeCross / SetContext", false},
+      {"layer.mha.backward", "layers", "gap? MHA backward + dropout/QKNorm", false},
       {"layer.swiglu", "layers", "gap? SwiGLU F/B", false},
       {"layer.rmsnorm", "layers", "gap? RMSNorm F/B", false},
       {"layer.layernorm", "layers", "gap? LayerNorm F/B", false},

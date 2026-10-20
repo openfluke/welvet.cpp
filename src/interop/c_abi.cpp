@@ -3,6 +3,7 @@
 #include "welvet/architecture.hpp"
 #include "welvet/dense.hpp"
 #include "welvet/gaps.hpp"
+#include "welvet/mha.hpp"
 
 #include <cstdio>
 #include <cstring>
@@ -129,7 +130,58 @@ welvet_status welvet_arch_topology(int32_t depth, int32_t rows, int32_t cols,
   return to_c(welvet::Status::Ok());
 }
 
-const char* welvet_version(void) { return "0.1.3-m1-arch-baseline"; }
+welvet_status welvet_mha_forward_f32(int32_t batch, int32_t seq, int32_t d_model, int32_t num_heads,
+                                     int32_t num_kv_heads, int32_t head_dim, int32_t max_seq_len,
+                                     int32_t mask, int32_t pos, int32_t dtype, int32_t backend,
+                                     const float* Q, const float* K, const float* V, const float* O,
+                                     const float* x, float* pre, float* post) {
+  if (batch <= 0 || seq <= 0 || d_model <= 0 || num_heads <= 0 || !Q || !K || !V || !O || !x ||
+      !pre || !post) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "mha: invalid argument");
+    return st;
+  }
+  if (backend != 0 && backend != 1) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "mha: bad backend");
+    return st;
+  }
+
+  welvet::mha::Config cfg;
+  cfg.d_model = d_model;
+  cfg.num_heads = num_heads;
+  cfg.num_kv_heads = num_kv_heads;
+  cfg.head_dim = head_dim;
+  cfg.max_seq_len = max_seq_len;
+  cfg.mask = static_cast<welvet::mha::MaskKind>(mask);
+  cfg.pos = static_cast<welvet::mha::PosKind>(pos);
+  cfg.mode = welvet::mha::AttnMode::Self;
+  cfg.causal = (cfg.mask == welvet::mha::MaskKind::Causal);
+
+  welvet::mha::Layer layer;
+  auto st = welvet::mha::new_configured(cfg, static_cast<welvet::DType>(dtype), Q, K, V, O, &layer);
+  if (!st) {
+    return to_c(st);
+  }
+  layer.backend = backend == 1 ? welvet::Backend::SIMD : welvet::Backend::CPUTiled;
+
+  welvet::TensorF32 input;
+  input.shape = {batch, seq, d_model};
+  input.data.assign(x, x + static_cast<std::size_t>(batch * seq * d_model));
+
+  welvet::TensorF32 pre_t, post_t;
+  st = welvet::mha::forward(layer, input, &pre_t, &post_t);
+  if (!st) {
+    return to_c(st);
+  }
+  std::memcpy(pre, pre_t.data.data(), pre_t.data.size() * sizeof(float));
+  std::memcpy(post, post_t.data.data(), post_t.data.size() * sizeof(float));
+  return to_c(welvet::Status::Ok());
+}
+
+const char* welvet_version(void) { return "0.1.4-m1-mha"; }
 
 int32_t welvet_gap_count(void) { return static_cast<int32_t>(welvet::gaps::count_gaps()); }
 

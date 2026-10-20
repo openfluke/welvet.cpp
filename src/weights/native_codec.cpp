@@ -271,26 +271,35 @@ Status pack_native(DType dt, const float* w, int n, std::vector<uint8_t>* out, f
     if (dt == DType::Uint8) {
       out->assign(4 + n, 0);
       put_u32(*out, 0, f32_to_bits(mn));
-      for (int i = 0; i < n; ++i)
-        (*out)[4 + i] = static_cast<uint8_t>(clamp_i(std::round((w[i] - mn) / span * 255.0), 0, 255));
+      for (int i = 0; i < n; ++i) {
+        // Go: Round(float64((v-min)/span*255)) with float32 arithmetic first.
+        const float qf = (w[i] - mn) / span * 255.0f;
+        (*out)[4 + i] =
+            static_cast<uint8_t>(clamp_i(std::round(static_cast<double>(qf)), 0, 255));
+      }
       *scale = span / 255.0f;
     } else if (dt == DType::Uint16) {
       out->assign(4 + n * 2, 0);
       put_u32(*out, 0, f32_to_bits(mn));
       for (int i = 0; i < n; ++i) {
-        const uint16_t q = static_cast<uint16_t>(clamp_i(std::round((w[i] - mn) / span * 65535.0), 0, 65535));
+        const float qf = (w[i] - mn) / span * 65535.0f;
+        const uint16_t q =
+            static_cast<uint16_t>(clamp_i(std::round(static_cast<double>(qf)), 0, 65535));
         put_u16(*out, 4 + i * 2, q);
       }
       *scale = span / 65535.0f;
     } else if (dt == DType::Uint32) {
       out->assign(4 + n * 4, 0);
       put_u32(*out, 0, f32_to_bits(mn));
-      const double maxu = 4294967295.0;
+      // Go multiplies by float32(MaxUint32) before widening to float64.
+      const float maxu_f = static_cast<float>(4294967295u);
       for (int i = 0; i < n; ++i) {
-        const uint32_t q = static_cast<uint32_t>(clamp_i(std::round((w[i] - mn) / span * maxu), 0, maxu));
+        const float qf = (w[i] - mn) / span * maxu_f;
+        const uint32_t q = static_cast<uint32_t>(
+            clamp_i(std::round(static_cast<double>(qf)), 0, 4294967295.0));
         put_u32(*out, 4 + i * 4, q);
       }
-      *scale = span / static_cast<float>(maxu);
+      *scale = span / maxu_f;
     } else {
       out->assign(4 + n * 8, 0);
       put_u32(*out, 0, f32_to_bits(mn));
@@ -323,7 +332,8 @@ Status pack_native(DType dt, const float* w, int n, std::vector<uint8_t>* out, f
     out->assign(4 + (n + 1) / 2, 0);
     put_u32(*out, 0, f32_to_bits(mn));
     for (int i = 0; i < n; ++i) {
-      const int q = static_cast<int>(clamp_i(std::round((w[i] - mn) / span * 15.0), 0, 15)) & 0xF;
+      const float qf = (w[i] - mn) / span * 15.0f;
+      const int q = static_cast<int>(clamp_i(std::round(static_cast<double>(qf)), 0, 15)) & 0xF;
       if (i % 2 == 0) (*out)[4 + i / 2] = static_cast<uint8_t>(q);
       else (*out)[4 + i / 2] |= static_cast<uint8_t>(q << 4);
     }
