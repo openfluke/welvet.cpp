@@ -4,6 +4,7 @@
 #include "welvet/dense.hpp"
 #include "welvet/gaps.hpp"
 #include "welvet/mha.hpp"
+#include "welvet/swiglu.hpp"
 
 #include <cstdio>
 #include <cstring>
@@ -181,7 +182,55 @@ welvet_status welvet_mha_forward_f32(int32_t batch, int32_t seq, int32_t d_model
   return to_c(welvet::Status::Ok());
 }
 
-const char* welvet_version(void) { return "0.1.4-m1-mha"; }
+welvet_status welvet_swiglu_forward_f32(int32_t batch, int32_t seq, int32_t input_dim,
+                                        int32_t intermediate_dim, int32_t dtype, int32_t backend,
+                                        const float* Gate, const float* Up, const float* Down,
+                                        const float* x, float* pre, float* post) {
+  if (batch <= 0 || seq <= 0 || input_dim <= 0 || intermediate_dim <= 0 || !Gate || !Up || !Down ||
+      !x || !pre || !post) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "swiglu: invalid argument");
+    return st;
+  }
+  if (backend != 0 && backend != 1) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "swiglu: bad backend");
+    return st;
+  }
+
+  welvet::swiglu::Config cfg;
+  cfg.input_dim = input_dim;
+  cfg.intermediate_dim = intermediate_dim;
+
+  welvet::swiglu::Layer layer;
+  auto st = welvet::swiglu::new_configured(cfg, static_cast<welvet::DType>(dtype), Gate, Up, Down,
+                                           &layer);
+  if (!st) {
+    return to_c(st);
+  }
+  layer.backend = backend == 1 ? welvet::Backend::SIMD : welvet::Backend::CPUTiled;
+
+  welvet::TensorF32 input;
+  if (seq == 1) {
+    input.shape = {batch, input_dim};
+  } else {
+    input.shape = {batch, seq, input_dim};
+  }
+  input.data.assign(x, x + static_cast<std::size_t>(batch * seq * input_dim));
+
+  welvet::TensorF32 pre_t, post_t;
+  st = welvet::swiglu::forward(layer, input, &pre_t, &post_t);
+  if (!st) {
+    return to_c(st);
+  }
+  std::memcpy(pre, pre_t.data.data(), pre_t.data.size() * sizeof(float));
+  std::memcpy(post, post_t.data.data(), post_t.data.size() * sizeof(float));
+  return to_c(welvet::Status::Ok());
+}
+
+const char* welvet_version(void) { return "0.1.5-m1-swiglu"; }
 
 int32_t welvet_gap_count(void) { return static_cast<int32_t>(welvet::gaps::count_gaps()); }
 

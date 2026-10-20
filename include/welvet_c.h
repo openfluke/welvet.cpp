@@ -62,6 +62,14 @@ WELVET_API welvet_status welvet_mha_forward_f32(
     int32_t backend, const float* Q, const float* K, const float* V, const float* O,
     const float* x, float* pre, float* post);
 
+/* SwiGLU baseline. Gate/Up: [inter*in], Down: [in*inter], x: [batch*seq*in]
+ * pre (h): [batch*seq*inter], post: [batch*seq*in]
+ */
+WELVET_API welvet_status welvet_swiglu_forward_f32(
+    int32_t batch, int32_t seq, int32_t input_dim, int32_t intermediate_dim, int32_t dtype,
+    int32_t backend, const float* Gate, const float* Up, const float* Down, const float* x,
+    float* pre, float* post);
+
 WELVET_API const char* welvet_version(void);
 WELVET_API int32_t welvet_gap_count(void);
 WELVET_API void welvet_print_gaps(void);

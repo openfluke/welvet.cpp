@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(welvet VERSION 0.1.4 LANGUAGES CXX)
+project(welvet VERSION 0.1.5 LANGUAGES CXX)
 
 # One tree → many OS: Linux, macOS, Windows, Android, iOS (toolchains under cmake/).
 set(CMAKE_CXX_STANDARD 20)
@@ -41,6 +41,7 @@ set(WELVET_CORE_SOURCES
   src/layers/dense/dense.cpp
   src/layers/dense/simd_bridge.cpp
   src/layers/mha/mha.cpp
+  src/layers/swiglu/swiglu.cpp
   src/architecture/grid.cpp
   src/runtime/forward.cpp
   src/backends/registry.cpp

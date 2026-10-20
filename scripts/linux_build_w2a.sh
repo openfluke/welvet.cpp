@@ -2,8 +2,9 @@
 # Linux: build welvet.cpp, then run w2a Go↔C++ validation.
 #
 # Usage:
-#   ./scripts/linux_build_w2a.sh              # build + full go_v_cpp (dense/arch/mha)
+#   ./scripts/linux_build_w2a.sh              # build + full go_v_cpp (dense/arch/mha/swiglu)
 #   ./scripts/linux_build_w2a.sh --mha        # build + MHA go_v_cpp only
+#   ./scripts/linux_build_w2a.sh --swiglu     # build + SwiGLU go_v_cpp only
 #   ./scripts/linux_build_w2a.sh --go-v-cpp   # same as default
 #   ./scripts/linux_build_w2a.sh --all        # build + entire w2a go test ./...
 #   BUILD_DIR=/tmp/welvet-build ./scripts/linux_build_w2a.sh
@@ -21,8 +22,9 @@ for arg in "$@"; do
     --all) MODE="all" ;;
     --go-v-cpp) MODE="go_v_cpp" ;;
     --mha) MODE="mha" ;;
+    --swiglu) MODE="swiglu" ;;
     -h|--help)
-      sed -n '2,14p' "$0"
+      sed -n '2,15p' "$0"
       exit 0
       ;;
     *)
@@ -55,12 +57,16 @@ export WELVET_DENSE_FWD="$TOOL"
 cd "$W2A_ROOT"
 case "$MODE" in
   go_v_cpp)
-    echo "==> w2a go_v_cpp full (dense + arch + mha)"
+    echo "==> w2a go_v_cpp full (dense + arch + mha + swiglu)"
     go test ./tests/go_v_cpp/ -run '^TestGoVCpp$' -v -count=1
     ;;
   mha)
     echo "==> w2a go_v_cpp MHA only"
     go test ./tests/go_v_cpp/ -run '^TestGoVCppMHA$' -v -count=1
+    ;;
+  swiglu)
+    echo "==> w2a go_v_cpp SwiGLU only"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppSwiGLU$' -v -count=1
     ;;
   all)
     echo "==> w2a full suite (go test ./...)"
