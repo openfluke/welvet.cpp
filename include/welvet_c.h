@@ -140,6 +140,14 @@ WELVET_API welvet_status welvet_lstm_forward_f32(
     int32_t batch, int32_t input_size, int32_t hidden_size, int32_t seq_len, int32_t dtype,
     int32_t backend, const float* packed, const float* x, float* pre, float* post);
 
+/* Embedding gather. W: [vocab*emb], x: [batch*seq*in_last] token ids as f32
+ * in_rank 1..3; in_last 1 (or emb for chain). pre/post: [batch*seq*emb] (rank1→seq*emb)
+ */
+WELVET_API welvet_status welvet_embedding_forward_f32(
+    int32_t batch, int32_t vocab, int32_t emb, int32_t seq_len, int32_t in_rank, int32_t in_last,
+    int32_t act, int32_t dtype, int32_t backend, const float* W, const float* x, float* pre,
+    float* post);
+
 WELVET_API const char* welvet_version(void);
 WELVET_API int32_t welvet_gap_count(void);
 WELVET_API void welvet_print_gaps(void);

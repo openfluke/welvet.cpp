@@ -12,6 +12,7 @@
 //   WVT1 / WVT2 / WVT3 — ConvT1/2/3 forward
 //   WRN1 — RNN forward
 //   WLS1 — LSTM forward
+//   WEM1 — Embedding gather forward
 //
 // WVA1 stdin:
 //   magic "WVA1"
@@ -968,6 +969,41 @@ int run_lstm(int bench_iters) {
   return write_lstm_out(pre, post);
 }
 
+int write_emb_out(const std::vector<float>& pre, const std::vector<float>& post) {
+  const int32_t pre_n = static_cast<int32_t>(pre.size());
+  const int32_t post_n = static_cast<int32_t>(post.size());
+  if (!write_magic("WEMO") || !write_exact(&pre_n, 1) || !write_exact(pre.data(), pre.size()) ||
+      !write_exact(&post_n, 1) || !write_exact(post.data(), post.size())) {
+    return 2;
+  }
+  return 0;
+}
+
+int run_embedding(int bench_iters) {
+  int32_t batch = 0, vocab = 0, emb = 0, seq = 0, in_rank = 2, in_last = 1, act = -1, dtype = 1,
+          backend = 0;
+  if (!read_exact(&batch, 1) || !read_exact(&vocab, 1) || !read_exact(&emb, 1) ||
+      !read_exact(&seq, 1) || !read_exact(&in_rank, 1) || !read_exact(&in_last, 1) ||
+      !read_exact(&act, 1) || !read_exact(&dtype, 1) || !read_exact(&backend, 1)) {
+    std::fprintf(stderr, "welvet_dense_fwd: short WEM1 header\n");
+    return 2;
+  }
+  std::vector<float> W(static_cast<std::size_t>(vocab * emb));
+  if (!read_exact(W.data(), W.size())) return 2;
+  const int x_n = batch * seq * in_last;
+  std::vector<float> x(static_cast<std::size_t>(x_n));
+  if (!read_exact(x.data(), x.size())) return 2;
+  const int out_n = (in_rank == 1 ? seq : batch * seq) * emb;
+  std::vector<float> pre(static_cast<std::size_t>(out_n));
+  std::vector<float> post(pre.size());
+  auto once = [&]() -> welvet_status {
+    return welvet_embedding_forward_f32(batch, vocab, emb, seq, in_rank, in_last, act, dtype,
+                                        backend, W.data(), x.data(), pre.data(), post.data());
+  };
+  if (int rc = bench_or_once(bench_iters, once, pre, post); rc != 0) return rc;
+  return write_emb_out(pre, post);
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -1033,12 +1069,15 @@ int main(int argc, char** argv) {
   if (std::memcmp(magic, "WLS1", 4) == 0) {
     return run_lstm(bench_iters);
   }
+  if (std::memcmp(magic, "WEM1", 4) == 0) {
+    return run_embedding(bench_iters);
+  }
   const bool v3 = std::memcmp(magic, "WVD3", 4) == 0;
   const bool v2 = std::memcmp(magic, "WVD2", 4) == 0;
   const bool v1 = std::memcmp(magic, "WVD1", 4) == 0;
   if (!v1 && !v2 && !v3) {
     std::fprintf(stderr, "welvet_dense_fwd: bad magic (want WVD*/WVA1/WVF1/WVM1/WVS1/WVR1/WVL1/"
-                         "WVC1/2/3/WVT1/2/3/WRN1/WLS1)\n");
+                         "WVC1/2/3/WVT1/2/3/WRN1/WLS1/WEM1)\n");
     return 2;
   }
   return run_dense(v1, v2, v3, bench_iters);
