@@ -195,6 +195,14 @@ WELVET_API welvet_status welvet_metacognition_forward_f32(
     int32_t batch, int32_t seq, int32_t dim, int32_t dtype, int32_t backend, const float* packed,
     const float* x, float* pre, float* post);
 
+/* GDN (Gated DeltaNet). Float32 FormatNone. packed: InQKV|InZ|InB|InA|Out|Conv|ALog|DtBias|γ
+ * x/pre/post: [batch*seq*hidden]. dtype ignored (must be Float32).
+ */
+WELVET_API welvet_status welvet_gdn_forward_f32(
+    int32_t batch, int32_t seq, int32_t hidden, int32_t num_key_heads, int32_t num_value_heads,
+    int32_t key_head_dim, int32_t value_head_dim, int32_t conv_kernel, int32_t dtype, int32_t backend,
+    const float* packed, const float* x, float* pre, float* post);
+
 WELVET_API const char* welvet_version(void);
 WELVET_API int32_t welvet_gap_count(void);
 WELVET_API void welvet_print_gaps(void);

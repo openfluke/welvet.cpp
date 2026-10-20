@@ -19,6 +19,7 @@
 //   WRE1 — Residual Dense F(x)+x forward
 //   WMB1 — Mamba minimal SSM forward
 //   WMC1 — Metacognition Observed Dense + rules forward
+//   WGD1 — GDN (Gated DeltaNet) Float32 forward
 //
 // WVA1 stdin:
 //   magic "WVA1"
@@ -1235,6 +1236,46 @@ int run_metacognition(int bench_iters) {
   return write_mc_out(pre, post);
 }
 
+int write_gd_out(const std::vector<float>& pre, const std::vector<float>& post) {
+  const int32_t pre_n = static_cast<int32_t>(pre.size());
+  const int32_t post_n = static_cast<int32_t>(post.size());
+  if (!write_magic("WGDO") || !write_exact(&pre_n, 1) || !write_exact(pre.data(), pre.size()) ||
+      !write_exact(&post_n, 1) || !write_exact(post.data(), post.size())) {
+    return 2;
+  }
+  return 0;
+}
+
+int run_gdn(int bench_iters) {
+  int32_t batch = 0, seq = 0, hidden = 0, nk = 0, nv = 0, hd_k = 0, hd_v = 0, conv_k = 0;
+  int32_t dtype = 1, backend = 0;
+  if (!read_exact(&batch, 1) || !read_exact(&seq, 1) || !read_exact(&hidden, 1) ||
+      !read_exact(&nk, 1) || !read_exact(&nv, 1) || !read_exact(&hd_k, 1) || !read_exact(&hd_v, 1) ||
+      !read_exact(&conv_k, 1) || !read_exact(&dtype, 1) || !read_exact(&backend, 1)) {
+    std::fprintf(stderr, "welvet_dense_fwd: short WGD1 header\n");
+    return 2;
+  }
+  int conv_eff = conv_k;
+  if (conv_eff < 1) conv_eff = 4;
+  const int key_d = nk * hd_k;
+  const int val_d = nv * hd_v;
+  const int conv_d = key_d * 2 + val_d;
+  const int wn = conv_d * hidden + val_d * hidden + nv * hidden + nv * hidden + hidden * val_d +
+                 conv_d * conv_eff + nv + nv + hd_v;
+  std::vector<float> packed(static_cast<std::size_t>(wn));
+  if (!read_exact(packed.data(), packed.size())) return 2;
+  std::vector<float> x(static_cast<std::size_t>(batch * seq * hidden));
+  if (!read_exact(x.data(), x.size())) return 2;
+  std::vector<float> pre(x.size());
+  std::vector<float> post(x.size());
+  auto once = [&]() -> welvet_status {
+    return welvet_gdn_forward_f32(batch, seq, hidden, nk, nv, hd_k, hd_v, conv_k, dtype, backend,
+                                  packed.data(), x.data(), pre.data(), post.data());
+  };
+  if (int rc = bench_or_once(bench_iters, once, pre, post); rc != 0) return rc;
+  return write_gd_out(pre, post);
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -1321,12 +1362,15 @@ int main(int argc, char** argv) {
   if (std::memcmp(magic, "WMC1", 4) == 0) {
     return run_metacognition(bench_iters);
   }
+  if (std::memcmp(magic, "WGD1", 4) == 0) {
+    return run_gdn(bench_iters);
+  }
   const bool v3 = std::memcmp(magic, "WVD3", 4) == 0;
   const bool v2 = std::memcmp(magic, "WVD2", 4) == 0;
   const bool v1 = std::memcmp(magic, "WVD1", 4) == 0;
   if (!v1 && !v2 && !v3) {
     std::fprintf(stderr, "welvet_dense_fwd: bad magic (want WVD*/WVA1/WVF1/WVM1/WVS1/WVR1/WVL1/"
-                         "WVC1/2/3/WVT1/2/3/WRN1/WLS1/WEM1/WSM1/WKM1/WSQ1/WRE1/WMB1/WMC1)\n");
+                         "WVC1/2/3/WVT1/2/3/WRN1/WLS1/WEM1/WSM1/WKM1/WSQ1/WRE1/WMB1/WMC1/WGD1)\n");
     return 2;
   }
   return run_dense(v1, v2, v3, bench_iters);

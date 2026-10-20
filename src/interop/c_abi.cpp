@@ -16,6 +16,7 @@
 #include "welvet/mha.hpp"
 #include "welvet/rmsnorm.hpp"
 #include "welvet/rnn.hpp"
+#include "welvet/gdn.hpp"
 #include "welvet/mamba.hpp"
 #include "welvet/metacognition.hpp"
 #include "welvet/residual.hpp"
@@ -986,7 +987,47 @@ welvet_status welvet_metacognition_forward_f32(int32_t batch, int32_t seq, int32
   return to_c(welvet::Status::Ok());
 }
 
-const char* welvet_version(void) { return "0.1.17-m1-meta"; }
+welvet_status welvet_gdn_forward_f32(int32_t batch, int32_t seq, int32_t hidden,
+                                     int32_t num_key_heads, int32_t num_value_heads,
+                                     int32_t key_head_dim, int32_t value_head_dim,
+                                     int32_t conv_kernel, int32_t dtype, int32_t backend,
+                                     const float* packed, const float* x, float* pre, float* post) {
+  (void)dtype;
+  if (batch <= 0 || seq <= 0 || hidden <= 0 || !packed || !x || !pre || !post) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "gdn: invalid argument");
+    return st;
+  }
+  if (backend != 0 && backend != 1) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "gdn: bad backend");
+    return st;
+  }
+  welvet::gdn::Config cfg;
+  cfg.hidden_size = hidden;
+  cfg.num_key_heads = num_key_heads;
+  cfg.num_value_heads = num_value_heads;
+  cfg.key_head_dim = key_head_dim;
+  cfg.value_head_dim = value_head_dim;
+  cfg.conv_kernel = conv_kernel;
+  welvet::gdn::Layer layer;
+  auto st = welvet::gdn::new_configured(cfg, packed, &layer);
+  if (!st) return to_c(st);
+  layer.backend = backend == 1 ? welvet::Backend::SIMD : welvet::Backend::CPUTiled;
+  welvet::TensorF32 input;
+  input.shape = {batch, seq, hidden};
+  input.data.assign(x, x + static_cast<std::size_t>(batch * seq * hidden));
+  welvet::TensorF32 pre_t, post_t;
+  st = welvet::gdn::forward(layer, input, &pre_t, &post_t);
+  if (!st) return to_c(st);
+  std::memcpy(pre, pre_t.data.data(), pre_t.data.size() * sizeof(float));
+  std::memcpy(post, post_t.data.data(), post_t.data.size() * sizeof(float));
+  return to_c(welvet::Status::Ok());
+}
+
+const char* welvet_version(void) { return "0.1.18-m1-gdn"; }
 
 int32_t welvet_gap_count(void) { return static_cast<int32_t>(welvet::gaps::count_gaps()); }
 

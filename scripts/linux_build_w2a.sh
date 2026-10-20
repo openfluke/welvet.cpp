@@ -18,6 +18,7 @@
 #   ./scripts/linux_build_w2a.sh --residual   # Residual Dense F(x)+x
 #   ./scripts/linux_build_w2a.sh --mamba      # Mamba minimal SSM
 #   ./scripts/linux_build_w2a.sh --metacognition # Metacognition Observed+rules
+#   ./scripts/linux_build_w2a.sh --gdn        # GDN Gated DeltaNet (Float32)
 #   ./scripts/linux_build_w2a.sh --go-v-cpp   # same as default
 #   ./scripts/linux_build_w2a.sh --all        # entire w2a go test ./...
 #   BUILD_DIR=/tmp/welvet-build ./scripts/linux_build_w2a.sh
@@ -49,8 +50,9 @@ for arg in "$@"; do
     --residual) MODE="residual" ;;
     --mamba) MODE="mamba" ;;
     --metacognition) MODE="metacognition" ;;
+    --gdn) MODE="gdn" ;;
     -h|--help)
-      sed -n '2,28p' "$0"
+      sed -n '2,29p' "$0"
       exit 0
       ;;
     *)
@@ -83,7 +85,7 @@ export WELVET_DENSE_FWD="$TOOL"
 cd "$W2A_ROOT"
 case "$MODE" in
   go_v_cpp)
-    echo "==> w2a go_v_cpp full (dense + arch + transformer + cnn + convt + rnn + lstm + emb + sm + km + seq + res + mamba + meta)"
+    echo "==> w2a go_v_cpp full (dense + arch + transformer + cnn + convt + rnn + lstm + emb + sm + km + seq + res + mamba + meta + gdn)"
     go test ./tests/go_v_cpp/ -run '^TestGoVCpp$' -v -count=1
     ;;
   mha)
@@ -145,6 +147,10 @@ case "$MODE" in
   metacognition)
     echo "==> w2a go_v_cpp Metacognition"
     go test ./tests/go_v_cpp/ -run '^TestGoVCppMetacognition$' -v -count=1
+    ;;
+  gdn)
+    echo "==> w2a go_v_cpp GDN"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppGDN$' -v -count=1
     ;;
   all)
     echo "==> w2a full suite (go test ./...)"
