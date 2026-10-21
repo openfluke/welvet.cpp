@@ -1,5 +1,8 @@
 #pragma once
 
+#include "welvet/cnn1.hpp"
+#include "welvet/cnn2.hpp"
+#include "welvet/cnn3.hpp"
 #include "welvet/dense.hpp"
 #include "welvet/embedding.hpp"
 #include "welvet/layer.hpp"
@@ -33,6 +36,9 @@ enum class OpKind : int32_t {
   Softmax = 5,
   Embedding = 6,
   MHA = 7,
+  CNN1 = 8,
+  CNN2 = 9,
+  CNN3 = 10,
   // gap? other layer ops
 };
 
@@ -47,6 +53,9 @@ struct Cell {
   softmax::Layer softmax_op;     // valid when op_kind == Softmax
   embedding::Layer embedding_op; // valid when op_kind == Embedding
   mha::Layer mha_op;             // valid when op_kind == MHA
+  cnn1::Layer cnn1_op;           // valid when op_kind == CNN1
+  cnn2::Layer cnn2_op;           // valid when op_kind == CNN2
+  cnn3::Layer cnn3_op;           // valid when op_kind == CNN3
 
   bool is_remote_link = false;
   int target_z = 0, target_y = 0, target_x = 0, target_l = 0;
@@ -100,5 +109,8 @@ Status bind_swiglu(Grid& g, int z, int y, int x, int l, swiglu::Layer op);
 Status bind_softmax(Grid& g, int z, int y, int x, int l, softmax::Layer op);
 Status bind_embedding(Grid& g, int z, int y, int x, int l, embedding::Layer op);
 Status bind_mha(Grid& g, int z, int y, int x, int l, mha::Layer op);
+Status bind_cnn1(Grid& g, int z, int y, int x, int l, cnn1::Layer op);
+Status bind_cnn2(Grid& g, int z, int y, int x, int l, cnn2::Layer op);
+Status bind_cnn3(Grid& g, int z, int y, int x, int l, cnn3::Layer op);
 
 } // namespace welvet::architecture

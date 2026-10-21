@@ -239,4 +239,52 @@ Status bind_mha(Grid& g, int z, int y, int x, int l, mha::Layer op) {
   return Status::Ok();
 }
 
+Status bind_cnn1(Grid& g, int z, int y, int x, int l, cnn1::Layer op) {
+  Cell* c = at(g, z, y, x, l);
+  if (!c) {
+    return bad_coord("bind", z, y, x, l);
+  }
+  c->meta = op.meta;
+  c->meta.type = LayerType::CNN1;
+  c->meta.z = z;
+  c->meta.y = y;
+  c->meta.x = x;
+  c->meta.l = l;
+  c->op_kind = OpKind::CNN1;
+  c->cnn1_op = std::move(op);
+  return Status::Ok();
+}
+
+Status bind_cnn2(Grid& g, int z, int y, int x, int l, cnn2::Layer op) {
+  Cell* c = at(g, z, y, x, l);
+  if (!c) {
+    return bad_coord("bind", z, y, x, l);
+  }
+  c->meta = op.meta;
+  c->meta.type = LayerType::CNN2;
+  c->meta.z = z;
+  c->meta.y = y;
+  c->meta.x = x;
+  c->meta.l = l;
+  c->op_kind = OpKind::CNN2;
+  c->cnn2_op = std::move(op);
+  return Status::Ok();
+}
+
+Status bind_cnn3(Grid& g, int z, int y, int x, int l, cnn3::Layer op) {
+  Cell* c = at(g, z, y, x, l);
+  if (!c) {
+    return bad_coord("bind", z, y, x, l);
+  }
+  c->meta = op.meta;
+  c->meta.type = LayerType::CNN3;
+  c->meta.z = z;
+  c->meta.y = y;
+  c->meta.x = x;
+  c->meta.l = l;
+  c->op_kind = OpKind::CNN3;
+  c->cnn3_op = std::move(op);
+  return Status::Ok();
+}
+
 } // namespace welvet::architecture

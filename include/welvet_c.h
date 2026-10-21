@@ -148,6 +148,17 @@ WELVET_API welvet_status welvet_cnn1_forward_f32(
     int32_t padding, int32_t act, int32_t dtype, int32_t backend, const float* W,
     const double* bias, size_t bias_len, const float* x, float* pre, float* post);
 
+/* CNN1 NormalBP leaf: forward → (MSEGrad | grad_out) → backward → optional SGD.
+ * use_target: 0 = grad_or_target is gradOut loom; 1 = target (MSE).
+ * dW/W_after: [filters*inC*k]. lr==0 skips ApplyGradSGD.
+ */
+WELVET_API welvet_status welvet_cnn1_normalbp_f32(
+    int32_t batch, int32_t in_c, int32_t filters, int32_t seq_len, int32_t kernel, int32_t stride,
+    int32_t padding, int32_t act, int32_t dtype, int32_t backend, const float* W,
+    const double* bias, size_t bias_len, const float* x, const float* grad_or_target,
+    int32_t use_target, double lr, float* pre, float* post, float* dX, float* dW, float* W_after,
+    double* loss);
+
 /* CNN2 Conv2d (square kernel). W: [filters*inC*k*k], x: [batch*inC*H*W]
  * pre/post loom: [batch*filters*outH*outW]
  */
@@ -156,6 +167,13 @@ WELVET_API welvet_status welvet_cnn2_forward_f32(
     int32_t stride, int32_t padding, int32_t act, int32_t dtype, int32_t backend, const float* W,
     const double* bias, size_t bias_len, const float* x, float* pre, float* post);
 
+WELVET_API welvet_status welvet_cnn2_normalbp_f32(
+    int32_t batch, int32_t in_c, int32_t filters, int32_t height, int32_t width, int32_t kernel,
+    int32_t stride, int32_t padding, int32_t act, int32_t dtype, int32_t backend, const float* W,
+    const double* bias, size_t bias_len, const float* x, const float* grad_or_target,
+    int32_t use_target, double lr, float* pre, float* post, float* dX, float* dW, float* W_after,
+    double* loss);
+
 /* CNN3 Conv3d (cubic kernel). W: [filters*inC*k³], x: [batch*inC*D*H*W]
  * pre/post loom: [batch*filters*outD*outH*outW]
  */
@@ -163,6 +181,13 @@ WELVET_API welvet_status welvet_cnn3_forward_f32(
     int32_t batch, int32_t in_c, int32_t filters, int32_t depth, int32_t height, int32_t width,
     int32_t kernel, int32_t stride, int32_t padding, int32_t act, int32_t dtype, int32_t backend,
     const float* W, const double* bias, size_t bias_len, const float* x, float* pre, float* post);
+
+WELVET_API welvet_status welvet_cnn3_normalbp_f32(
+    int32_t batch, int32_t in_c, int32_t filters, int32_t depth, int32_t height, int32_t width,
+    int32_t kernel, int32_t stride, int32_t padding, int32_t act, int32_t dtype, int32_t backend,
+    const float* W, const double* bias, size_t bias_len, const float* x, const float* grad_or_target,
+    int32_t use_target, double lr, float* pre, float* post, float* dX, float* dW, float* W_after,
+    double* loss);
 
 /* ConvT1/2/3 — transposed conv (scatter). No bias. output_padding in OutLen only. */
 WELVET_API welvet_status welvet_convt1_forward_f32(

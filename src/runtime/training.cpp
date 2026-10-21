@@ -1,5 +1,8 @@
 #include "welvet/runtime/training.hpp"
 
+#include "welvet/cnn1.hpp"
+#include "welvet/cnn2.hpp"
+#include "welvet/cnn3.hpp"
 #include "welvet/embedding.hpp"
 #include "welvet/layernorm.hpp"
 #include "welvet/mha.hpp"
@@ -91,6 +94,15 @@ Status sgd_dense(architecture::Grid& g, const forward::Result& fwd, const backwa
       break;
     case architecture::OpKind::MHA:
       st_a = mha::apply_grad_sgd(&cell->mha_op, *it->second, lr);
+      break;
+    case architecture::OpKind::CNN1:
+      st_a = cnn1::apply_grad_sgd(&cell->cnn1_op, *it->second, lr);
+      break;
+    case architecture::OpKind::CNN2:
+      st_a = cnn2::apply_grad_sgd(&cell->cnn2_op, *it->second, lr);
+      break;
+    case architecture::OpKind::CNN3:
+      st_a = cnn3::apply_grad_sgd(&cell->cnn3_op, *it->second, lr);
       break;
     default:
       return Status::Err(StatusCode::InvalidArgument, "training: SGD unsupported cell Op");

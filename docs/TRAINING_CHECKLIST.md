@@ -15,7 +15,7 @@ Canonical enum: Go `layers/parallel/train_mode.go` (`TrainMode`).
 
 Tick `[x]` when done. Put the **release tag** in **Ver** when that row (or the whole mode table) is signed.
 
-**Current engine:** `0.1.27-m2-mha-nbp`
+**Current engine:** `0.1.28-m2-cnn-nbp`
 
 ---
 
@@ -134,6 +134,19 @@ Timing: same `--bench=N` / spd%Δ convention. ModeSelf baseline (no dropout/QKNo
 | 7 | Volume 2×2×2×1 Float32 | [x] | 3D volumetric + speed |
 | 8 | Volume 2×1×1×1 × all 34 dtypes | [x] | multi-cell ×34 |
 
+## w2a Go↔C++ (CNN1/2/3 NormalBP) — sign-off evidence
+
+Run: `./scripts/linux_build_w2a.sh --cnn-train`  
+Wire: `C1B1`/`C1BO`, `C2B1`/`C2BO`, `C3B1`/`C3BO` (leaf); `C*V1`/`C*VO` (volume). Exact_bit vs Go.  
+Timing: same `--bench=N` / spd%Δ convention. im2col → Dense bwd → col2im.
+
+| # | Case | Status | Notes |
+|---|---|:---:|---|
+| 1–3 | Leaf Float32 CNN1/2/3 | [x] | exact_bit + speed |
+| 4–6 | Leaf ×34 CNN1/2/3 | [x] | exact_bit spectrum |
+| 7–9 | Volume 1×1×1×1 / chain / ×34 | [x] | shape-preserving pad |
+| 10–12 | Volume 2×2×2×1 / 2×1×1×1×34 | [x] | scaled init for 8-hop |
+
 ---
 
 ## 1 — NormalBP
@@ -149,9 +162,9 @@ Chain-rule Backward + ApplyGradSGD. Start here. Dense first.
 | Softmax | [x] | [x] | [x] | `0.1.25-m2-softmax-nbp` |
 | Embedding | [x] | [x] | [x] | `0.1.26-m2-embedding-nbp` |
 | MHA | [x] | [x] | [x] | `0.1.27-m2-mha-nbp` |
-| CNN1 | [ ] | [ ] | [ ] | |
-| CNN2 | [ ] | [ ] | [ ] | |
-| CNN3 | [ ] | [ ] | [ ] | |
+| CNN1 | [x] | [x] | [x] | `0.1.28-m2-cnn-nbp` |
+| CNN2 | [x] | [x] | [x] | `0.1.28-m2-cnn-nbp` |
+| CNN3 | [x] | [x] | [x] | `0.1.28-m2-cnn-nbp` |
 | ConvT1 | [ ] | [ ] | [ ] | |
 | ConvT2 | [ ] | [ ] | [ ] | |
 | ConvT3 | [ ] | [ ] | [ ] | |
@@ -1252,4 +1265,5 @@ Fill as you tick rows / finish mode tables.
 | `0.1.25-m2-softmax-nbp` | NormalBP Softmax | Leaf+vol w2a exact_bit all Kind×34; Jacobian dX (weightless); gumbel smoke |
 | `0.1.26-m2-embedding-nbp` | NormalBP Embedding | Leaf+vol w2a exact_bit ×34; scatter dW (dX=0) + ApplySGD |
 | `0.1.27-m2-mha-nbp` | NormalBP MHA | Leaf+vol w2a exact_bit ×34; ModeSelf attn+RoPEᵀ + Q/K/V/O |
+| `0.1.28-m2-cnn-nbp` | NormalBP CNN1/2/3 | Leaf+vol w2a exact_bit ×34; im2col+Dense bwd+col2im |
 | | | |
