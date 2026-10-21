@@ -19,6 +19,7 @@ const std::vector<Entry>& build() {
       {"abi.dense_forward_f32", "interop", "C ABI welvet_dense_forward_f32 (+dtype)", true},
       {"abi.arch_topology", "interop", "C ABI welvet_arch_topology + WVA1/WVF1 tool", true},
       {"abi.mha_forward_f32", "interop", "C ABI welvet_mha_forward_f32 + WVM1 tool", true},
+      {"abi.mha_normalbp_f32", "interop", "C ABI welvet_mha_normalbp_f32 + WHB1/WHV1 tool", true},
       {"abi.swiglu_forward_f32", "interop", "C ABI welvet_swiglu_forward_f32 + WVS1 tool", true},
       {"abi.swiglu_normalbp_f32", "interop", "C ABI welvet_swiglu_normalbp_f32 + WSB1/WSV1 tool", true},
       {"abi.rmsnorm_forward_f32", "interop", "C ABI welvet_rmsnorm_forward_f32 + WVR1 tool", true},
@@ -76,7 +77,8 @@ const std::vector<Entry>& build() {
       // --- Other layers (23 kinds) ---
       {"layer.mha", "layers", "MHA ModeSelf forward (causal/bi, RoPE/none, GQA) FormatNone×34", true},
       {"layer.mha.cross", "layers", "gap? MHA ModeCross / SetContext", false},
-      {"layer.mha.backward", "layers", "gap? MHA backward + dropout/QKNorm", false},
+      {"layer.mha.backward", "layers",
+       "MHA ModeSelf NormalBP (RoPE/bi/GQA) FormatNone×34; dropout/QKNorm/cross gap?", true},
       {"layer.swiglu", "layers", "SwiGLU forward Gate/Up/Down + SiLU⊙ FormatNone×34", true},
       {"layer.swiglu.backward", "layers", "SwiGLU NormalBP Gate/Up/Down + SiLU⊙ grads FormatNone×34", true},
       {"layer.rmsnorm", "layers", "RMSNorm forward x̂ + γ⊙ FormatNone×34", true},

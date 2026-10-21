@@ -1,6 +1,6 @@
 # welvet.cpp gap census
 
-**Version `0.1.26-m2-embedding-nbp`** — see main [README](README.md) scoreboard (**56 / 100** engine + **13 / 100** extensions = **69 / 200**).
+**Version `0.1.27-m2-mha-nbp`** — see main [README](README.md) scoreboard (**57 / 100** engine + **13 / 100** extensions = **70 / 200**).
 
 SIMD/GEMV code under `include/welvet/simd/` + `include/welvet/imported/` was **copied** from `welvet-to-rust_n_cpp/welvet_cpp` (kernels only — not that tree’s docs).
 
@@ -14,6 +14,7 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 ./scripts/linux_build_w2a.sh --swiglu-train
 ./scripts/linux_build_w2a.sh --softmax-train
 ./scripts/linux_build_w2a.sh --embedding-train
+./scripts/linux_build_w2a.sh --mha-train
 ./scripts/linux_build_w2a.sh --parallel
 ./scripts/linux_build_w2a.sh --seqmix
 ./scripts/linux_build_w2a.sh --all
@@ -22,7 +23,7 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 ./build/welvet_dense_fwd --gaps
 ```
 
-## Done (through M2.06 Embedding NormalBP)
+## Done (through M2.07 MHA NormalBP)
 
 | ID | Detail |
 |---|---|
@@ -33,10 +34,11 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 | **SwiGLU NormalBP** | Gate/Up/Down + SiLU⊙ grads FormatNone×34; volume Step; w2a `WSB1`/`WSV1` |
 | **Softmax NormalBP** | Jacobian dX all Kind (weightless); volume Step; w2a `WXB1`/`WXV1` |
 | **Embedding NormalBP** | Scatter dW (dX=0); ApplySGD FormatNone×34; volume Step; w2a `WEB1`/`WEV1` |
+| **MHA NormalBP** | ModeSelf attn+RoPEᵀ + Q/K/V/O grads FormatNone×34; volume Step; w2a `WHB1`/`WHV1` |
 | Transformer / composition | Sequential, Residual, seqmix Kind, **Parallel Dense×7 combines** |
 | Extended | ConvT, KMeans, Mamba, Metacognition, GDN |
 | CNN / RNN / LSTM | FormatNone×34 forwards |
-| ABI wires | … / WDB1 / WVN1 / WRB1 / WRV1 / WLB1 / WLV1 / WSB1 / WSV1 / WXB1 / WXV1 / WEB1 / WEV1 |
+| ABI wires | … / WDB1 / WVN1 / WRB1 / WRV1 / WLB1 / WLV1 / WSB1 / WSV1 / WXB1 / WXV1 / WEB1 / WEV1 / WHB1 / WHV1 |
 
 ## gap? — remaining
 

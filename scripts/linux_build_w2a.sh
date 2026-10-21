@@ -27,6 +27,7 @@
 #   ./scripts/linux_build_w2a.sh --swiglu-train # SwiGLU NormalBP leaf + volumetric
 #   ./scripts/linux_build_w2a.sh --softmax-train # Softmax NormalBP (all Kind) leaf + volumetric
 #   ./scripts/linux_build_w2a.sh --embedding-train # Embedding NormalBP leaf + volumetric
+#   ./scripts/linux_build_w2a.sh --mha-train  # MHA NormalBP leaf + volumetric
 #   ./scripts/linux_build_w2a.sh --go-v-cpp   # same as default
 #   ./scripts/linux_build_w2a.sh --all        # entire w2a go test ./...
 #   BUILD_DIR=/tmp/welvet-build ./scripts/linux_build_w2a.sh
@@ -67,8 +68,9 @@ for arg in "$@"; do
     --swiglu-train) MODE="swiglu_train" ;;
     --softmax-train) MODE="softmax_train" ;;
     --embedding-train) MODE="embedding_train" ;;
+    --mha-train) MODE="mha_train" ;;
     -h|--help)
-      sed -n '2,37p' "$0"
+      sed -n '2,38p' "$0"
       exit 0
       ;;
     *)
@@ -199,6 +201,10 @@ case "$MODE" in
   embedding_train)
     echo "==> w2a go_v_cpp Embedding NormalBP (leaf + volumetric)"
     go test ./tests/go_v_cpp/ -run '^TestGoVCppEmbeddingTrain$' -v -count=1
+    ;;
+  mha_train)
+    echo "==> w2a go_v_cpp MHA NormalBP (leaf + volumetric)"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppMHATrain$' -v -count=1
     ;;
   all)
     echo "==> w2a full suite (go test ./...)"

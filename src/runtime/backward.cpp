@@ -52,6 +52,9 @@ Status volume_dense(architecture::Grid& g, const forward::Result& fwd, const Ten
     case architecture::OpKind::Embedding:
       st_b = embedding::backward_f32(cell->embedding_op, gy, st.input, st.pre, &gx, &dw);
       break;
+    case architecture::OpKind::MHA:
+      st_b = mha::backward_f32(cell->mha_op, gy, st.input, st.pre, &gx, &dw);
+      break;
     default: {
       std::ostringstream oss;
       oss << "runtime.backward: unsupported Op at z=" << st.coord.z << " y=" << st.coord.y

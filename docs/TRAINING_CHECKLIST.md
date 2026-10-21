@@ -15,7 +15,7 @@ Canonical enum: Go `layers/parallel/train_mode.go` (`TrainMode`).
 
 Tick `[x]` when done. Put the **release tag** in **Ver** when that row (or the whole mode table) is signed.
 
-**Current engine:** `0.1.26-m2-embedding-nbp`
+**Current engine:** `0.1.27-m2-mha-nbp`
 
 ---
 
@@ -117,6 +117,23 @@ Timing: same `--bench=N` / spd%Δ convention. dX zeros (discrete IDs); dW scatte
 | 6 | Volume 2×2×2×1 Float32 | [x] | 3D volumetric + speed |
 | 7 | Volume 2×1×1×1 × all 34 dtypes | [x] | multi-cell ×34 |
 
+## w2a Go↔C++ (MHA NormalBP) — sign-off evidence
+
+Run: `./scripts/linux_build_w2a.sh --mha-train`  
+Wire: `WHB1`/`WHBO` (leaf), `WHV1`/`WHVO` (volume). Exact_bit vs Go.  
+Timing: same `--bench=N` / spd%Δ convention. ModeSelf baseline (no dropout/QKNorm/cross).
+
+| # | Case | Status | Notes |
+|---|---|:---:|---|
+| 1 | Leaf DecoderCausal Float32 (dX/dW/W/loss) | [x] | exact_bit + speed |
+| 2 | Leaf GQA + Encoder Float32 | [x] | exact_bit |
+| 3 | Leaf DecoderCausal × all 34 dtypes | [x] | exact_bit + speed table |
+| 4 | Volume 1×1×1×1 Float32 | [x] | inside-node + speed |
+| 5 | Volume 1×1×1×2 chain Float32 | [x] | multi-layer cell + speed |
+| 6 | Volume 1×1×1×1 × all 34 dtypes | [x] | + spectrum |
+| 7 | Volume 2×2×2×1 Float32 | [x] | 3D volumetric + speed |
+| 8 | Volume 2×1×1×1 × all 34 dtypes | [x] | multi-cell ×34 |
+
 ---
 
 ## 1 — NormalBP
@@ -131,7 +148,7 @@ Chain-rule Backward + ApplyGradSGD. Start here. Dense first.
 | SwiGLU | [x] | [x] | [x] | `0.1.24-m2-swiglu-nbp` |
 | Softmax | [x] | [x] | [x] | `0.1.25-m2-softmax-nbp` |
 | Embedding | [x] | [x] | [x] | `0.1.26-m2-embedding-nbp` |
-| MHA | [ ] | [ ] | [ ] | |
+| MHA | [x] | [x] | [x] | `0.1.27-m2-mha-nbp` |
 | CNN1 | [ ] | [ ] | [ ] | |
 | CNN2 | [ ] | [ ] | [ ] | |
 | CNN3 | [ ] | [ ] | [ ] | |
@@ -1234,4 +1251,5 @@ Fill as you tick rows / finish mode tables.
 | `0.1.24-m2-swiglu-nbp` | NormalBP SwiGLU | Leaf+vol w2a exact_bit ×34; Gate/Up/Down + SiLU⊙ grads |
 | `0.1.25-m2-softmax-nbp` | NormalBP Softmax | Leaf+vol w2a exact_bit all Kind×34; Jacobian dX (weightless); gumbel smoke |
 | `0.1.26-m2-embedding-nbp` | NormalBP Embedding | Leaf+vol w2a exact_bit ×34; scatter dW (dX=0) + ApplySGD |
+| `0.1.27-m2-mha-nbp` | NormalBP MHA | Leaf+vol w2a exact_bit ×34; ModeSelf attn+RoPEᵀ + Q/K/V/O |
 | | | |

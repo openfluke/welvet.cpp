@@ -73,6 +73,17 @@ WELVET_API welvet_status welvet_mha_forward_f32(
     int32_t backend, const float* Q, const float* K, const float* V, const float* O,
     const float* x, float* pre, float* post);
 
+/* MHA NormalBP leaf (ModeSelf): forward → (MSEGrad | grad_out) → backward → optional SGD.
+ * use_target: 0 = grad_or_target is gradOut [batch*seq*d]; 1 = target (MSE).
+ * Outputs: pre [batch*seq*q_dim], post/dX [batch*seq*d], dW/W_after = concat(Q,K,V,O), *loss.
+ */
+WELVET_API welvet_status welvet_mha_normalbp_f32(
+    int32_t batch, int32_t seq, int32_t d_model, int32_t num_heads, int32_t num_kv_heads,
+    int32_t head_dim, int32_t max_seq_len, int32_t mask, int32_t pos, int32_t dtype,
+    int32_t backend, const float* Q, const float* K, const float* V, const float* O,
+    const float* x, const float* grad_or_target, int32_t use_target, double lr, float* pre,
+    float* post, float* dX, float* dW, float* W_after, double* loss);
+
 /* SwiGLU baseline. Gate/Up: [inter*in], Down: [in*inter], x: [batch*seq*in]
  * pre (h): [batch*seq*inter], post: [batch*seq*in]
  */
