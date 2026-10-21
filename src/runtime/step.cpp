@@ -332,7 +332,8 @@ Status train_mse(architecture::Grid& g, const TensorF32& input, const TensorF32&
   }
 
   if (credit == Credit::FamilyTween || credit == Credit::FamilyTweenSplit ||
-      credit == Credit::FamilyTweenAlt || credit == Credit::FamilyTweenSplitFastProxy) {
+      credit == Credit::FamilyTweenAlt || credit == Credit::FamilyTweenSplitFastProxy ||
+      credit == Credit::FamilyTweenSplitSparse) {
     // Last-tick mesh credit (no BPTT). Dense mesh-clock suites; gin = copy gap / zeros.
     if (st.history_in.empty() || st.history_pre.empty()) {
       return Status::Err(StatusCode::InvalidArgument, "step: empty tween history");
@@ -370,12 +371,19 @@ Status train_mse(architecture::Grid& g, const TensorF32& input, const TensorF32&
           return Status::Err(s.code, std::string("step alt cell ") + std::to_string(idx) + ": " +
                                          s.message);
         }
-      } else {
+      } else if (credit == Credit::FamilyTweenSplitFastProxy) {
         // MeshTweenSplitFastProxy: head GradWOnly; n=1 Dense ⇒ no hidden.
         if (auto s =
                 systems::tween_split::apply_cell_fast_proxy(cell, gap, cin, pre, post, lr); !s) {
           return Status::Err(s.code, std::string("step fastproxy cell ") + std::to_string(idx) +
                                          ": " + s.message);
+        }
+      } else {
+        // MeshTweenSplitSparse: head GradWOnly + one rotating hidden; n=1 Dense ⇒ head only.
+        if (auto s = systems::tween_split::apply_cell_sparse(cell, gap, cin, pre, post, lr,
+                                                            &g.accel); !s) {
+          return Status::Err(s.code, std::string("step sparse cell ") + std::to_string(idx) + ": " +
+                                         s.message);
         }
       }
       TensorF32 next;

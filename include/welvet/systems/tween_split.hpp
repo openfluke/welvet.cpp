@@ -78,5 +78,8 @@ Status apply_cell_split(architecture::Cell& cell, const TensorF32& grad_out, con
 Status apply_cell_fast_proxy(architecture::Cell& cell, const TensorF32& grad_out,
                              const TensorF32& input, const TensorF32& pre, const TensorF32& post,
                              double lr);
+Status apply_cell_sparse(architecture::Cell& cell, const TensorF32& grad_out, const TensorF32& input,
+                         const TensorF32& pre, const TensorF32& post, double lr,
+                         stack::SplitAccel* accel);
 
 } // namespace welvet::systems::tween_split

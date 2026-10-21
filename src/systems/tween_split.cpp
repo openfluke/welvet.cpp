@@ -1011,6 +1011,19 @@ Status apply_cell_fast_proxy(architecture::Cell& cell, const TensorF32& grad_out
   return apply_fast_proxy_leaves(leaves, grad_out, lr);
 }
 
+Status apply_cell_sparse(architecture::Cell& cell, const TensorF32& grad_out, const TensorF32& input,
+                         const TensorF32& pre, const TensorF32& post, double lr,
+                         stack::SplitAccel* accel) {
+  if (cell.meta.is_disabled || grad_out.data.empty() || input.data.empty()) {
+    return Status::Ok();
+  }
+  std::vector<Leaf> leaves;
+  if (auto st = collect_cell_leaves(cell, input, pre, post, &leaves); !st) {
+    return st;
+  }
+  return apply_sparse_leaves(leaves, grad_out, lr, accel);
+}
+
 Status apply_sparse(stack::Layer& ops, const TensorF32& grad_out, const TensorF32& input, double lr) {
   std::vector<Leaf> leaves;
   if (auto st = collect_stack_leaves(ops, input, &leaves); !st) {

@@ -1171,35 +1171,37 @@ Ship: `runtime/step` `Credit::FamilyTweenSplitFastProxy` — Forward×ticks → 
 
 ## 23 — MeshTweenSplitSparse
 
-Needs Mesh + TweenSplitSparse.
+Needs Mesh + TweenSplitSparse.  
+Ship: `runtime/step` `Credit::FamilyTweenSplitSparse` — Forward×ticks → last-tick Sparse (`MSS1`/`MSSO`); w2a `--meshtweensplitsparse-train`.  
+**3D volumetric** = ModeTweenSplitSparse / TweenSplitSparse volume credit (`SPV1`/`SRP1`…). CNN2/3 & ConvT2/3 share CNN1/ConvT1 path.
 
 | Layer | Inside node | 3D volumetric | Fully signed off | Ver |
 |---|:---:|:---:|:---:|---|
-| Dense | [ ] | [ ] | [ ] | |
-| RMSNorm | [ ] | [ ] | [ ] | |
-| LayerNorm | [ ] | [ ] | [ ] | |
-| SwiGLU | [ ] | [ ] | [ ] | |
-| Softmax | [ ] | [ ] | [ ] | |
-| Embedding | [ ] | [ ] | [ ] | |
-| MHA | [ ] | [ ] | [ ] | |
-| CNN1 | [ ] | [ ] | [ ] | |
-| CNN2 | [ ] | [ ] | [ ] | |
-| CNN3 | [ ] | [ ] | [ ] | |
-| ConvT1 | [ ] | [ ] | [ ] | |
-| ConvT2 | [ ] | [ ] | [ ] | |
-| ConvT3 | [ ] | [ ] | [ ] | |
-| RNN | [ ] | [ ] | [ ] | |
-| LSTM | [ ] | [ ] | [ ] | |
-| Sequential | [ ] | [ ] | [ ] | |
-| Residual | [ ] | [ ] | [ ] | |
+| Dense | [x] | [x] | [x] | `0.1.52-m2-meshtweensplitsparse` |
+| RMSNorm | [x] | [x] | [x] | `0.1.52-m2-meshtweensplitsparse` |
+| LayerNorm | [x] | [x] | [x] | `0.1.52-m2-meshtweensplitsparse` |
+| SwiGLU | [x] | [x] | [x] | `0.1.52-m2-meshtweensplitsparse` |
+| Softmax | [x] | [x] | [x] | `0.1.52-m2-meshtweensplitsparse` |
+| Embedding | [x] | [x] | [x] | `0.1.52-m2-meshtweensplitsparse` |
+| MHA | [x] | [x] | [x] | `0.1.52-m2-meshtweensplitsparse` |
+| CNN1 | [x] | [x] | [x] | `0.1.52-m2-meshtweensplitsparse` |
+| CNN2 | [x] | [x] | [x] | `0.1.52-m2-meshtweensplitsparse` |
+| CNN3 | [x] | [x] | [x] | `0.1.52-m2-meshtweensplitsparse` |
+| ConvT1 | [x] | [x] | [x] | `0.1.52-m2-meshtweensplitsparse` |
+| ConvT2 | [x] | [x] | [x] | `0.1.52-m2-meshtweensplitsparse` |
+| ConvT3 | [x] | [x] | [x] | `0.1.52-m2-meshtweensplitsparse` |
+| RNN | [x] | [x] | [x] | `0.1.52-m2-meshtweensplitsparse` |
+| LSTM | [x] | [x] | [x] | `0.1.52-m2-meshtweensplitsparse` |
+| Sequential | [x] | [x] | [x] | `0.1.52-m2-meshtweensplitsparse` |
+| Residual | [x] | [x] | [x] | `0.1.52-m2-meshtweensplitsparse` |
 | KMeans | [ ] | [ ] | [ ] | |
-| Mamba | [ ] | [ ] | [ ] | |
+| Mamba | [x] | [x] | [x] | `0.1.52-m2-meshtweensplitsparse` |
 | Metacognition | [ ] | [ ] | [ ] | |
 | GDN | [ ] | [ ] | [ ] | |
 | Parallel | [ ] | [ ] | [ ] | |
 | Stack | [ ] | [ ] | [ ] | |
 
-**Checkpoint:** bump version when this mode table advances.
+**Checkpoint:** `0.1.52-m2-meshtweensplitsparse` — Dense mesh-clock MSS1 111/211/222 + TweenSplitSparse volume for NormalBP-signed kinds.
 
 ---
 
@@ -1574,3 +1576,4 @@ Fill as you tick rows / finish mode tables.
 | `0.1.49-m2-tweensplitheadproxyasync` | TweenSplitHeadProxyAsync × signed kinds | Stale-proxy hidden; head GradWOnly; store Wᵀgy; HAB1/HAV1/ARPA…; leaf ×34 + volume |
 | `0.1.50-m2-tweensplitsparse` | TweenSplitSparse × signed kinds | Head GradWOnly + one hidden P(Wᵀgy); SPB1/SPV1/SRP1…; leaf ×34 + volume |
 | `0.1.51-m2-meshtweensplit-alt-fastproxy` | MeshTweenSplit + MeshTweenAlt + MeshTweenSplitFastProxy | MTS1/MTA1/MTF1 mesh-clock; volume = TweenSplit/Alt/FastProxy |
+| `0.1.52-m2-meshtweensplitsparse` | MeshTweenSplitSparse × signed kinds | MSS1 mesh-clock Sparse; volume = TweenSplitSparse |
