@@ -23,6 +23,7 @@
 #include "welvet/stack.hpp"
 #include "welvet/swiglu.hpp"
 
+#include <cmath>
 #include <string>
 #include <utility>
 #include <vector>
@@ -435,7 +436,29 @@ Status apply_leaf_dw_linear(Leaf& leaf, const TensorF32& gy, double lr) {
   return apply_one_leaf(leaf, gy, lr);
 }
 
-Status apply_linear_leaves(std::vector<Leaf>& leaves, const TensorF32& grad_out, double lr) {
+double gap_norm(const TensorF32& g) {
+  if (g.data.empty()) {
+    return 0.0;
+  }
+  double s = 0.0;
+  for (float v : g.data) {
+    const double f = static_cast<double>(v);
+    s += f * f;
+  }
+  return std::sqrt(s / static_cast<double>(g.data.size()));
+}
+
+int accel_every(const stack::SplitAccel* acc) {
+  if (!acc || acc->cache_every <= 0) {
+    return 20; // Go defaultLinearCacheEvery
+  }
+  return acc->cache_every;
+}
+
+// Go linearWalkTape + applyLeafDW: project → optional fill (pre-1/N) → scale 1/N → GradWOnly;
+// gx = LinearGradIn (Dense) / Backward (else).
+Status apply_linear_leaves(std::vector<Leaf>& leaves, const TensorF32& grad_out, double lr,
+                           std::vector<std::vector<float>>* fill) {
   const int n = static_cast<int>(leaves.size());
   if (n == 0) {
     return Status::Ok();
@@ -446,6 +469,9 @@ Status apply_linear_leaves(std::vector<Leaf>& leaves, const TensorF32& grad_out,
     Leaf& leaf = leaves[static_cast<std::size_t>(i)];
     if (!leaf.post.data.empty()) {
       TensorF32 gi = systems::tween::project_gap(gy, leaf.post.shape);
+      if (fill && static_cast<int>(fill->size()) == n) {
+        (*fill)[static_cast<std::size_t>(i)].assign(gi.data.begin(), gi.data.end());
+      }
       scale_gap(&gi, scale);
       if (auto st = apply_leaf_dw_linear(leaf, gi, lr); !st) {
         return Status::Err(st.code, std::string("tween_split linear leaf: ") + st.message);
@@ -460,6 +486,62 @@ Status apply_linear_leaves(std::vector<Leaf>& leaves, const TensorF32& grad_out,
     } else if (!leaf.input.data.empty()) {
       gy = systems::tween::project_gap(gy, leaf.input.shape);
     }
+  }
+  return Status::Ok();
+}
+
+Status apply_linear_leaves(std::vector<Leaf>& leaves, const TensorF32& grad_out, double lr) {
+  return apply_linear_leaves(leaves, grad_out, lr, nullptr);
+}
+
+Status apply_linear_cache_leaves(std::vector<Leaf>& leaves, const TensorF32& grad_out, double lr,
+                                 stack::SplitAccel* acc) {
+  const int n = static_cast<int>(leaves.size());
+  if (n == 0) {
+    return Status::Ok();
+  }
+  const int every = accel_every(acc);
+  if (acc && static_cast<int>(acc->cache.size()) == n && acc->cache_norm > 1e-12 &&
+      (acc->tick % every) != 0) {
+    const double live = gap_norm(grad_out);
+    const double rescale = live / acc->cache_norm;
+    acc->tick++;
+    const double scale = 1.0 / static_cast<double>(n);
+    for (int i = 0; i < n; ++i) {
+      Leaf& leaf = leaves[static_cast<std::size_t>(i)];
+      if (leaf.post.data.empty() || i >= static_cast<int>(acc->cache.size())) {
+        continue;
+      }
+      const auto& buf = acc->cache[static_cast<std::size_t>(i)];
+      if (static_cast<int>(buf.size()) != static_cast<int>(leaf.post.data.size())) {
+        continue;
+      }
+      TensorF32 gi;
+      gi.shape = leaf.post.shape;
+      gi.data.resize(buf.size());
+      for (std::size_t j = 0; j < buf.size(); ++j) {
+        gi.data[j] = static_cast<float>(static_cast<double>(buf[j]) * rescale);
+      }
+      scale_gap(&gi, scale);
+      if (auto st = apply_leaf_dw_linear(leaf, gi, lr); !st) {
+        return Status::Err(st.code, std::string("tween_split linearcache hit: ") + st.message);
+      }
+    }
+    return Status::Ok();
+  }
+  std::vector<std::vector<float>> fill;
+  std::vector<std::vector<float>>* fill_ptr = nullptr;
+  if (acc) {
+    fill.resize(static_cast<std::size_t>(n));
+    fill_ptr = &fill;
+  }
+  if (auto st = apply_linear_leaves(leaves, grad_out, lr, fill_ptr); !st) {
+    return st;
+  }
+  if (acc) {
+    acc->cache = std::move(fill);
+    acc->cache_norm = gap_norm(grad_out);
+    acc->tick++;
   }
   return Status::Ok();
 }
@@ -702,6 +784,46 @@ Status train_volume_mse_fast_proxy(architecture::Grid& g, const runtime::forward
     return st;
   }
   return apply_fast_proxy_leaves(leaves, gy, lr);
+}
+
+Status apply_linear_cache(stack::Layer& ops, const TensorF32& grad_out, const TensorF32& input,
+                          double lr) {
+  std::vector<Leaf> leaves;
+  if (auto st = collect_stack_leaves(ops, input, &leaves); !st) {
+    return st;
+  }
+  return apply_linear_cache_leaves(leaves, grad_out, lr, &ops.accel);
+}
+
+Status apply_linear_cache_child(stack::Child& c, const TensorF32& grad_out, const TensorF32& input,
+                                double lr, stack::SplitAccel* accel) {
+  std::vector<Leaf> leaves;
+  if (auto st = collect_child(c, input, &leaves); !st) {
+    return st;
+  }
+  return apply_linear_cache_leaves(leaves, grad_out, lr, accel);
+}
+
+Status train_volume_mse_linear_cache(architecture::Grid& g, const runtime::forward::Result& fwd,
+                                     const TensorF32& target, double lr, double* loss) {
+  if (!loss) {
+    return Status::Err(StatusCode::InvalidArgument, "tween_split linear_cache: nil loss");
+  }
+  if (fwd.steps.empty()) {
+    return Status::Err(StatusCode::InvalidArgument, "tween_split linear_cache: empty forward tape");
+  }
+  if (auto st = runtime::training::mse(fwd.output, target, loss); !st) {
+    return st;
+  }
+  TensorF32 gy;
+  if (auto st = runtime::training::mse_grad(fwd.output, target, &gy); !st) {
+    return st;
+  }
+  std::vector<Leaf> leaves;
+  if (auto st = collect_volume_leaves(g, fwd, &leaves); !st) {
+    return st;
+  }
+  return apply_linear_cache_leaves(leaves, gy, lr, &g.accel);
 }
 
 } // namespace welvet::systems::tween_split

@@ -27,6 +27,16 @@
 
 namespace welvet::stack {
 
+// Go parallel.splitAccel — LinearCache / HeadProxyAsync / Sparse scratch.
+struct SplitAccel {
+  std::vector<std::vector<float>> cache;
+  double cache_norm = 0.0;
+  int tick = 0;
+  int cache_every = 0; // 0 ⇒ default 20 (Go defaultLinearCacheEvery)
+  std::vector<float> proxy; // HeadProxyAsync
+  int sparse = 0;
+};
+
 // Matches architecture::OpKind values (Dense=1 … Mamba=18; NestedStack=19).
 enum class Kind : int32_t {
   None = 0,
@@ -79,6 +89,7 @@ struct Layer {
   std::vector<Child> children;
   Backend backend = Backend::CPUTiled;
   LayerMeta meta{};
+  SplitAccel accel{};
 };
 
 // Flatten NestedStack into leaf Child* order (Go flattenLineOps).

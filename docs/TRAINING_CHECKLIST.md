@@ -958,33 +958,36 @@ CNN2/3 & ConvT2/3 share CNN1/ConvT1 path.
 
 ## 17 — TweenSplitLinearCache
 
+Ship: `systems::tween_split::apply_linear_cache` + `runtime/tween_split_linear_cache_train` — linear walk with `SplitAccel` cache; refresh every 20 (or `CacheEvery`); hit rescales cached P(gy) by live/cacheNorm then 1/N GradWOnly; wire `LCB1`/`LCV1`/`CRP1`…; w2a `--tweensplitlinearcache-train`.  
+CNN2/3 & ConvT2/3 share CNN1/ConvT1 path.
+
 | Layer | Inside node | 3D volumetric | Fully signed off | Ver |
 |---|:---:|:---:|:---:|---|
-| Dense | [ ] | [ ] | [ ] | |
-| RMSNorm | [ ] | [ ] | [ ] | |
-| LayerNorm | [ ] | [ ] | [ ] | |
-| SwiGLU | [ ] | [ ] | [ ] | |
-| Softmax | [ ] | [ ] | [ ] | |
-| Embedding | [ ] | [ ] | [ ] | |
-| MHA | [ ] | [ ] | [ ] | |
-| CNN1 | [ ] | [ ] | [ ] | |
-| CNN2 | [ ] | [ ] | [ ] | |
-| CNN3 | [ ] | [ ] | [ ] | |
-| ConvT1 | [ ] | [ ] | [ ] | |
-| ConvT2 | [ ] | [ ] | [ ] | |
-| ConvT3 | [ ] | [ ] | [ ] | |
-| RNN | [ ] | [ ] | [ ] | |
-| LSTM | [ ] | [ ] | [ ] | |
-| Sequential | [ ] | [ ] | [ ] | |
-| Residual | [ ] | [ ] | [ ] | |
+| Dense | [x] | [x] | [x] | `0.1.48-m2-tweensplitlinearcache` |
+| RMSNorm | [x] | [x] | [x] | `0.1.48-m2-tweensplitlinearcache` |
+| LayerNorm | [x] | [x] | [x] | `0.1.48-m2-tweensplitlinearcache` |
+| SwiGLU | [x] | [x] | [x] | `0.1.48-m2-tweensplitlinearcache` |
+| Softmax | [x] | [x] | [x] | `0.1.48-m2-tweensplitlinearcache` |
+| Embedding | [x] | [x] | [x] | `0.1.48-m2-tweensplitlinearcache` |
+| MHA | [x] | [x] | [x] | `0.1.48-m2-tweensplitlinearcache` |
+| CNN1 | [x] | [x] | [x] | `0.1.48-m2-tweensplitlinearcache` |
+| CNN2 | [x] | [x] | [x] | `0.1.48-m2-tweensplitlinearcache` |
+| CNN3 | [x] | [x] | [x] | `0.1.48-m2-tweensplitlinearcache` |
+| ConvT1 | [x] | [x] | [x] | `0.1.48-m2-tweensplitlinearcache` |
+| ConvT2 | [x] | [x] | [x] | `0.1.48-m2-tweensplitlinearcache` |
+| ConvT3 | [x] | [x] | [x] | `0.1.48-m2-tweensplitlinearcache` |
+| RNN | [x] | [x] | [x] | `0.1.48-m2-tweensplitlinearcache` |
+| LSTM | [x] | [x] | [x] | `0.1.48-m2-tweensplitlinearcache` |
+| Sequential | [x] | [x] | [x] | `0.1.48-m2-tweensplitlinearcache` |
+| Residual | [x] | [x] | [x] | `0.1.48-m2-tweensplitlinearcache` |
 | KMeans | [ ] | [ ] | [ ] | |
-| Mamba | [ ] | [ ] | [ ] | |
+| Mamba | [x] | [x] | [x] | `0.1.48-m2-tweensplitlinearcache` |
 | Metacognition | [ ] | [ ] | [ ] | |
 | GDN | [ ] | [ ] | [ ] | |
 | Parallel | [ ] | [ ] | [ ] | |
 | Stack | [ ] | [ ] | [ ] | |
 
-**Checkpoint:** bump version when this mode table advances.
+**Checkpoint:** `0.1.48-m2-tweensplitlinearcache` — ModeTweenSplitLinearCache Inside+×34 + volume 2×2×2×1 for NormalBP-signed kinds.
 
 ---
 
@@ -1555,3 +1558,4 @@ Fill as you tick rows / finish mode tables.
 | `0.1.45-m2-tweensplitheadproxy` | TweenSplitHeadProxy × signed kinds | Head Jᵀgy + hidden 1/(N−1) P(gx); HPB1/HPV1/HRP1…; leaf ×34 + volume |
 | `0.1.46-m2-tweensplitlinear` | TweenSplitLinear × signed kinds | Reverse walk 1/N P(gy); Dense gx=Wᵀgy no act'; LLB1/LLV1/LRP1…; leaf ×34 + volume |
 | `0.1.47-m2-tweensplitfastproxy` | TweenSplitFastProxy × signed kinds | Head GradWOnly + hidden 1/(N−1) P(Wᵀgy); FPB1/FPV1/FRP1…; leaf ×34 + volume |
+| `0.1.48-m2-tweensplitlinearcache` | TweenSplitLinearCache × signed kinds | Cached linear walk; refresh every 20; LCB1/LCV1/CRP1…; leaf ×34 + volume |

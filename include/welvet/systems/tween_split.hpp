@@ -46,4 +46,13 @@ Status apply_fast_proxy_child(stack::Child& c, const TensorF32& grad_out, const 
 Status train_volume_mse_fast_proxy(architecture::Grid& g, const runtime::forward::Result& fwd,
                                    const TensorF32& target, double lr, double* loss);
 
+// ModeTweenSplitLinearCache: linear walk; refresh every CacheEvery (default 20);
+// hit path rescale cached P(gy) by live/cacheNorm then 1/N GradWOnly.
+Status apply_linear_cache(stack::Layer& ops, const TensorF32& grad_out, const TensorF32& input,
+                          double lr);
+Status apply_linear_cache_child(stack::Child& c, const TensorF32& grad_out, const TensorF32& input,
+                                double lr, stack::SplitAccel* accel);
+Status train_volume_mse_linear_cache(architecture::Grid& g, const runtime::forward::Result& fwd,
+                                     const TensorF32& target, double lr, double* loss);
+
 } // namespace welvet::systems::tween_split

@@ -98,6 +98,7 @@ struct Grid {
   std::vector<Cell> cells;
   ExecConfig exec{};
   bool native_exact = true;
+  stack::SplitAccel accel{}; // LinearCache / HeadProxyAsync / Sparse
 };
 
 using VolumetricNetwork = Grid;

@@ -44,7 +44,7 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 ./build/welvet_dense_fwd --gaps
 ```
 
-## Done (through M2.27 TweenSplitFastProxy + TweenSplitLinear + TweenSplitHeadProxy + StepTweenAlt + TweenAlt + StepTweenSplit + TweenSplit + MeshTween* + Step*/ModeTween* + MeshBP + StepBP Line + NormalBP credit)
+## Done (through M2.28 TweenSplitLinearCache + TweenSplitFastProxy + TweenSplitLinear + TweenSplitHeadProxy + StepTweenAlt + TweenAlt + StepTweenSplit + TweenSplit + MeshTween* + Step*/ModeTween* + MeshBP + StepBP Line + NormalBP credit)
 
 | ID | Detail |
 |---|---|
@@ -78,14 +78,15 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 | **TweenSplitHeadProxy** | Head full Jᵀgy (+ gx); hidden 1/(N−1) P(gx_head); HPB1 leaf ×34; HPV1/HRP1… volume; w2a `--tweensplitheadproxy-train` |
 | **TweenSplitLinear** | Reverse walk 1/N P(gy); Dense gx=Wᵀgy (no act'); LLB1 leaf ×34; LLV1/LRP1… volume; w2a `--tweensplitlinear-train` |
 | **TweenSplitFastProxy** | Head GradWOnly on P(gy); proxy=Wᵀgy; hidden 1/(N−1) P(proxy); FPB1 leaf ×34; FPV1/FRP1… volume; w2a `--tweensplitfastproxy-train` |
+| **TweenSplitLinearCache** | Cached linear walk; refresh every 20; hit rescale cache×live/norm; LCB1 leaf ×34; LCV1/CRP1… volume; w2a `--tweensplitlinearcache-train` |
 | Transformer / composition | Sequential+Residual NormalBP, seqmix Kind, **Parallel Dense×7 combines** |
 | Extended | ConvT, KMeans, Mamba NormalBP, Metacognition, GDN |
 | CNN / RNN / LSTM | FormatNone×34 forwards |
-| ABI wires | … / HPB1 / HPV1 / LLB1 / LLV1 / FPB1 / FPV1 |
+| ABI wires | … / HPB1 / HPV1 / LLB1 / LLV1 / FPB1 / FPV1 / LCB1 / LCV1 |
 
 ## gap? — remaining
 
-- Parallel poly/nested/cameral/train; full cameral Stack; MeshTweenSplit / MeshTweenAlt / Sparse/LinearCache Split variants
+- Parallel poly/nested/cameral/train; full cameral Stack; MeshTweenSplit / MeshTweenAlt / Sparse / HeadProxyAsync Split variants
 - Other layers’ Backward; Dense quants; remaining TrainModes; systems (DNA/evolution/TANHI/telemetry); model/IO; vendor accel
 
 See `src/gaps/registry.cpp`.
