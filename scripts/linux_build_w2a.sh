@@ -56,6 +56,7 @@
 #   ./scripts/linux_build_w2a.sh --meshtweenalt-train # MeshTweenAlt mesh-clock + TweenAlt vol
 #   ./scripts/linux_build_w2a.sh --meshtweensplitfastproxy-train # MeshTweenSplitFastProxy + FastProxy vol
 #   ./scripts/linux_build_w2a.sh --meshtweensplitsparse-train # MeshTweenSplitSparse + Sparse vol
+#   ./scripts/linux_build_w2a.sh --steptweensplitheadproxy-train # Line StepTweenSplitHeadProxy + HeadProxy vol
 #   ./scripts/linux_build_w2a.sh --go-v-cpp   # same as default
 #   ./scripts/linux_build_w2a.sh --all        # entire w2a go test ./...
 #   BUILD_DIR=/tmp/welvet-build ./scripts/linux_build_w2a.sh
@@ -125,6 +126,7 @@ for arg in "$@"; do
     --meshtweenalt-train) MODE="meshtweenalt_train" ;;
     --meshtweensplitfastproxy-train) MODE="meshtweensplitfastproxy_train" ;;
     --meshtweensplitsparse-train) MODE="meshtweensplitsparse_train" ;;
+    --steptweensplitheadproxy-train) MODE="steptweensplitheadproxy_train" ;;
     -h|--help)
       sed -n '2,60p' "$0"
       exit 0
@@ -373,6 +375,10 @@ case "$MODE" in
   meshtweensplitsparse_train)
     echo "==> w2a go_v_cpp MeshTweenSplitSparse train (mesh-clock Sparse + Sparse volume)"
     go test ./tests/go_v_cpp/ -run '^TestGoVCppMeshTweenSplitSparseTrain$' -v -count=1
+    ;;
+  steptweensplitheadproxy_train)
+    echo "==> w2a go_v_cpp StepTweenSplitHeadProxy train (Line HeadProxy + HeadProxy volume)"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppStepTweenSplitHeadProxyTrain$' -v -count=1
     ;;
   all)
     echo "==> w2a full suite (go test ./...)"

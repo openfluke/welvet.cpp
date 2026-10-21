@@ -20,11 +20,13 @@ enum class FlightRole : uint8_t {
 // FamilyTween = StepTween (projected @ lr*0.5);
 // FamilyTweenSplit = StepTweenSplit (1/N projected gap @ full lr per hop);
 // FamilyTweenAlt = StepTweenAlt (Split→Tween frozen gap per hop; AltTimes=1).
+// FamilyTweenSplitHeadProxy = StepTweenSplitHeadProxy (head Jᵀgy; hidden 1/(N−1) P(gx)).
 enum class Credit : uint8_t {
   FamilyBP = 0,
   FamilyTween = 1,
   FamilyTweenSplit = 2,
   FamilyTweenAlt = 3,
+  FamilyTweenSplitHeadProxy = 4,
 };
 
 struct Flight {
