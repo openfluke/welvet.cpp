@@ -197,6 +197,11 @@
 #include <cstring>
 #include <vector>
 
+#if defined(_WIN32)
+#include <fcntl.h>
+#include <io.h>
+#endif
+
 namespace {
 
 template <typename T>
@@ -50037,6 +50042,12 @@ int run_volume_kmeans_tween_alt(int bench_iters) {
 }
 
 int main(int argc, char** argv) {
+#if defined(_WIN32)
+  // Binary wire protocol over stdin/stdout — Windows defaults to text mode
+  // (CRLF / Ctrl-Z) which truncates payloads ("short weights", short headers).
+  _setmode(_fileno(stdin), _O_BINARY);
+  _setmode(_fileno(stdout), _O_BINARY);
+#endif
   int bench_iters = 0;
   for (int i = 1; i < argc; ++i) {
     if (std::strcmp(argv[i], "--gaps") == 0) {
