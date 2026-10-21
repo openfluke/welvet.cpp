@@ -1424,34 +1424,36 @@ Ship: `runtime/line` `Credit::FamilyTweenSplitSparse` on pop (`apply_sparse_chil
 ## 30 — Freeze
 
 No weight update; forward + zero apply.
+Ship: `runtime/freeze_train` — Forward → MSE → no ApplyGrad; wire `FRB1`/`FRV1`/`FRR1`…; w2a `--freeze-train`.
+CNN2/3 & ConvT2/3 share CNN1/ConvT1 path.
 
 | Layer | Inside node | 3D volumetric | Fully signed off | Ver |
 |---|:---:|:---:|:---:|---|
-| Dense | [ ] | [ ] | [ ] | |
-| RMSNorm | [ ] | [ ] | [ ] | |
-| LayerNorm | [ ] | [ ] | [ ] | |
-| SwiGLU | [ ] | [ ] | [ ] | |
-| Softmax | [ ] | [ ] | [ ] | |
-| Embedding | [ ] | [ ] | [ ] | |
-| MHA | [ ] | [ ] | [ ] | |
-| CNN1 | [ ] | [ ] | [ ] | |
-| CNN2 | [ ] | [ ] | [ ] | |
-| CNN3 | [ ] | [ ] | [ ] | |
-| ConvT1 | [ ] | [ ] | [ ] | |
-| ConvT2 | [ ] | [ ] | [ ] | |
-| ConvT3 | [ ] | [ ] | [ ] | |
-| RNN | [ ] | [ ] | [ ] | |
-| LSTM | [ ] | [ ] | [ ] | |
-| Sequential | [ ] | [ ] | [ ] | |
-| Residual | [ ] | [ ] | [ ] | |
+| Dense | [x] | [x] | [x] | `0.1.59-m2-freeze` |
+| RMSNorm | [x] | [x] | [x] | `0.1.59-m2-freeze` |
+| LayerNorm | [x] | [x] | [x] | `0.1.59-m2-freeze` |
+| SwiGLU | [x] | [x] | [x] | `0.1.59-m2-freeze` |
+| Softmax | [x] | [x] | [x] | `0.1.59-m2-freeze` |
+| Embedding | [x] | [x] | [x] | `0.1.59-m2-freeze` |
+| MHA | [x] | [x] | [x] | `0.1.59-m2-freeze` |
+| CNN1 | [x] | [x] | [x] | `0.1.59-m2-freeze` |
+| CNN2 | [x] | [x] | [x] | `0.1.59-m2-freeze` |
+| CNN3 | [x] | [x] | [x] | `0.1.59-m2-freeze` |
+| ConvT1 | [x] | [x] | [x] | `0.1.59-m2-freeze` |
+| ConvT2 | [x] | [x] | [x] | `0.1.59-m2-freeze` |
+| ConvT3 | [x] | [x] | [x] | `0.1.59-m2-freeze` |
+| RNN | [x] | [x] | [x] | `0.1.59-m2-freeze` |
+| LSTM | [x] | [x] | [x] | `0.1.59-m2-freeze` |
+| Sequential | [x] | [x] | [x] | `0.1.59-m2-freeze` |
+| Residual | [x] | [x] | [x] | `0.1.59-m2-freeze` |
 | KMeans | [ ] | [ ] | [ ] | |
-| Mamba | [ ] | [ ] | [ ] | |
+| Mamba | [x] | [x] | [x] | `0.1.59-m2-freeze` |
 | Metacognition | [ ] | [ ] | [ ] | |
 | GDN | [ ] | [ ] | [ ] | |
 | Parallel | [ ] | [ ] | [ ] | |
 | Stack | [ ] | [ ] | [ ] | |
 
-**Checkpoint:** bump version when this mode table advances.
+**Checkpoint:** `0.1.59-m2-freeze` — ModeFreeze Inside+×34 + volume 2×2×2×1 for NormalBP-signed kinds.
 
 ---
 

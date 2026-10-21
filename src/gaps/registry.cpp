@@ -203,6 +203,8 @@ const std::vector<Entry>& build() {
        "TrainStackMSE ModeTweenSplitHeadProxyAsync (stale proxy hidden; head GradWOnly)", true},
       {"runtime.tween_split_sparse_train", "runtime",
        "TrainStackMSE ModeTweenSplitSparse (head GradWOnly; one hidden P(Wᵀgy))", true},
+      {"runtime.freeze_train", "runtime",
+       "TrainStackMSE ModeFreeze (fwd+mse; no ApplyGrad)", true},
       {"systems.tween_alt", "systems",
        "ModeTweenAlt + Line StepTweenAlt Split→Tween; TAB1/STA1 + TAV1/TRA1…MBTA", true},
       {"runtime.tween_alt_train", "runtime", "TrainStackMSE ModeTweenAlt (Split @ lr → Tween @ lr×0.5)", true},

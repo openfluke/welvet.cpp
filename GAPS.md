@@ -44,7 +44,7 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 ./build/welvet_dense_fwd --gaps
 ```
 
-## Done (through M2.38 StepTweenSplitSparse + StepTweenSplitHeadProxyAsync + StepTweenSplitLinearCache + StepTweenSplitFastProxy + StepTweenSplitLinear + StepTweenSplitHeadProxy + MeshTweenSplitSparse + MeshTweenSplit/Alt/SplitFastProxy + TweenSplitSparse + TweenSplitHeadProxyAsync + TweenSplitLinearCache + TweenSplitFastProxy + TweenSplitLinear + TweenSplitHeadProxy + StepTweenAlt + TweenAlt + StepTweenSplit + TweenSplit + MeshTween* + Step*/ModeTween* + MeshBP + StepBP Line + NormalBP credit)
+## Done (through M2.39 Freeze + M2.38 StepTweenSplitSparse + StepTweenSplitHeadProxyAsync + StepTweenSplitLinearCache + StepTweenSplitFastProxy + StepTweenSplitLinear + StepTweenSplitHeadProxy + MeshTweenSplitSparse + MeshTweenSplit/Alt/SplitFastProxy + TweenSplitSparse + TweenSplitHeadProxyAsync + TweenSplitLinearCache + TweenSplitFastProxy + TweenSplitLinear + TweenSplitHeadProxy + StepTweenAlt + TweenAlt + StepTweenSplit + TweenSplit + MeshTween* + Step*/ModeTween* + MeshBP + StepBP Line + NormalBP credit)
 
 | ID | Detail |
 |---|---|
@@ -91,10 +91,11 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 | **TweenSplitLinearCache** | Cached linear walk; refresh every 20; hit rescale cache×live/norm; LCB1 leaf ×34; LCV1/CRP1… volume; w2a `--tweensplitlinearcache-train` |
 | **TweenSplitHeadProxyAsync** | Stale-proxy hidden first; head GradWOnly; store Wᵀgy; HAB1 leaf ×34; HAV1/ARPA… volume; w2a `--tweensplitheadproxyasync-train` |
 | **TweenSplitSparse** | Head GradWOnly; one hidden at sparse%(N−1) on P(Wᵀgy); SPB1 leaf ×34; SPV1/SRP1… volume; w2a `--tweensplitsparse-train` |
+| **Freeze** | Fwd+mse; no ApplyGrad; FRB1 leaf ×34; FRV1/FRR1… volume; w2a `--freeze-train` |
 | Transformer / composition | Sequential+Residual NormalBP, seqmix Kind, **Parallel Dense×7 combines** |
 | Extended | ConvT, KMeans, Mamba NormalBP, Metacognition, GDN |
 | CNN / RNN / LSTM | FormatNone×34 forwards |
-| ABI wires | … / MSS1 / STH1 / STL1 / STF1 / SLC1 / SHA1 / SSP1 |
+| ABI wires | … / MSS1 / STH1 / STL1 / STF1 / SLC1 / SHA1 / SSP1 / FRB1 |
 
 ## gap? — remaining
 
