@@ -3,6 +3,9 @@
 #include "welvet/cnn1.hpp"
 #include "welvet/cnn2.hpp"
 #include "welvet/cnn3.hpp"
+#include "welvet/convt1.hpp"
+#include "welvet/convt2.hpp"
+#include "welvet/convt3.hpp"
 #include "welvet/dense.hpp"
 #include "welvet/embedding.hpp"
 #include "welvet/layer.hpp"
@@ -39,6 +42,9 @@ enum class OpKind : int32_t {
   CNN1 = 8,
   CNN2 = 9,
   CNN3 = 10,
+  ConvT1 = 11,
+  ConvT2 = 12,
+  ConvT3 = 13,
   // gap? other layer ops
 };
 
@@ -56,6 +62,9 @@ struct Cell {
   cnn1::Layer cnn1_op;           // valid when op_kind == CNN1
   cnn2::Layer cnn2_op;           // valid when op_kind == CNN2
   cnn3::Layer cnn3_op;           // valid when op_kind == CNN3
+  convt1::Layer convt1_op;       // valid when op_kind == ConvT1
+  convt2::Layer convt2_op;       // valid when op_kind == ConvT2
+  convt3::Layer convt3_op;       // valid when op_kind == ConvT3
 
   bool is_remote_link = false;
   int target_z = 0, target_y = 0, target_x = 0, target_l = 0;
@@ -112,5 +121,8 @@ Status bind_mha(Grid& g, int z, int y, int x, int l, mha::Layer op);
 Status bind_cnn1(Grid& g, int z, int y, int x, int l, cnn1::Layer op);
 Status bind_cnn2(Grid& g, int z, int y, int x, int l, cnn2::Layer op);
 Status bind_cnn3(Grid& g, int z, int y, int x, int l, cnn3::Layer op);
+Status bind_convt1(Grid& g, int z, int y, int x, int l, convt1::Layer op);
+Status bind_convt2(Grid& g, int z, int y, int x, int l, convt2::Layer op);
+Status bind_convt3(Grid& g, int z, int y, int x, int l, convt3::Layer op);
 
 } // namespace welvet::architecture

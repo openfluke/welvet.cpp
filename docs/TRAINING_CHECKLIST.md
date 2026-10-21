@@ -15,7 +15,7 @@ Canonical enum: Go `layers/parallel/train_mode.go` (`TrainMode`).
 
 Tick `[x]` when done. Put the **release tag** in **Ver** when that row (or the whole mode table) is signed.
 
-**Current engine:** `0.1.28-m2-cnn-nbp`
+**Current engine:** `0.1.29-m2-convt-nbp`
 
 ---
 
@@ -147,6 +147,19 @@ Timing: same `--bench=N` / spd%Δ convention. im2col → Dense bwd → col2im.
 | 7–9 | Volume 1×1×1×1 / chain / ×34 | [x] | shape-preserving pad |
 | 10–12 | Volume 2×2×2×1 / 2×1×1×1×34 | [x] | scaled init for 8-hop |
 
+## w2a Go↔C++ (ConvT1/2/3 NormalBP) — sign-off evidence
+
+Run: `./scripts/linux_build_w2a.sh --convt-train`  
+Wire: `T1B1`/`T1BO`, `T2B1`/`T2BO`, `T3B1`/`T3BO` (leaf); `T*V1`/`T*VO` (volume). Exact_bit vs Go.  
+Timing: same `--bench=N` / spd%Δ convention. Scatter forward + act Jacobian + scatter adjoint (no bias).
+
+| # | Case | Status | Notes |
+|---|---|:---:|---|
+| 1–3 | Leaf Float32 ConvT1/2/3 | [x] | exact_bit + speed |
+| 4–6 | Leaf ×34 ConvT1/2/3 | [x] | exact_bit spectrum |
+| 7–9 | Volume 1×1×1×1 / chain / ×34 | [x] | shape-preserving pad |
+| 10–12 | Volume 2×2×2×1 / 2×1×1×1×34 | [x] | scaled init for 8-hop |
+
 ---
 
 ## 1 — NormalBP
@@ -165,9 +178,9 @@ Chain-rule Backward + ApplyGradSGD. Start here. Dense first.
 | CNN1 | [x] | [x] | [x] | `0.1.28-m2-cnn-nbp` |
 | CNN2 | [x] | [x] | [x] | `0.1.28-m2-cnn-nbp` |
 | CNN3 | [x] | [x] | [x] | `0.1.28-m2-cnn-nbp` |
-| ConvT1 | [ ] | [ ] | [ ] | |
-| ConvT2 | [ ] | [ ] | [ ] | |
-| ConvT3 | [ ] | [ ] | [ ] | |
+| ConvT1 | [x] | [x] | [x] | `0.1.29-m2-convt-nbp` |
+| ConvT2 | [x] | [x] | [x] | `0.1.29-m2-convt-nbp` |
+| ConvT3 | [x] | [x] | [x] | `0.1.29-m2-convt-nbp` |
 | RNN | [ ] | [ ] | [ ] | |
 | LSTM | [ ] | [ ] | [ ] | |
 | Sequential | [ ] | [ ] | [ ] | |

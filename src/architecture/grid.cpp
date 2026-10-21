@@ -287,4 +287,52 @@ Status bind_cnn3(Grid& g, int z, int y, int x, int l, cnn3::Layer op) {
   return Status::Ok();
 }
 
+Status bind_convt1(Grid& g, int z, int y, int x, int l, convt1::Layer op) {
+  Cell* c = at(g, z, y, x, l);
+  if (!c) {
+    return bad_coord("bind", z, y, x, l);
+  }
+  c->meta = op.meta;
+  c->meta.type = LayerType::ConvTransposed1D;
+  c->meta.z = z;
+  c->meta.y = y;
+  c->meta.x = x;
+  c->meta.l = l;
+  c->op_kind = OpKind::ConvT1;
+  c->convt1_op = std::move(op);
+  return Status::Ok();
+}
+
+Status bind_convt2(Grid& g, int z, int y, int x, int l, convt2::Layer op) {
+  Cell* c = at(g, z, y, x, l);
+  if (!c) {
+    return bad_coord("bind", z, y, x, l);
+  }
+  c->meta = op.meta;
+  c->meta.type = LayerType::ConvTransposed2D;
+  c->meta.z = z;
+  c->meta.y = y;
+  c->meta.x = x;
+  c->meta.l = l;
+  c->op_kind = OpKind::ConvT2;
+  c->convt2_op = std::move(op);
+  return Status::Ok();
+}
+
+Status bind_convt3(Grid& g, int z, int y, int x, int l, convt3::Layer op) {
+  Cell* c = at(g, z, y, x, l);
+  if (!c) {
+    return bad_coord("bind", z, y, x, l);
+  }
+  c->meta = op.meta;
+  c->meta.type = LayerType::ConvTransposed3D;
+  c->meta.z = z;
+  c->meta.y = y;
+  c->meta.x = x;
+  c->meta.l = l;
+  c->op_kind = OpKind::ConvT3;
+  c->convt3_op = std::move(op);
+  return Status::Ok();
+}
+
 } // namespace welvet::architecture

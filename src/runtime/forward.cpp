@@ -39,6 +39,12 @@ Status dispatch_cell(architecture::Cell& cell, const TensorF32& in, TensorF32* p
     return cnn2::forward(cell.cnn2_op, in, pre, post);
   case architecture::OpKind::CNN3:
     return cnn3::forward(cell.cnn3_op, in, pre, post);
+  case architecture::OpKind::ConvT1:
+    return convt1::forward(cell.convt1_op, in, pre, post);
+  case architecture::OpKind::ConvT2:
+    return convt2::forward(cell.convt2_op, in, pre, post);
+  case architecture::OpKind::ConvT3:
+    return convt3::forward(cell.convt3_op, in, pre, post);
   default:
     return Status::Gap("runtime.forward: unsupported cell Op");
   }
