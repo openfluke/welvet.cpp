@@ -37,6 +37,7 @@
 #   ./scripts/linux_build_w2a.sh --mamba-train # Mamba NormalBP leaf + volumetric
 #   ./scripts/linux_build_w2a.sh --stepbp-train # Line StepBP (Stack + FamilyBP)
 #   ./scripts/linux_build_w2a.sh --tween-train  # ModeTween projected local + volume
+#   ./scripts/linux_build_w2a.sh --tweenchain-train  # ModeTweenChain FamilyBP @ full lr + volume
 #   ./scripts/linux_build_w2a.sh --go-v-cpp   # same as default
 #   ./scripts/linux_build_w2a.sh --all        # entire w2a go test ./...
 #   BUILD_DIR=/tmp/welvet-build ./scripts/linux_build_w2a.sh
@@ -87,6 +88,7 @@ for arg in "$@"; do
     --mamba-train) MODE="mamba_train" ;;
     --stepbp-train) MODE="stepbp_train" ;;
     --tween-train) MODE="tween_train" ;;
+    --tweenchain-train) MODE="tweenchain_train" ;;
     -h|--help)
       sed -n '2,45p' "$0"
       exit 0
@@ -259,6 +261,10 @@ case "$MODE" in
   tween_train)
     echo "==> w2a go_v_cpp Tween train (ModeTween leaf + volume)"
     go test ./tests/go_v_cpp/ -run '^TestGoVCppTweenTrain$' -v -count=1
+    ;;
+  tweenchain_train)
+    echo "==> w2a go_v_cpp TweenChain train (ModeTweenChain leaf + volume)"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppTweenChainTrain$' -v -count=1
     ;;
   all)
     echo "==> w2a full suite (go test ./...)"

@@ -2527,7 +2527,7 @@ welvet_status welvet_stack_stepbp_dense_f32(int32_t n_children, int32_t n_ticks,
   return to_c(welvet::Status::Ok());
 }
 
-const char* welvet_version(void) { return "0.1.36-m2-tween"; }
+const char* welvet_version(void) { return "0.1.37-m2-tweenchain"; }
 
 int32_t welvet_gap_count(void) { return static_cast<int32_t>(welvet::gaps::count_gaps()); }
 

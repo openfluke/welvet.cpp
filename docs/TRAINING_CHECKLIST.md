@@ -15,7 +15,7 @@ Canonical enum: Go `layers/parallel/train_mode.go` (`TrainMode`).
 
 Tick `[x]` when done. Put the **release tag** in **Ver** when that row (or the whole mode table) is signed.
 
-**Current engine:** `0.1.36-m2-tween`
+**Current engine:** `0.1.37-m2-tweenchain`
 
 ---
 
@@ -281,6 +281,33 @@ Each leaf ×34 kind prints **dtype / band / exact%W / goµs / cppµs / spd%Δ**.
 | 29–31 | Dense Tween volume 111/211/222 | [x] | TWV1 exact_bit + speed |
 | 32–48 | ModeTween volume 2×2×2×1 all signed kinds | [x] | TRV1…MBTV / C1TV…; reverse-hop @ lr×0.5 |
 
+## w2a Go↔C++ (TweenChain ModeTweenChain) — sign-off evidence
+
+Run: `./scripts/linux_build_w2a.sh --tweenchain-train`  
+Wires: `TCB1`/`TCBO` (Stack ModeTweenChain leaf = FamilyBP @ full lr); `TCV1`/`TCVO` + `TRC1`…`MBTC` (volume Step = NormalBP credit). Exact_bit vs Go.  
+Each leaf ×34 kind prints **dtype / band / exact%W / goµs / cppµs / spd%Δ**.  
+3D: Dense 111/211/222 + ModeTweenChain volume 2×2×2×1 for all NormalBP-signed kinds. CNN2/3 & ConvT2/3 share CNN1/ConvT1 path.
+
+| # | Case | Status | Notes |
+|---|---|:---:|---|
+| 1 | Dense multi-hop Float32 (W/loss) | [x] | ModeTweenChain = BP @ full lr |
+| 2 | Dense 1-hop ×34 | [x] | spectrum + speed table |
+| 3–4 | RMSNorm f32 + ×34 | [x] | full spectrum + speed |
+| 5–6 | LayerNorm f32 + ×34 | [x] | full spectrum + speed |
+| 7–8 | Softmax f32 + ×34 | [x] | full spectrum + speed |
+| 9–10 | SwiGLU f32 + ×34 | [x] | full spectrum + speed |
+| 11–12 | Sequential f32 + ×34 | [x] | full chain FamilyBP |
+| 13–14 | Residual f32 + ×34 | [x] | full chain FamilyBP |
+| 15–16 | Mamba f32 + ×34 | [x] | full spectrum + speed |
+| 17–18 | Embedding f32 + ×34 | [x] | full spectrum + speed |
+| 19–20 | MHA f32 + ×34 | [x] | full spectrum + speed |
+| 21–22 | CNN1 f32 + ×34 | [x] | full spectrum + speed (CNN2/3 share) |
+| 23–24 | ConvT1 f32 + ×34 | [x] | full spectrum + speed (ConvT2/3 share) |
+| 25–26 | RNN f32 + ×34 | [x] | full spectrum + speed |
+| 27–28 | LSTM f32 + ×34 | [x] | full spectrum + speed |
+| 29–31 | Dense TweenChain volume 111/211/222 | [x] | TCV1 exact_bit + speed |
+| 32–48 | ModeTweenChain volume 2×2×2×1 all signed kinds | [x] | TRC1…MBTC / C1TC…; volume Step |
+
 ## 1 — NormalBP
 
 Chain-rule Backward + ApplyGradSGD. Start here. Dense first.
@@ -389,33 +416,37 @@ CNN2/3 and ConvT2/3 share CNN1/ConvT1 dispatch. 3D = reverse-hop volume 2×2×2�
 
 ## 4 — TweenChain
 
+ModeTweenChain: named Tween, credit = BP (Go `familyTweenChain` ≡ `familyBP` @ full lr).  
+Ship: `systems/tween_chain` + `runtime/tween_chain_train`; wires `TCB1`/`TCBO` + `TCV1`/`TCVO` + per-kind `TRC1`…`MBTC`; w2a `--tweenchain-train`.  
+CNN2/3 and ConvT2/3 share CNN1/ConvT1 dispatch. 3D = volume Step 2×2×2×1 for all NormalBP-signed kinds.
+
 | Layer | Inside node | 3D volumetric | Fully signed off | Ver |
 |---|:---:|:---:|:---:|---|
-| Dense | [ ] | [ ] | [ ] | |
-| RMSNorm | [ ] | [ ] | [ ] | |
-| LayerNorm | [ ] | [ ] | [ ] | |
-| SwiGLU | [ ] | [ ] | [ ] | |
-| Softmax | [ ] | [ ] | [ ] | |
-| Embedding | [ ] | [ ] | [ ] | |
-| MHA | [ ] | [ ] | [ ] | |
-| CNN1 | [ ] | [ ] | [ ] | |
-| CNN2 | [ ] | [ ] | [ ] | |
-| CNN3 | [ ] | [ ] | [ ] | |
-| ConvT1 | [ ] | [ ] | [ ] | |
-| ConvT2 | [ ] | [ ] | [ ] | |
-| ConvT3 | [ ] | [ ] | [ ] | |
-| RNN | [ ] | [ ] | [ ] | |
-| LSTM | [ ] | [ ] | [ ] | |
-| Sequential | [ ] | [ ] | [ ] | |
-| Residual | [ ] | [ ] | [ ] | |
+| Dense | [x] | [x] | [x] | `0.1.37-m2-tweenchain` |
+| RMSNorm | [x] | [x] | [x] | `0.1.37-m2-tweenchain` |
+| LayerNorm | [x] | [x] | [x] | `0.1.37-m2-tweenchain` |
+| SwiGLU | [x] | [x] | [x] | `0.1.37-m2-tweenchain` |
+| Softmax | [x] | [x] | [x] | `0.1.37-m2-tweenchain` |
+| Embedding | [x] | [x] | [x] | `0.1.37-m2-tweenchain` |
+| MHA | [x] | [x] | [x] | `0.1.37-m2-tweenchain` |
+| CNN1 | [x] | [x] | [x] | `0.1.37-m2-tweenchain` |
+| CNN2 | [x] | [x] | [x] | `0.1.37-m2-tweenchain` |
+| CNN3 | [x] | [x] | [x] | `0.1.37-m2-tweenchain` |
+| ConvT1 | [x] | [x] | [x] | `0.1.37-m2-tweenchain` |
+| ConvT2 | [x] | [x] | [x] | `0.1.37-m2-tweenchain` |
+| ConvT3 | [x] | [x] | [x] | `0.1.37-m2-tweenchain` |
+| RNN | [x] | [x] | [x] | `0.1.37-m2-tweenchain` |
+| LSTM | [x] | [x] | [x] | `0.1.37-m2-tweenchain` |
+| Sequential | [x] | [x] | [x] | `0.1.37-m2-tweenchain` |
+| Residual | [x] | [x] | [x] | `0.1.37-m2-tweenchain` |
 | KMeans | [ ] | [ ] | [ ] | |
-| Mamba | [ ] | [ ] | [ ] | |
+| Mamba | [x] | [x] | [x] | `0.1.37-m2-tweenchain` |
 | Metacognition | [ ] | [ ] | [ ] | |
 | GDN | [ ] | [ ] | [ ] | |
 | Parallel | [ ] | [ ] | [ ] | |
 | Stack | [ ] | [ ] | [ ] | |
 
-**Checkpoint:** bump version when this mode table advances.
+**Checkpoint:** `0.1.37-m2-tweenchain` — ModeTweenChain Inside+×34 + volume 2×2×2×1 for NormalBP-signed kinds.
 
 ---
 
@@ -1402,4 +1433,5 @@ Fill as you tick rows / finish mode tables.
 | `0.1.26-m2-embedding-nbp` | NormalBP Embedding | Leaf+vol w2a exact_bit ×34; scatter dW (dX=0) + ApplySGD |
 | `0.1.27-m2-mha-nbp` | NormalBP MHA | Leaf+vol w2a exact_bit ×34; ModeSelf attn+RoPEᵀ + Q/K/V/O |
 | `0.1.28-m2-cnn-nbp` | NormalBP CNN1/2/3 | Leaf+vol w2a exact_bit ×34; im2col+Dense bwd+col2im |
-| | | |
+| `0.1.36-m2-tween` | ModeTween × signed kinds | Leaf+vol projected local @ lr×0.5; TWB1/TWV1/TRV1… |
+| `0.1.37-m2-tweenchain` | ModeTweenChain × signed kinds | Leaf+vol FamilyBP @ full lr; TCB1/TCV1/TRC1… |
