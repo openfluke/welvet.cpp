@@ -121,6 +121,8 @@ Status apply_one(architecture::Cell* cell, const TensorF32& dW, double lr) {
     return metacognition::apply_grad_sgd(&cell->metacognition_op, dW, lr);
   case architecture::OpKind::GDN:
     return gdn::apply_grad_sgd(&cell->gdn_op, dW, lr);
+  case architecture::OpKind::KMeans:
+    return kmeans::apply_grad_sgd(&cell->kmeans_op, dW, lr);
   default:
     return Status::Err(StatusCode::InvalidArgument, "step: SGD unsupported cell Op");
   }

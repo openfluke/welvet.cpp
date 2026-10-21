@@ -70,6 +70,8 @@ Status child_forward(Child& c, const TensorF32& input, TensorF32* pre, TensorF32
     return metacognition::forward(c.metacognition_op, input, pre, post);
   case Kind::GDN:
     return gdn::forward(c.gdn_op, input, pre, post);
+  case Kind::KMeans:
+    return kmeans::forward(c.kmeans_op, input, pre, post);
   case Kind::NestedStack: {
     Layer tmp;
     tmp.children = c.nested;
@@ -126,6 +128,8 @@ Status child_backward(Child& c, const TensorF32& grad_out, const TensorF32& inpu
     return metacognition::backward_f32(c.metacognition_op, grad_out, input, pre, grad_in, grad_w);
   case Kind::GDN:
     return gdn::backward_f32(c.gdn_op, grad_out, input, pre, grad_in, grad_w);
+  case Kind::KMeans:
+    return kmeans::backward_f32(c.kmeans_op, grad_out, input, pre, grad_in, grad_w);
   case Kind::NestedStack: {
     Layer tmp;
     tmp.children = std::move(c.nested);
@@ -186,6 +190,8 @@ Status child_apply_sgd(Child* c, const TensorF32& dW, double lr) {
     return metacognition::apply_grad_sgd(&c->metacognition_op, dW, lr);
   case Kind::GDN:
     return gdn::apply_grad_sgd(&c->gdn_op, dW, lr);
+  case Kind::KMeans:
+    return kmeans::apply_grad_sgd(&c->kmeans_op, dW, lr);
   case Kind::NestedStack: {
     Layer tmp;
     tmp.children = std::move(c->nested);
@@ -240,6 +246,8 @@ int child_grad_w_size(const Child& c) {
     return metacognition::grad_w_size(c.metacognition_op);
   case Kind::GDN:
     return gdn::grad_w_size(c.gdn_op);
+  case Kind::KMeans:
+    return kmeans::grad_w_size(c.kmeans_op);
   case Kind::NestedStack: {
     int n = 0;
     for (const auto& ch : c.nested) {
@@ -300,6 +308,8 @@ Status child_export_f32(const Child& c, float* dst) {
     return metacognition::export_packed_f32(c.metacognition_op, dst);
   case Kind::GDN:
     return gdn::export_packed_f32(c.gdn_op, dst);
+  case Kind::KMeans:
+    return kmeans::export_packed_f32(c.kmeans_op, dst);
   case Kind::NestedStack: {
     int off = 0;
     for (const auto& ch : c.nested) {

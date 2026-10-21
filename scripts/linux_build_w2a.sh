@@ -14,6 +14,7 @@
 #   ./scripts/linux_build_w2a.sh --embedding  # Embedding only
 #   ./scripts/linux_build_w2a.sh --softmax    # Softmax all Kind variants
 #   ./scripts/linux_build_w2a.sh --kmeans     # KMeans soft assignment
+#   ./scripts/linux_build_w2a.sh --kmeans-train # KMeans NormalBP leaf + volumetric
 #   ./scripts/linux_build_w2a.sh --sequential # Sequential Dense chain
 #   ./scripts/linux_build_w2a.sh --residual   # Residual Dense F(x)+x
 #   ./scripts/linux_build_w2a.sh --mamba      # Mamba minimal SSM
@@ -96,6 +97,7 @@ for arg in "$@"; do
     --embedding) MODE="embedding" ;;
     --softmax) MODE="softmax" ;;
     --kmeans) MODE="kmeans" ;;
+    --kmeans-train) MODE="kmeans_train" ;;
     --sequential) MODE="sequential" ;;
     --residual) MODE="residual" ;;
     --mamba) MODE="mamba" ;;
@@ -231,6 +233,10 @@ case "$MODE" in
   kmeans)
     echo "==> w2a go_v_cpp KMeans"
     go test ./tests/go_v_cpp/ -run '^TestGoVCppKMeans$' -v -count=1
+    ;;
+  kmeans_train)
+    echo "==> w2a go_v_cpp KMeans NormalBP (leaf + volumetric)"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppKMeansTrain$' -v -count=1
     ;;
   sequential)
     echo "==> w2a go_v_cpp Sequential"

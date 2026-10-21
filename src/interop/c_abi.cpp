@@ -1973,6 +1973,75 @@ welvet_status welvet_kmeans_forward_f32(int32_t n, int32_t feature_dim, int32_t 
   return to_c(welvet::Status::Ok());
 }
 
+welvet_status welvet_kmeans_normalbp_f32(int32_t batch, int32_t seq, int32_t num_clusters,
+                                         int32_t feature_dim, int32_t output_mode, int32_t act,
+                                         double temperature, int32_t dtype, int32_t backend,
+                                         const float* W, const float* x,
+                                         const float* grad_or_target, int32_t use_target, double lr,
+                                         float* pre, float* post, float* dX, float* dW,
+                                         float* W_after, double* loss) {
+  if (batch <= 0 || seq <= 0 || num_clusters <= 0 || feature_dim <= 0 || !W || !x ||
+      !grad_or_target || !pre || !post || !dX || !dW || !W_after || !loss) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "kmeans nbp: invalid argument");
+    return st;
+  }
+  if (backend != 0 && backend != 1) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "kmeans nbp: bad backend");
+    return st;
+  }
+  welvet::kmeans::Config cfg;
+  cfg.num_clusters = num_clusters;
+  cfg.feature_dim = feature_dim;
+  cfg.temperature = temperature;
+  cfg.output_mode = static_cast<welvet::kmeans::OutputMode>(output_mode);
+  cfg.activation = static_cast<welvet::Activation>(act);
+  welvet::kmeans::Layer layer;
+  auto st = welvet::kmeans::new_configured(cfg, static_cast<welvet::DType>(dtype), W, &layer);
+  if (!st) return to_c(st);
+  layer.backend = backend == 1 ? welvet::Backend::SIMD : welvet::Backend::CPUTiled;
+  welvet::TensorF32 input;
+  if (seq == 1) {
+    input.shape = {batch, feature_dim};
+  } else {
+    input.shape = {batch, seq, feature_dim};
+  }
+  input.data.assign(x, x + static_cast<std::size_t>(batch * seq * feature_dim));
+  welvet::TensorF32 pre_t, post_t;
+  st = welvet::kmeans::forward(layer, input, &pre_t, &post_t);
+  if (!st) return to_c(st);
+  const std::size_t nout = post_t.data.size();
+  welvet::TensorF32 gy;
+  gy.shape = post_t.shape;
+  gy.data.assign(grad_or_target, grad_or_target + nout);
+  *loss = 0.0;
+  if (use_target) {
+    st = welvet::runtime::training::mse(post_t, gy, loss);
+    if (!st) return to_c(st);
+    welvet::TensorF32 gtmp;
+    st = welvet::runtime::training::mse_grad(post_t, gy, &gtmp);
+    if (!st) return to_c(st);
+    gy = std::move(gtmp);
+  }
+  welvet::TensorF32 dx_t, dw_t;
+  st = welvet::kmeans::backward_f32(layer, gy, input, pre_t, &dx_t, &dw_t);
+  if (!st) return to_c(st);
+  if (lr != 0.0) {
+    st = welvet::kmeans::apply_grad_sgd(&layer, dw_t, lr);
+    if (!st) return to_c(st);
+  }
+  st = welvet::kmeans::export_packed_f32(layer, W_after);
+  if (!st) return to_c(st);
+  std::memcpy(pre, pre_t.data.data(), pre_t.data.size() * sizeof(float));
+  std::memcpy(post, post_t.data.data(), post_t.data.size() * sizeof(float));
+  std::memcpy(dX, dx_t.data.data(), dx_t.data.size() * sizeof(float));
+  std::memcpy(dW, dw_t.data.data(), dw_t.data.size() * sizeof(float));
+  return to_c(welvet::Status::Ok());
+}
+
 welvet_status welvet_sequential_forward_f32(int32_t batch, int32_t seq, int32_t dim, int32_t depth,
                                             int32_t child_act, int32_t dtype, int32_t backend,
                                             const float* packed, const float* x, float* pre,
@@ -2754,7 +2823,7 @@ welvet_status welvet_stack_stepbp_dense_f32(int32_t n_children, int32_t n_ticks,
   return to_c(welvet::Status::Ok());
 }
 
-const char* welvet_version(void) { return "0.1.67-m2-meta-gdn-stack-cascade"; }
+const char* welvet_version(void) { return "0.1.69-m2-kmeans-cascade"; }
 
 int32_t welvet_gap_count(void) { return static_cast<int32_t>(welvet::gaps::count_gaps()); }
 

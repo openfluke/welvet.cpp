@@ -1,6 +1,6 @@
 # welvet.cpp gap census
 
-**Version `0.1.67-m2-meta-gdn-stack-cascade`** — see main [README](README.md) scoreboard (**70 / 100** engine + **13 / 100** extensions = **83 / 200**).
+**Version `0.1.69-m2-kmeans-cascade`** — see main [README](README.md) scoreboard (**70 / 100** engine + **13 / 100** extensions = **83 / 200**).
 
 SIMD/GEMV code under `include/welvet/simd/` + `include/welvet/imported/` was **copied** from `welvet-to-rust_n_cpp/welvet_cpp` (kernels only — not that tree’s docs).
 
@@ -21,6 +21,7 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 ./scripts/linux_build_w2a.sh --lstm-train
 ./scripts/linux_build_w2a.sh --sequential-train
 ./scripts/linux_build_w2a.sh --residual-train
+./scripts/linux_build_w2a.sh --kmeans-train
 ./scripts/linux_build_w2a.sh --mamba-train
 ./scripts/linux_build_w2a.sh --gdn-train
 ./scripts/linux_build_w2a.sh --stack-train
@@ -64,6 +65,7 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 | **LSTM NormalBP** | BPTT 4-gate Dense + bias SGD FormatNone×34; volume Step; w2a `LSB1`/`LSV1` |
 | **Sequential NormalBP** | Reverse Dense Dim→Dim chain + ApplySGD FormatNone×34; volume Step; w2a `SQB1`/`SQV1` |
 | **Residual NormalBP** | F reverse Dense + skip grad + ApplySGD FormatNone×34; volume Step; w2a `REB1`/`REV1` |
+| **KMeans NormalBP + cascade** | Soft assignment softMaxBwd + center SGD FormatNone×34; volume Step + Tween*/Freeze retargets; w2a `KMB1`/`KMV1`/`KMTV`…`KMTA`; Parallel BranchMode gap |
 | **Mamba NormalBP** | Scan BPTT + In/Out Dense + ALog/DSkip SGD FormatNone×34; volume Step; w2a `MBB1`/`MBV1` |
 | **Metacognition NormalBP** | lastGate-scale + Observed Dense bwd + ApplySGD FormatNone×34; volume Step; w2a `MCB1`/`MCV1` |
 | **GDN NormalBP** | Truncated-BPTT (state/conv stop-grad) f32; volume Step; w2a `GDB1`/`GDV1` |
@@ -102,14 +104,14 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 | **Memory** | Parallel BranchMode + CamKit SurpriseThresh; MMB1 Dense Add ×34; w2a `--memory-train` |
 | **Shadow** | Parallel BranchMode + CamKit KD; SHB1 Dense Add ×34; w2a `--shadow-train` |
 | Transformer / composition | Sequential+Residual NormalBP, seqmix Kind, **Parallel Dense×7 combines** |
-| Extended | ConvT, KMeans, Mamba NormalBP, Metacognition, GDN NormalBP, Stack NestedStack NormalBP |
+| Extended | ConvT, **KMeans NormalBP+cascade**, Mamba NormalBP, Metacognition, GDN NormalBP, Stack NestedStack NormalBP |
 | CNN / RNN / LSTM | FormatNone×34 forwards |
 | ABI wires | … / FRB1 / ADB1 / MMB1 / SHB1 |
 
 ## gap? — remaining
 
 - Parallel poly/nested/CamSync/DNA/Dream; Parallel Meta/GDN under Adv/Memory/Shadow 3D (stack Meta/GDN/NestedStack cameral Inside signed); full cameral Stack host
-- Other layers’ Backward; Dense quants; systems (DNA/evolution/TANHI/telemetry); model/IO; vendor accel
+- Parallel/cameral remaining; Dense quants; systems (DNA/evolution/TANHI/telemetry); model/IO; vendor accel
 
 See `src/gaps/registry.cpp`.
 

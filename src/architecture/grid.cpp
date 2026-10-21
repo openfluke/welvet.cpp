@@ -463,4 +463,20 @@ Status bind_gdn(Grid& g, int z, int y, int x, int l, gdn::Layer op) {
   return Status::Ok();
 }
 
+Status bind_kmeans(Grid& g, int z, int y, int x, int l, kmeans::Layer op) {
+  Cell* c = at(g, z, y, x, l);
+  if (!c) {
+    return bad_coord("bind", z, y, x, l);
+  }
+  c->meta = op.meta;
+  c->meta.type = LayerType::KMeans;
+  c->meta.z = z;
+  c->meta.y = y;
+  c->meta.x = x;
+  c->meta.l = l;
+  c->op_kind = OpKind::KMeans;
+  c->kmeans_op = std::move(op);
+  return Status::Ok();
+}
+
 } // namespace welvet::architecture

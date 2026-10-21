@@ -39,4 +39,15 @@ Status new_configured(const Config& cfg, DType dt, const float* init_or_null, La
 // Input last dim = FeatureDim. pre/post: […, K] probs or […, D] features.
 Status forward(const Layer& layer, const TensorF32& input, TensorF32* pre, TensorF32* post);
 
+int grad_w_size(const Layer& layer);
+
+// NormalBP soft assignment: softMaxBwd + center/input grads (Go backwardHost).
+Status backward_f32(Layer& layer, const TensorF32& grad_out, const TensorF32& input,
+                    const TensorF32& pre, TensorF32* grad_in, TensorF32* grad_w);
+
+Status apply_grad_sgd(Layer* layer, const TensorF32& dW, double lr);
+
+// Export Centers [K×D] as f32.
+Status export_packed_f32(const Layer& layer, float* dst);
+
 } // namespace welvet::kmeans

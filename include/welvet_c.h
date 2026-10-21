@@ -302,6 +302,17 @@ WELVET_API welvet_status welvet_kmeans_forward_f32(
     double temperature, int32_t dtype, int32_t backend, int32_t rank, const int32_t* shape,
     const float* W, const float* x, float* pre, float* post);
 
+/* Soft KMeans NormalBP leaf. W: [K*D] centers; x: [batch*seq*D] (seq=1 → [batch*D]).
+ * output_mode: 0=probabilities (out K), 1=features (out D).
+ * use_target: 0=gradOut on post, 1=MSE target. lr==0 skips SGD.
+ * pre/post/dX: batch*seq*out_dim; dW/W_after: [K*D].
+ */
+WELVET_API welvet_status welvet_kmeans_normalbp_f32(
+    int32_t batch, int32_t seq, int32_t num_clusters, int32_t feature_dim, int32_t output_mode,
+    int32_t act, double temperature, int32_t dtype, int32_t backend, const float* W, const float* x,
+    const float* grad_or_target, int32_t use_target, double lr, float* pre, float* post, float* dX,
+    float* dW, float* W_after, double* loss);
+
 /* Sequential Dense chain. packed: Depth×[Dim×Dim], x: [batch*seq*dim] (seq=1 → [batch*dim])
  * pre/post: same layout as x (last child). child_act typically Linear (-1).
  */

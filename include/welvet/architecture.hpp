@@ -9,6 +9,7 @@
 #include "welvet/dense.hpp"
 #include "welvet/embedding.hpp"
 #include "welvet/gdn.hpp"
+#include "welvet/kmeans.hpp"
 #include "welvet/layer.hpp"
 #include "welvet/layernorm.hpp"
 #include "welvet/lstm.hpp"
@@ -61,6 +62,7 @@ enum class OpKind : int32_t {
   Stack = 19, // thin Stack host (Line/StepBP children; volume = full-chain NormalBP)
   Metacognition = 20,
   GDN = 21,
+  KMeans = 22,
 };
 
 // One processing unit in the grid (Go architecture.Cell topology subset).
@@ -88,6 +90,7 @@ struct Cell {
   stack::Layer stack_op;           // valid when op_kind == Stack
   metacognition::Layer metacognition_op; // valid when op_kind == Metacognition
   gdn::Layer gdn_op;               // valid when op_kind == GDN
+  kmeans::Layer kmeans_op;         // valid when op_kind == KMeans
 
   bool is_remote_link = false;
   int target_z = 0, target_y = 0, target_x = 0, target_l = 0;
@@ -156,5 +159,6 @@ Status bind_mamba(Grid& g, int z, int y, int x, int l, mamba::Layer op);
 Status bind_stack(Grid& g, int z, int y, int x, int l, stack::Layer op);
 Status bind_metacognition(Grid& g, int z, int y, int x, int l, metacognition::Layer op);
 Status bind_gdn(Grid& g, int z, int y, int x, int l, gdn::Layer op);
+Status bind_kmeans(Grid& g, int z, int y, int x, int l, kmeans::Layer op);
 
 } // namespace welvet::architecture

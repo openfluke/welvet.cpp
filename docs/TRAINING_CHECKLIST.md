@@ -15,7 +15,7 @@ Canonical enum: Go `layers/parallel/train_mode.go` (`TrainMode`).
 
 Tick `[x]` when done. Put the **release tag** in **Ver** when that row (or the whole mode table) is signed.
 
-**Current engine:** `0.1.67-m2-meta-gdn-stack-cascade`
+**Current engine:** `0.1.69-m2-kmeans-cascade`
 
 ---
 
@@ -453,7 +453,7 @@ Chain-rule Backward + ApplyGradSGD. Start here. Dense first.
 | LSTM | [x] | [x] | [x] | `0.1.30-m2-rnn-lstm-nbp` |
 | Sequential | [x] | [x] | [x] | `0.1.31-m2-sequential-nbp` |
 | Residual | [x] | [x] | [x] | `0.1.32-m2-residual-nbp` |
-| KMeans | [ ] | [ ] | [ ] | |
+| KMeans | [x] | [x] | [x] | `0.1.69-m2-kmeans-cascade` |
 | Mamba | [x] | [x] | [x] | `0.1.33-m2-mamba-nbp` |
 | Metacognition | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
 | GDN | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
@@ -489,7 +489,7 @@ Ship: thin Stack host + `runtime/line` TickLine/TrainLineMSE; wire `STB1`/`STBO`
 | LSTM | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
 | Sequential | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
 | Residual | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
-| KMeans | [ ] | [ ] | [ ] | |
+| KMeans | [x] | [x] | [x] | `0.1.69-m2-kmeans-cascade` |
 | Mamba | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
 | Metacognition | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
 | GDN | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
@@ -525,7 +525,7 @@ CNN2/3 and ConvT2/3 share CNN1/ConvT1 dispatch. 3D = reverse-hop volume 2×2×2�
 | LSTM | [x] | [x] | [x] | `0.1.36-m2-tween` |
 | Sequential | [x] | [x] | [x] | `0.1.36-m2-tween` |
 | Residual | [x] | [x] | [x] | `0.1.36-m2-tween` |
-| KMeans | [ ] | [ ] | [ ] | |
+| KMeans | [x] | [x] | [x] | `0.1.69-m2-kmeans-cascade` |
 | Mamba | [x] | [x] | [x] | `0.1.36-m2-tween` |
 | Metacognition | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
 | GDN | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
@@ -561,7 +561,7 @@ CNN2/3 and ConvT2/3 share CNN1/ConvT1 dispatch. 3D = volume Step 2×2×2×1 for 
 | LSTM | [x] | [x] | [x] | `0.1.37-m2-tweenchain` |
 | Sequential | [x] | [x] | [x] | `0.1.37-m2-tweenchain` |
 | Residual | [x] | [x] | [x] | `0.1.37-m2-tweenchain` |
-| KMeans | [ ] | [ ] | [ ] | |
+| KMeans | [x] | [x] | [x] | `0.1.69-m2-kmeans-cascade` |
 | Mamba | [x] | [x] | [x] | `0.1.37-m2-tweenchain` |
 | Metacognition | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
 | GDN | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
@@ -597,7 +597,7 @@ Ship: `runtime/line` Credit::FamilyTween on pop (`apply_projected` @ `lr×0.5`);
 | LSTM | [x] | [x] | [x] | `0.1.38-m2-steptween` |
 | Sequential | [x] | [x] | [x] | `0.1.38-m2-steptween` |
 | Residual | [x] | [x] | [x] | `0.1.38-m2-steptween` |
-| KMeans | [ ] | [ ] | [ ] | |
+| KMeans | [x] | [x] | [x] | `0.1.69-m2-kmeans-cascade` |
 | Mamba | [x] | [x] | [x] | `0.1.38-m2-steptween` |
 | Metacognition | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
 | GDN | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
@@ -633,7 +633,7 @@ Ship: `runtime/line` Credit::FamilyBP on pop (same credit as StepBP / TweenChain
 | LSTM | [x] | [x] | [x] | `0.1.39-m2-steptweenchain` |
 | Sequential | [x] | [x] | [x] | `0.1.39-m2-steptweenchain` |
 | Residual | [x] | [x] | [x] | `0.1.39-m2-steptweenchain` |
-| KMeans | [ ] | [ ] | [ ] | |
+| KMeans | [x] | [x] | [x] | `0.1.69-m2-kmeans-cascade` |
 | Mamba | [x] | [x] | [x] | `0.1.39-m2-steptweenchain` |
 | Metacognition | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
 | GDN | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
@@ -668,7 +668,7 @@ Go ModeMeshBP on grid also = volume Forward+Step (cameral_train) — signed 2×2
 | LSTM | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
 | Sequential | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
 | Residual | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
-| KMeans | [ ] | [ ] | [ ] | |
+| KMeans | [x] | [x] | [x] | `0.1.69-m2-kmeans-cascade` |
 | Mamba | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
 | Metacognition | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
 | GDN | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
@@ -701,7 +701,7 @@ Ship: `runtime/step` `Credit::FamilyTween` — Forward×ticks → last-tick `app
 | LSTM | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
 | Sequential | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
 | Residual | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
-| KMeans | [ ] | [ ] | [ ] | |
+| KMeans | [x] | [x] | [x] | `0.1.69-m2-kmeans-cascade` |
 | Mamba | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
 | Metacognition | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
 | GDN | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
@@ -737,7 +737,7 @@ Ship: `runtime/step` `Credit::FamilyBP` under mesh clock (`MTC1`/`MTCO` ≡ Mesh
 | LSTM | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
 | Sequential | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
 | Residual | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
-| KMeans | [ ] | [ ] | [ ] | |
+| KMeans | [x] | [x] | [x] | `0.1.69-m2-kmeans-cascade` |
 | Mamba | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
 | Metacognition | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
 | GDN | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
@@ -772,7 +772,7 @@ CNN2/3 & ConvT2/3 share CNN1/ConvT1 path. Softmax weightless (N may be 0).
 | LSTM | [x] | [x] | [x] | `0.1.41-m2-tweensplit` |
 | Sequential | [x] | [x] | [x] | `0.1.41-m2-tweensplit` |
 | Residual | [x] | [x] | [x] | `0.1.41-m2-tweensplit` |
-| KMeans | [ ] | [ ] | [ ] | |
+| KMeans | [x] | [x] | [x] | `0.1.69-m2-kmeans-cascade` |
 | Mamba | [x] | [x] | [x] | `0.1.41-m2-tweensplit` |
 | Metacognition | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
 | GDN | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
@@ -808,7 +808,7 @@ Ship: `runtime/line` Credit::FamilyTweenSplit on pop (`apply_split_child` 1/N @ 
 | LSTM | [x] | [x] | [x] | `0.1.42-m2-steptweensplit` |
 | Sequential | [x] | [x] | [x] | `0.1.42-m2-steptweensplit` |
 | Residual | [x] | [x] | [x] | `0.1.42-m2-steptweensplit` |
-| KMeans | [ ] | [ ] | [ ] | |
+| KMeans | [x] | [x] | [x] | `0.1.69-m2-kmeans-cascade` |
 | Mamba | [x] | [x] | [x] | `0.1.42-m2-steptweensplit` |
 | Metacognition | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
 | GDN | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
@@ -843,7 +843,7 @@ CNN2/3 & ConvT2/3 share CNN1/ConvT1 path. Default AltTimes=1.
 | LSTM | [x] | [x] | [x] | `0.1.43-m2-tweenalt` |
 | Sequential | [x] | [x] | [x] | `0.1.43-m2-tweenalt` |
 | Residual | [x] | [x] | [x] | `0.1.43-m2-tweenalt` |
-| KMeans | [ ] | [ ] | [ ] | |
+| KMeans | [x] | [x] | [x] | `0.1.69-m2-kmeans-cascade` |
 | Mamba | [x] | [x] | [x] | `0.1.43-m2-tweenalt` |
 | Metacognition | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
 | GDN | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
@@ -879,7 +879,7 @@ Ship: `runtime/line` Credit::FamilyTweenAlt on pop (`apply_alt_child` Split→Tw
 | LSTM | [x] | [x] | [x] | `0.1.44-m2-steptweenalt` |
 | Sequential | [x] | [x] | [x] | `0.1.44-m2-steptweenalt` |
 | Residual | [x] | [x] | [x] | `0.1.44-m2-steptweenalt` |
-| KMeans | [ ] | [ ] | [ ] | |
+| KMeans | [x] | [x] | [x] | `0.1.69-m2-kmeans-cascade` |
 | Mamba | [x] | [x] | [x] | `0.1.44-m2-steptweenalt` |
 | Metacognition | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
 | GDN | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
@@ -914,7 +914,7 @@ CNN2/3 & ConvT2/3 share CNN1/ConvT1 path.
 | LSTM | [x] | [x] | [x] | `0.1.45-m2-tweensplitheadproxy` |
 | Sequential | [x] | [x] | [x] | `0.1.45-m2-tweensplitheadproxy` |
 | Residual | [x] | [x] | [x] | `0.1.45-m2-tweensplitheadproxy` |
-| KMeans | [ ] | [ ] | [ ] | |
+| KMeans | [x] | [x] | [x] | `0.1.69-m2-kmeans-cascade` |
 | Mamba | [x] | [x] | [x] | `0.1.45-m2-tweensplitheadproxy` |
 | Metacognition | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
 | GDN | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
@@ -949,7 +949,7 @@ CNN2/3 & ConvT2/3 share CNN1/ConvT1 path.
 | LSTM | [x] | [x] | [x] | `0.1.46-m2-tweensplitlinear` |
 | Sequential | [x] | [x] | [x] | `0.1.46-m2-tweensplitlinear` |
 | Residual | [x] | [x] | [x] | `0.1.46-m2-tweensplitlinear` |
-| KMeans | [ ] | [ ] | [ ] | |
+| KMeans | [x] | [x] | [x] | `0.1.69-m2-kmeans-cascade` |
 | Mamba | [x] | [x] | [x] | `0.1.46-m2-tweensplitlinear` |
 | Metacognition | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
 | GDN | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
@@ -984,7 +984,7 @@ CNN2/3 & ConvT2/3 share CNN1/ConvT1 path.
 | LSTM | [x] | [x] | [x] | `0.1.47-m2-tweensplitfastproxy` |
 | Sequential | [x] | [x] | [x] | `0.1.47-m2-tweensplitfastproxy` |
 | Residual | [x] | [x] | [x] | `0.1.47-m2-tweensplitfastproxy` |
-| KMeans | [ ] | [ ] | [ ] | |
+| KMeans | [x] | [x] | [x] | `0.1.69-m2-kmeans-cascade` |
 | Mamba | [x] | [x] | [x] | `0.1.47-m2-tweensplitfastproxy` |
 | Metacognition | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
 | GDN | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
@@ -1019,7 +1019,7 @@ CNN2/3 & ConvT2/3 share CNN1/ConvT1 path.
 | LSTM | [x] | [x] | [x] | `0.1.48-m2-tweensplitlinearcache` |
 | Sequential | [x] | [x] | [x] | `0.1.48-m2-tweensplitlinearcache` |
 | Residual | [x] | [x] | [x] | `0.1.48-m2-tweensplitlinearcache` |
-| KMeans | [ ] | [ ] | [ ] | |
+| KMeans | [x] | [x] | [x] | `0.1.69-m2-kmeans-cascade` |
 | Mamba | [x] | [x] | [x] | `0.1.48-m2-tweensplitlinearcache` |
 | Metacognition | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
 | GDN | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
@@ -1054,7 +1054,7 @@ CNN2/3 & ConvT2/3 share CNN1/ConvT1 path.
 | LSTM | [x] | [x] | [x] | `0.1.49-m2-tweensplitheadproxyasync` |
 | Sequential | [x] | [x] | [x] | `0.1.49-m2-tweensplitheadproxyasync` |
 | Residual | [x] | [x] | [x] | `0.1.49-m2-tweensplitheadproxyasync` |
-| KMeans | [ ] | [ ] | [ ] | |
+| KMeans | [x] | [x] | [x] | `0.1.69-m2-kmeans-cascade` |
 | Mamba | [x] | [x] | [x] | `0.1.49-m2-tweensplitheadproxyasync` |
 | Metacognition | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
 | GDN | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
@@ -1089,7 +1089,7 @@ CNN2/3 & ConvT2/3 share CNN1/ConvT1 path.
 | LSTM | [x] | [x] | [x] | `0.1.50-m2-tweensplitsparse` |
 | Sequential | [x] | [x] | [x] | `0.1.50-m2-tweensplitsparse` |
 | Residual | [x] | [x] | [x] | `0.1.50-m2-tweensplitsparse` |
-| KMeans | [ ] | [ ] | [ ] | |
+| KMeans | [x] | [x] | [x] | `0.1.69-m2-kmeans-cascade` |
 | Mamba | [x] | [x] | [x] | `0.1.50-m2-tweensplitsparse` |
 | Metacognition | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
 | GDN | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
@@ -1125,7 +1125,7 @@ Ship: `runtime/step` `Credit::FamilyTweenSplit` — Forward×ticks → last-tick
 | LSTM | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
 | Sequential | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
 | Residual | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
-| KMeans | [ ] | [ ] | [ ] | |
+| KMeans | [x] | [x] | [x] | `0.1.69-m2-kmeans-cascade` |
 | Mamba | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
 | Metacognition | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
 | GDN | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
@@ -1161,7 +1161,7 @@ Ship: `runtime/step` `Credit::FamilyTweenAlt` — Forward×ticks → last-tick S
 | LSTM | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
 | Sequential | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
 | Residual | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
-| KMeans | [ ] | [ ] | [ ] | |
+| KMeans | [x] | [x] | [x] | `0.1.69-m2-kmeans-cascade` |
 | Mamba | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
 | Metacognition | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
 | GDN | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
@@ -1197,7 +1197,7 @@ Ship: `runtime/step` `Credit::FamilyTweenSplitFastProxy` — Forward×ticks → 
 | LSTM | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
 | Sequential | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
 | Residual | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
-| KMeans | [ ] | [ ] | [ ] | |
+| KMeans | [x] | [x] | [x] | `0.1.69-m2-kmeans-cascade` |
 | Mamba | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
 | Metacognition | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
 | GDN | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
@@ -1233,7 +1233,7 @@ Ship: `runtime/step` `Credit::FamilyTweenSplitSparse` — Forward×ticks → las
 | LSTM | [x] | [x] | [x] | `0.1.52-m2-meshtweensplitsparse` |
 | Sequential | [x] | [x] | [x] | `0.1.52-m2-meshtweensplitsparse` |
 | Residual | [x] | [x] | [x] | `0.1.52-m2-meshtweensplitsparse` |
-| KMeans | [ ] | [ ] | [ ] | |
+| KMeans | [x] | [x] | [x] | `0.1.69-m2-kmeans-cascade` |
 | Mamba | [x] | [x] | [x] | `0.1.52-m2-meshtweensplitsparse` |
 | Metacognition | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
 | GDN | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
@@ -1269,7 +1269,7 @@ Ship: `runtime/line` `Credit::FamilyTweenSplitHeadProxy` on pop (`apply_head_pro
 | LSTM | [x] | [x] | [x] | `0.1.53-m2-steptweensplitheadproxy` |
 | Sequential | [x] | [x] | [x] | `0.1.53-m2-steptweensplitheadproxy` |
 | Residual | [x] | [x] | [x] | `0.1.53-m2-steptweensplitheadproxy` |
-| KMeans | [ ] | [ ] | [ ] | |
+| KMeans | [x] | [x] | [x] | `0.1.69-m2-kmeans-cascade` |
 | Mamba | [x] | [x] | [x] | `0.1.53-m2-steptweensplitheadproxy` |
 | Metacognition | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
 | GDN | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
@@ -1305,7 +1305,7 @@ Ship: `runtime/line` `Credit::FamilyTweenSplitLinear` on pop (`apply_linear_chil
 | LSTM | [x] | [x] | [x] | `0.1.54-m2-steptweensplitlinear` |
 | Sequential | [x] | [x] | [x] | `0.1.54-m2-steptweensplitlinear` |
 | Residual | [x] | [x] | [x] | `0.1.54-m2-steptweensplitlinear` |
-| KMeans | [ ] | [ ] | [ ] | |
+| KMeans | [x] | [x] | [x] | `0.1.69-m2-kmeans-cascade` |
 | Mamba | [x] | [x] | [x] | `0.1.54-m2-steptweensplitlinear` |
 | Metacognition | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
 | GDN | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
@@ -1341,7 +1341,7 @@ Ship: `runtime/line` `Credit::FamilyTweenSplitFastProxy` on pop (`apply_fast_pro
 | LSTM | [x] | [x] | [x] | `0.1.55-m2-steptweensplitfastproxy` |
 | Sequential | [x] | [x] | [x] | `0.1.55-m2-steptweensplitfastproxy` |
 | Residual | [x] | [x] | [x] | `0.1.55-m2-steptweensplitfastproxy` |
-| KMeans | [ ] | [ ] | [ ] | |
+| KMeans | [x] | [x] | [x] | `0.1.69-m2-kmeans-cascade` |
 | Mamba | [x] | [x] | [x] | `0.1.55-m2-steptweensplitfastproxy` |
 | Metacognition | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
 | GDN | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
@@ -1377,7 +1377,7 @@ Ship: `runtime/line` `Credit::FamilyTweenSplitLinearCache` on pop (`apply_linear
 | LSTM | [x] | [x] | [x] | `0.1.56-m2-steptweensplitlinearcache` |
 | Sequential | [x] | [x] | [x] | `0.1.56-m2-steptweensplitlinearcache` |
 | Residual | [x] | [x] | [x] | `0.1.56-m2-steptweensplitlinearcache` |
-| KMeans | [ ] | [ ] | [ ] | |
+| KMeans | [x] | [x] | [x] | `0.1.69-m2-kmeans-cascade` |
 | Mamba | [x] | [x] | [x] | `0.1.56-m2-steptweensplitlinearcache` |
 | Metacognition | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
 | GDN | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
@@ -1413,7 +1413,7 @@ Ship: `runtime/line` `Credit::FamilyTweenSplitHeadProxyAsync` on pop (`apply_hea
 | LSTM | [x] | [x] | [x] | `0.1.57-m2-steptweensplitheadproxyasync` |
 | Sequential | [x] | [x] | [x] | `0.1.57-m2-steptweensplitheadproxyasync` |
 | Residual | [x] | [x] | [x] | `0.1.57-m2-steptweensplitheadproxyasync` |
-| KMeans | [ ] | [ ] | [ ] | |
+| KMeans | [x] | [x] | [x] | `0.1.69-m2-kmeans-cascade` |
 | Mamba | [x] | [x] | [x] | `0.1.57-m2-steptweensplitheadproxyasync` |
 | Metacognition | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
 | GDN | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
@@ -1449,7 +1449,7 @@ Ship: `runtime/line` `Credit::FamilyTweenSplitSparse` on pop (`apply_sparse_chil
 | LSTM | [x] | [x] | [x] | `0.1.58-m2-steptweensplitsparse` |
 | Sequential | [x] | [x] | [x] | `0.1.58-m2-steptweensplitsparse` |
 | Residual | [x] | [x] | [x] | `0.1.58-m2-steptweensplitsparse` |
-| KMeans | [ ] | [ ] | [ ] | |
+| KMeans | [x] | [x] | [x] | `0.1.69-m2-kmeans-cascade` |
 | Mamba | [x] | [x] | [x] | `0.1.58-m2-steptweensplitsparse` |
 | Metacognition | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
 | GDN | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
@@ -1485,7 +1485,7 @@ CNN2/3 & ConvT2/3 share CNN1/ConvT1 path.
 | LSTM | [x] | [x] | [x] | `0.1.59-m2-freeze` |
 | Sequential | [x] | [x] | [x] | `0.1.59-m2-freeze` |
 | Residual | [x] | [x] | [x] | `0.1.59-m2-freeze` |
-| KMeans | [ ] | [ ] | [ ] | |
+| KMeans | [x] | [x] | [x] | `0.1.69-m2-kmeans-cascade` |
 | Mamba | [x] | [x] | [x] | `0.1.59-m2-freeze` |
 | Metacognition | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
 | GDN | [x] | [x] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
@@ -1520,7 +1520,7 @@ Ship: `runtime/parallel_train` BranchMode Shadow + CamKit ShadowCoef KD; wire `S
 | LSTM | [ ] | [ ] | [ ] | |
 | Sequential | [ ] | [ ] | [ ] | |
 | Residual | [ ] | [ ] | [ ] | |
-| KMeans | [ ] | [ ] | [ ] | |
+| KMeans | [x] | [ ] | [x] | `0.1.69-m2-kmeans-cascade` |
 | Mamba | [ ] | [ ] | [ ] | |
 | Metacognition | [x] | [ ] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
 | GDN | [x] | [ ] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
@@ -1555,7 +1555,7 @@ Ship: `runtime/parallel_train` BranchMode Adversarial (negated LR) on Parallel D
 | LSTM | [ ] | [ ] | [ ] | |
 | Sequential | [ ] | [ ] | [ ] | |
 | Residual | [ ] | [ ] | [ ] | |
-| KMeans | [ ] | [ ] | [ ] | |
+| KMeans | [x] | [ ] | [x] | `0.1.69-m2-kmeans-cascade` |
 | Mamba | [ ] | [ ] | [ ] | |
 | Metacognition | [x] | [ ] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
 | GDN | [x] | [ ] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
@@ -1590,7 +1590,7 @@ Ship: `runtime/parallel_train` BranchMode Memory + CamKit SurpriseThresh; wire `
 | LSTM | [ ] | [ ] | [ ] | |
 | Sequential | [ ] | [ ] | [ ] | |
 | Residual | [ ] | [ ] | [ ] | |
-| KMeans | [ ] | [ ] | [ ] | |
+| KMeans | [x] | [ ] | [x] | `0.1.69-m2-kmeans-cascade` |
 | Mamba | [ ] | [ ] | [ ] | |
 | Metacognition | [x] | [ ] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
 | GDN | [x] | [ ] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
@@ -1607,6 +1607,8 @@ Fill as you tick rows / finish mode tables.
 
 | Ver | Mode / layers | Notes |
 |---|---|---|
+| `0.1.69-m2-kmeans-cascade` | KMeans train-mode cascade | Clone Meta leaf+vol across Step/Tween/Mesh/Freeze/Shadow/Adv/Memory; Linear GradIn Backward; Parallel BranchMode KMeans gap |
+| `0.1.68-m2-kmeans-nbp` | NormalBP KMeans | Soft-assignment leaf+vol ×34; KMB1/KMV1 |
 | `0.1.67-m2-meta-gdn-stack-cascade` | Meta/GDN/Stack cascade close | Linear-family Meta+Stack 3D exact_bit; TweenAlt Meta ×34 Fully; Parallel Meta/GDN Adv/Memory/Shadow 3D still gap |
 | `0.1.66-m2-meta-gdn-stack-cascade` | Meta/GDN/Stack cascade | Train-mode cascade leaf+vol across Step/Tween/Mesh/Freeze + cameral stack |
 | `0.1.65-m2-stack-nbp` | NormalBP Stack | NestedStack-of-Dense leaf+vol; STKB/STKV |

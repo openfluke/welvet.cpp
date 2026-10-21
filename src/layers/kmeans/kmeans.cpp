@@ -73,6 +73,19 @@ std::vector<double> soft_max(const std::vector<double>& logits) {
   return out;
 }
 
+// Go softMaxBwd: y_i * (gy_i - ⟨gy, y⟩).
+std::vector<double> soft_max_bwd(const std::vector<double>& gy, const std::vector<double>& y) {
+  double dot = 0.0;
+  for (std::size_t i = 0; i < y.size(); ++i) {
+    dot += gy[i] * y[i];
+  }
+  std::vector<double> out(y.size());
+  for (std::size_t i = 0; i < y.size(); ++i) {
+    out[i] = y[i] * (gy[i] - dot);
+  }
+  return out;
+}
+
 double temp_of(const Config& cfg) {
   return cfg.temperature == 0.0 ? 1.0 : cfg.temperature;
 }
@@ -188,6 +201,127 @@ Status forward(const Layer& layer, const TensorF32& input, TensorF32* pre, Tenso
     }
   }
   return Status::Ok();
+}
+
+int grad_w_size(const Layer& layer) {
+  return layer.cfg.num_clusters * layer.cfg.feature_dim;
+}
+
+Status backward_f32(Layer& layer, const TensorF32& grad_out, const TensorF32& input,
+                    const TensorF32& pre, TensorF32* grad_in, TensorF32* grad_w) {
+  if (!grad_in || !grad_w) {
+    return Status::Err(StatusCode::InvalidArgument, "kmeans: nil grad out");
+  }
+  Config cfg = layer.cfg;
+  if (auto st = validate(&cfg); !st) return st;
+
+  LayInfo lay;
+  if (auto st = parse_in(cfg, input, &lay); !st) return st;
+  if (grad_out.data.empty() || pre.data.empty()) {
+    return Status::Err(StatusCode::InvalidArgument, "kmeans: nil gradOut/pre");
+  }
+
+  std::vector<float> w;
+  if (auto st = flatten_w_f32(layer.centers.weights, &w); !st) return st;
+
+  const double temp = temp_of(cfg);
+  const double temp_sq = temp * temp;
+  const int od = out_dim(cfg);
+  const Activation act = cfg.activation;
+
+  std::vector<double> g_in_acc(static_cast<std::size_t>(lay.batch * lay.d), 0.0);
+  std::vector<double> g_w_acc(static_cast<std::size_t>(lay.k * lay.d), 0.0);
+
+  for (int b = 0; b < lay.batch; ++b) {
+    const int x_off = b * lay.d;
+    const int o_off = b * od;
+
+    std::vector<double> logits(static_cast<std::size_t>(lay.k));
+    for (int k = 0; k < lay.k; ++k) {
+      double sq = 0.0;
+      const int c_off = k * lay.d;
+      for (int d = 0; d < lay.d; ++d) {
+        const double diff =
+            static_cast<double>(input.data[static_cast<std::size_t>(x_off + d)]) -
+            static_cast<double>(w[static_cast<std::size_t>(c_off + d)]);
+        sq += diff * diff;
+      }
+      logits[static_cast<std::size_t>(k)] = -sq / (2.0 * temp_sq);
+    }
+    const auto a = soft_max(logits);
+
+    // Go: ActivateDeriv(pre.Data[i], act) on stored pre (f32→AsFloat64).
+    std::vector<double> gy(static_cast<std::size_t>(od));
+    for (int i = 0; i < od; ++i) {
+      const double g =
+          static_cast<double>(grad_out.data[static_cast<std::size_t>(o_off + i)]);
+      const double deriv = activate_deriv_f64(
+          static_cast<double>(pre.data[static_cast<std::size_t>(o_off + i)]), act);
+      gy[static_cast<std::size_t>(i)] = g * deriv;
+    }
+
+    std::vector<double> grad_logits;
+    if (cfg.output_mode == OutputMode::Features) {
+      std::vector<double> gy_a(static_cast<std::size_t>(lay.k));
+      for (int k = 0; k < lay.k; ++k) {
+        double dot = 0.0;
+        for (int d = 0; d < lay.d; ++d) {
+          dot += gy[static_cast<std::size_t>(d)] *
+                 static_cast<double>(w[static_cast<std::size_t>(k * lay.d + d)]);
+        }
+        gy_a[static_cast<std::size_t>(k)] = dot;
+      }
+      grad_logits = soft_max_bwd(gy_a, a);
+      for (int k = 0; k < lay.k; ++k) {
+        for (int d = 0; d < lay.d; ++d) {
+          g_w_acc[static_cast<std::size_t>(k * lay.d + d)] +=
+              a[static_cast<std::size_t>(k)] * gy[static_cast<std::size_t>(d)];
+        }
+      }
+    } else {
+      grad_logits = soft_max_bwd(gy, a);
+    }
+
+    for (int k = 0; k < lay.k; ++k) {
+      const int c_off = k * lay.d;
+      for (int d = 0; d < lay.d; ++d) {
+        const double diff =
+            static_cast<double>(input.data[static_cast<std::size_t>(x_off + d)]) -
+            static_cast<double>(w[static_cast<std::size_t>(c_off + d)]);
+        // Match Go: (gradLogits[k] * diff) / tempSq (-ffp-contract=off).
+        const double g =
+            (grad_logits[static_cast<std::size_t>(k)] * diff) / temp_sq;
+        g_w_acc[static_cast<std::size_t>(c_off + d)] += g;
+        g_in_acc[static_cast<std::size_t>(x_off + d)] -= g;
+      }
+    }
+  }
+
+  grad_in->shape = lay.shape;
+  grad_in->data.resize(static_cast<std::size_t>(lay.batch * lay.d));
+  for (std::size_t i = 0; i < g_in_acc.size(); ++i) {
+    grad_in->data[i] = static_cast<float>(g_in_acc[i]);
+  }
+  grad_w->shape = {lay.k, lay.d};
+  grad_w->data.resize(static_cast<std::size_t>(lay.k * lay.d));
+  for (std::size_t i = 0; i < g_w_acc.size(); ++i) {
+    grad_w->data[i] = static_cast<float>(g_w_acc[i]);
+  }
+  return Status::Ok();
+}
+
+Status apply_grad_sgd(Layer* layer, const TensorF32& dW, double lr) {
+  if (!layer) {
+    return Status::Err(StatusCode::InvalidArgument, "kmeans: ApplyGradSGD nil");
+  }
+  return dense::apply_grad_sgd(&layer->centers, dW, lr);
+}
+
+Status export_packed_f32(const Layer& layer, float* dst) {
+  if (!dst) {
+    return Status::Err(StatusCode::InvalidArgument, "kmeans: nil dst");
+  }
+  return layer.centers.weights.export_f32(dst);
 }
 
 } // namespace welvet::kmeans
