@@ -123,3 +123,10 @@ See `src/gaps/registry.cpp`.
 Training runway checklist (leaf NormalBP → TrainModes): [`docs/TRAINING_CHECKLIST.md`](docs/TRAINING_CHECKLIST.md).
 
 Note: Go Parallel also has a large **w2a/suites/parallel** suite (cameral/poly/train). C++ Phase F signs combines + nested + poly via **go_v_cpp** `PNB1`/`PPB1` (+ Dense `WPL1`).
+
+## Platform sign-off (w2a `--all-train`)
+
+| Platform | Status |
+|----------|--------|
+| linux/amd64 | **PASS** 52/52 sections (~51s) vs engine `0.1.82` — Go Welvet v1.1.4 ships `native/cpp/linux_amd64/libwelvet.so` |
+| linux/arm64 / darwin/arm64 / windows_* | pending (drop lib + re-run `--all-train`) |

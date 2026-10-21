@@ -3,6 +3,7 @@
 #
 # Usage:
 #   ./scripts/linux_build_w2a.sh              # build + full go_v_cpp suite
+#   ./scripts/linux_build_w2a.sh --all-train  # ALL train sections + timing table
 #   ./scripts/linux_build_w2a.sh --mha        # MHA only
 #   ./scripts/linux_build_w2a.sh --swiglu     # SwiGLU only
 #   ./scripts/linux_build_w2a.sh --rmsnorm    # RMSNorm only
@@ -87,6 +88,7 @@ MODE="go_v_cpp"
 for arg in "$@"; do
   case "$arg" in
     --all) MODE="all" ;;
+    --all-train) MODE="all_train" ;;
     --go-v-cpp) MODE="go_v_cpp" ;;
     --mha) MODE="mha" ;;
     --swiglu) MODE="swiglu" ;;
@@ -470,6 +472,10 @@ case "$MODE" in
     go test ./tests/go_v_cpp/ -run '^TestGoVCppStepBPTrain$|^TestGoVCppMeshTweenTrain$|^TestGoVCppMeshTweenChainTrain$|^TestGoVCppMeshTweenSplitTrain$|^TestGoVCppMeshTweenAltTrain$|^TestGoVCppMeshTweenSplitFastProxyTrain$|^TestGoVCppMeshTweenSplitSparseTrain$' -v -count=1
     echo "==> w2a go_v_cpp Freeze/Shadow/Adv/Memory Parallel 3D"
     go test ./tests/go_v_cpp/ -run '^TestGoVCppFreezeTrain$|^TestGoVCppShadowTrain$|^TestGoVCppAdversarialTrain$|^TestGoVCppMemoryTrain$' -v -count=1
+    ;;
+  all_train)
+    echo "==> w2a go_v_cpp ALL TRAIN (section table + totals)"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppAllTrain$' -v -count=1 -timeout 120m
     ;;
   all)
     echo "==> w2a full suite (go test ./...)"
