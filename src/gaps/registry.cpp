@@ -161,7 +161,8 @@ const std::vector<Entry>& build() {
        "thin Stack host (ordered children + FamilyBP); full cameral NewFromOps/CamSync gap?", true},
       {"layer.stack.cameral", "layers", "gap? Stack NewFromOps + CamSync / BranchModes", false},
       {"runtime.line_stepbp", "runtime",
-       "Line TickLine/TrainLineMSE FamilyBP on pop; STB1/STBO + welvet_stack_stepbp_dense_f32", true},
+       "Line TickLine/TrainLineMSE FamilyBP+FamilyTween on pop; STB1/STW1 + welvet_stack_stepbp_dense_f32",
+       true},
       {"abi.stack_stepbp_f32", "interop", "C ABI welvet_stack_stepbp_dense_f32 + STB1/STBO tool", true},
       {"layer.seqmix", "layers",
        "seqmix Kind/Contract helper + MHA/Mamba/GDN tags (no Forward)", true},
@@ -170,7 +171,7 @@ const std::vector<Entry>& build() {
       // --- Architecture / runtime remaining ---
       {"runtime.forward", "runtime", "gap? volume Forward all layer kinds (Dense done)", false},
       {"runtime.backward", "runtime", "volume Backward Dense+RMSNorm+LayerNorm+SwiGLU + training.Step (NormalBP)", true},
-      {"runtime.training", "runtime", "NormalBP volume Step + Line StepBP; other TrainModes gap?", true},
+      {"runtime.training", "runtime", "NormalBP volume Step + Line StepBP/StepTween; other TrainModes gap?", true},
       {"runtime.tween_train", "runtime", "TrainStackMSE ModeTween (soft_lr=lr*0.5)", true},
       {"runtime.tween_chain_train", "runtime", "TrainStackMSE ModeTweenChain (FamilyBP @ full lr)", true},
       {"runtime.step_mesh", "runtime", "MeshBP FamilyBP: runtime/step Forward+Backward+SGD; MBP1/MBPO; ModeMeshBP volume Step", true},

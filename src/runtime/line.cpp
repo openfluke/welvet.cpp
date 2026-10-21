@@ -1,6 +1,7 @@
 #include "welvet/runtime/line.hpp"
 
 #include "welvet/runtime/training.hpp"
+#include "welvet/systems/tween.hpp"
 
 #include <string>
 #include <utility>
@@ -20,7 +21,7 @@ TensorF32 clone_t(const TensorF32& t) {
 int in_flight(const State& st) { return static_cast<int>(st.flights.size()); }
 
 Status tick(stack::Layer& ops, State* st, const TensorF32& input, const TensorF32* target,
-            FlightRole role, double lr, TickResult* out) {
+            FlightRole role, double lr, TickResult* out, Credit credit) {
   if (!st || !out) {
     return Status::Err(StatusCode::InvalidArgument, "line: nil state/out");
   }
@@ -108,16 +109,37 @@ Status tick(stack::Layer& ops, State* st, const TensorF32& input, const TensorF3
     out->popped_train = true;
 
     TensorF32 g = std::move(gy);
-    for (int j = n - 1; j >= 0; --j) {
-      TensorF32 g_in;
-      if (auto st_b = stack::child_family_bp(*flat[static_cast<std::size_t>(j)], g,
-                                             fl.ins[static_cast<std::size_t>(j)],
-                                             fl.pres[static_cast<std::size_t>(j)], lr, &g_in);
-          !st_b) {
-        return Status::Err(st_b.code, std::string("line bwd layer ") + std::to_string(j) + ": " +
-                                          st_b.message);
+    if (credit == Credit::FamilyTween) {
+      // Go trainTweenLocal / applyProjectedTween @ soft_lr = lr * 0.5; no chain gin.
+      const double soft_lr = lr * 0.5;
+      for (int j = n - 1; j >= 0; --j) {
+        if (auto st_t = systems::tween::apply_projected(*flat[static_cast<std::size_t>(j)], g,
+                                                         fl.ins[static_cast<std::size_t>(j)], soft_lr);
+            !st_t) {
+          return Status::Err(st_t.code, std::string("line tween layer ") + std::to_string(j) +
+                                            ": " + st_t.message);
+        }
+        TensorF32 next;
+        next.shape = fl.ins[static_cast<std::size_t>(j)].shape;
+        next.data.assign(fl.ins[static_cast<std::size_t>(j)].data.size(), 0.0f);
+        if (g.data.size() == next.data.size()) {
+          next.data = g.data;
+        }
+        g = std::move(next);
       }
-      g = std::move(g_in);
+    } else {
+      // FamilyBP (StepBP): reverse child_family_bp @ full lr with true gin.
+      for (int j = n - 1; j >= 0; --j) {
+        TensorF32 g_in;
+        if (auto st_b = stack::child_family_bp(*flat[static_cast<std::size_t>(j)], g,
+                                               fl.ins[static_cast<std::size_t>(j)],
+                                               fl.pres[static_cast<std::size_t>(j)], lr, &g_in);
+            !st_b) {
+          return Status::Err(st_b.code, std::string("line bwd layer ") + std::to_string(j) + ": " +
+                                            st_b.message);
+        }
+        g = std::move(g_in);
+      }
     }
   }
   st->flights = std::move(alive);
@@ -125,12 +147,12 @@ Status tick(stack::Layer& ops, State* st, const TensorF32& input, const TensorF3
 }
 
 Status train_mse(stack::Layer& ops, State* st, const TensorF32& input, const TensorF32& target,
-                 double lr, double* loss) {
+                 double lr, double* loss, Credit credit) {
   if (!loss) {
     return Status::Err(StatusCode::InvalidArgument, "line: nil loss");
   }
   TickResult tr;
-  if (auto s = tick(ops, st, input, &target, FlightRole::Train, lr, &tr); !s) return s;
+  if (auto s = tick(ops, st, input, &target, FlightRole::Train, lr, &tr, credit); !s) return s;
   *loss = tr.loss;
   return Status::Ok();
 }

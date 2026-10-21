@@ -15,6 +15,13 @@ enum class FlightRole : uint8_t {
   Action = 1,
 };
 
+// Credit applied when a RoleTrain sample pops the last child.
+// FamilyBP = StepBP (chain rule @ full lr); FamilyTween = StepTween (projected @ lr*0.5).
+enum class Credit : uint8_t {
+  FamilyBP = 0,
+  FamilyTween = 1,
+};
+
 struct Flight {
   FlightRole role = FlightRole::Train;
   TensorF32 target;
@@ -36,13 +43,13 @@ struct TickResult {
 };
 
 // Inject one sample, advance every in-flight flight one child hop.
-// RoleTrain requires target; on pop runs FamilyBP (MSE gap + reverse BP+SGD).
+// RoleTrain requires target; on pop runs `credit` (MSE gap + reverse update).
 Status tick(stack::Layer& ops, State* st, const TensorF32& input, const TensorF32* target,
-            FlightRole role, double lr, TickResult* out);
+            FlightRole role, double lr, TickResult* out, Credit credit = Credit::FamilyBP);
 
 // RoleTrain convenience: returns loss from pop (0 if no train sample popped).
 Status train_mse(stack::Layer& ops, State* st, const TensorF32& input, const TensorF32& target,
-                 double lr, double* loss);
+                 double lr, double* loss, Credit credit = Credit::FamilyBP);
 
 int in_flight(const State& st);
 
