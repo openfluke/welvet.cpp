@@ -1,6 +1,6 @@
 # welvet.cpp gap census
 
-**Version `0.1.43-m2-tweenalt`** — see main [README](README.md) scoreboard (**69 / 100** engine + **13 / 100** extensions = **82 / 200**).
+**Version `0.1.44-m2-steptweenalt`** — see main [README](README.md) scoreboard (**70 / 100** engine + **13 / 100** extensions = **83 / 200**).
 
 SIMD/GEMV code under `include/welvet/simd/` + `include/welvet/imported/` was **copied** from `welvet-to-rust_n_cpp/welvet_cpp` (kernels only — not that tree’s docs).
 
@@ -32,6 +32,7 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 ./scripts/linux_build_w2a.sh --tweensplit-train
 ./scripts/linux_build_w2a.sh --steptweensplit-train
 ./scripts/linux_build_w2a.sh --tweenalt-train
+./scripts/linux_build_w2a.sh --steptweenalt-train
 ./scripts/linux_build_w2a.sh --parallel
 ./scripts/linux_build_w2a.sh --seqmix
 ./scripts/linux_build_w2a.sh --all
@@ -40,7 +41,7 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 ./build/welvet_dense_fwd --gaps
 ```
 
-## Done (through M2.23 TweenAlt + StepTweenSplit + TweenSplit + MeshTween* + Step*/ModeTween* + MeshBP + StepBP Line + NormalBP credit)
+## Done (through M2.24 StepTweenAlt + TweenAlt + StepTweenSplit + TweenSplit + MeshTween* + Step*/ModeTween* + MeshBP + StepBP Line + NormalBP credit)
 
 | ID | Detail |
 |---|---|
@@ -70,14 +71,15 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 | **TweenSplit** | `systems/tween_split` 1/N projected gap @ full lr; TSB1 leaf ×34; TSP1/TRP1… volume; w2a `--tweensplit-train` |
 | **StepTweenSplit** | Line FamilyTweenSplit 1/N @ full lr on pop; STS1 leaf ×34; 3D = MeshTweenSplit volume (= TweenSplit wires); w2a `--steptweensplit-train` |
 | **TweenAlt** | Split→Tween (AltTimes=1); TAB1 leaf ×34; TAV1/TRA1…MBTA volume; w2a `--tweenalt-train` |
+| **StepTweenAlt** | Line FamilyTweenAlt Split→Tween on pop; STA1 leaf ×34; 3D = MeshTweenAlt volume (= TweenAlt wires); w2a `--steptweenalt-train` |
 | Transformer / composition | Sequential+Residual NormalBP, seqmix Kind, **Parallel Dense×7 combines** |
 | Extended | ConvT, KMeans, Mamba NormalBP, Metacognition, GDN |
 | CNN / RNN / LSTM | FormatNone×34 forwards |
-| ABI wires | … / STW1 / STC1 / STS1 / MTW1 / MTC1 / TSB1 / TSP1 / TAB1 / TAV1 |
+| ABI wires | … / STW1 / STC1 / STS1 / STA1 / MTW1 / MTC1 / TSB1 / TSP1 / TAB1 / TAV1 |
 
 ## gap? — remaining
 
-- Parallel poly/nested/cameral/train; full cameral Stack; StepTweenAlt / MeshTweenSplit / MeshTweenAlt / proxy Split variants
+- Parallel poly/nested/cameral/train; full cameral Stack; MeshTweenSplit / MeshTweenAlt / proxy Split variants
 - Other layers’ Backward; Dense quants; remaining TrainModes; systems (DNA/evolution/TANHI/telemetry); model/IO; vendor accel
 
 See `src/gaps/registry.cpp`.

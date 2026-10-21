@@ -7,6 +7,21 @@
 
 namespace welvet::systems::tween_alt {
 
+Status apply_alt_child(stack::Child& c, const TensorF32& grad_out, const TensorF32& input,
+                       double lr, int alt_times) {
+  const int times = alt_times < 1 ? 1 : alt_times;
+  const double soft_lr = lr * 0.5;
+  for (int i = 0; i < times; ++i) {
+    if (auto st = tween_split::apply_split_child(c, grad_out, input, lr); !st) {
+      return Status::Err(st.code, std::string("tween_alt split: ") + st.message);
+    }
+    if (auto st = tween::apply_projected(c, grad_out, input, soft_lr); !st) {
+      return Status::Err(st.code, std::string("tween_alt tween: ") + st.message);
+    }
+  }
+  return Status::Ok();
+}
+
 Status train_volume_mse(architecture::Grid& g, const TensorF32& input, const TensorF32& target,
                         double lr, double* loss, int alt_times) {
   if (!loss) {

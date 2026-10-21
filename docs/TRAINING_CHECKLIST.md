@@ -15,7 +15,7 @@ Canonical enum: Go `layers/parallel/train_mode.go` (`TrainMode`).
 
 Tick `[x]` when done. Put the **release tag** in **Ver** when that row (or the whole mode table) is signed.
 
-**Current engine:** `0.1.43-m2-tweenalt`
+**Current engine:** `0.1.44-m2-steptweenalt`
 
 ---
 
@@ -337,6 +337,16 @@ Wires: `TAB1`/`TABO` (Split→Tween AltTimes=1); `TAV1`/`TRA1`…`MBTA` volume. 
 |---|---|:---:|---|
 | 1–28 | Leaf kinds ×34 | [x] | Split @ full lr then Tween @ lr×0.5 |
 | 29–48 | Volume 2×2×2×1 all signed kinds | [x] | re-forward between phases |
+
+## w2a Go↔C++ (StepTweenAlt ModeStepTweenAlt) — sign-off evidence
+
+Run: `./scripts/linux_build_w2a.sh --steptweenalt-train`  
+Wires: `STA1`/`STAO` (Line FamilyTweenAlt Split→Tween on pop); 3D via TweenAlt volume wires `TAV1`/`TRA1`… (MeshTweenAlt volume credit). Exact_bit vs Go.
+
+| # | Case | Status | Notes |
+|---|---|:---:|---|
+| 1–28 | Line leaf kinds ×34 | [x] | trainTweenAltOp frozen gap per hop |
+| 29–48 | MeshTweenAlt volume 2×2×2×1 | [x] | = ModeTweenAlt volume wires |
 
 ## w2a Go↔C++ (MeshTween mesh-clock) — sign-off evidence
 
@@ -807,35 +817,37 @@ CNN2/3 & ConvT2/3 share CNN1/ConvT1 path. Default AltTimes=1.
 
 ## 13 — StepTweenAlt
 
-Needs Line + TweenAlt.
+Needs Line + TweenAlt.  
+Ship: `runtime/line` Credit::FamilyTweenAlt on pop (`apply_alt_child` Split→Tween frozen gap); wire `STA1`/`STAO`; w2a `--steptweenalt-train`.  
+**3D volumetric** = MeshTweenAlt volume (= ModeTweenAlt / TweenAlt volume wires `TAV1`/`TRA1`…). CNN2/3 & ConvT2/3 share CNN1/ConvT1 path.
 
 | Layer | Inside node | 3D volumetric | Fully signed off | Ver |
 |---|:---:|:---:|:---:|---|
-| Dense | [ ] | [ ] | [ ] | |
-| RMSNorm | [ ] | [ ] | [ ] | |
-| LayerNorm | [ ] | [ ] | [ ] | |
-| SwiGLU | [ ] | [ ] | [ ] | |
-| Softmax | [ ] | [ ] | [ ] | |
-| Embedding | [ ] | [ ] | [ ] | |
-| MHA | [ ] | [ ] | [ ] | |
-| CNN1 | [ ] | [ ] | [ ] | |
-| CNN2 | [ ] | [ ] | [ ] | |
-| CNN3 | [ ] | [ ] | [ ] | |
-| ConvT1 | [ ] | [ ] | [ ] | |
-| ConvT2 | [ ] | [ ] | [ ] | |
-| ConvT3 | [ ] | [ ] | [ ] | |
-| RNN | [ ] | [ ] | [ ] | |
-| LSTM | [ ] | [ ] | [ ] | |
-| Sequential | [ ] | [ ] | [ ] | |
-| Residual | [ ] | [ ] | [ ] | |
+| Dense | [x] | [x] | [x] | `0.1.44-m2-steptweenalt` |
+| RMSNorm | [x] | [x] | [x] | `0.1.44-m2-steptweenalt` |
+| LayerNorm | [x] | [x] | [x] | `0.1.44-m2-steptweenalt` |
+| SwiGLU | [x] | [x] | [x] | `0.1.44-m2-steptweenalt` |
+| Softmax | [x] | [x] | [x] | `0.1.44-m2-steptweenalt` |
+| Embedding | [x] | [x] | [x] | `0.1.44-m2-steptweenalt` |
+| MHA | [x] | [x] | [x] | `0.1.44-m2-steptweenalt` |
+| CNN1 | [x] | [x] | [x] | `0.1.44-m2-steptweenalt` |
+| CNN2 | [x] | [x] | [x] | `0.1.44-m2-steptweenalt` |
+| CNN3 | [x] | [x] | [x] | `0.1.44-m2-steptweenalt` |
+| ConvT1 | [x] | [x] | [x] | `0.1.44-m2-steptweenalt` |
+| ConvT2 | [x] | [x] | [x] | `0.1.44-m2-steptweenalt` |
+| ConvT3 | [x] | [x] | [x] | `0.1.44-m2-steptweenalt` |
+| RNN | [x] | [x] | [x] | `0.1.44-m2-steptweenalt` |
+| LSTM | [x] | [x] | [x] | `0.1.44-m2-steptweenalt` |
+| Sequential | [x] | [x] | [x] | `0.1.44-m2-steptweenalt` |
+| Residual | [x] | [x] | [x] | `0.1.44-m2-steptweenalt` |
 | KMeans | [ ] | [ ] | [ ] | |
-| Mamba | [ ] | [ ] | [ ] | |
+| Mamba | [x] | [x] | [x] | `0.1.44-m2-steptweenalt` |
 | Metacognition | [ ] | [ ] | [ ] | |
 | GDN | [ ] | [ ] | [ ] | |
 | Parallel | [ ] | [ ] | [ ] | |
 | Stack | [ ] | [ ] | [ ] | |
 
-**Checkpoint:** bump version when this mode table advances.
+**Checkpoint:** `0.1.44-m2-steptweenalt` — Line StepTweenAlt Inside+×34 + MeshTweenAlt volume 2×2×2×1 (TweenAlt credit).
 
 ---
 
@@ -1530,3 +1542,4 @@ Fill as you tick rows / finish mode tables.
 | `0.1.41-m2-tweensplit` | TweenSplit × signed kinds | 1/N projected gap @ full lr; TSB1/TSP1/TRP1…; leaf ×34 + volume |
 | `0.1.42-m2-steptweensplit` | StepTweenSplit × signed kinds | Line FamilyTweenSplit 1/N @ full lr; STS1; 3D MeshTweenSplit vol (= TweenSplit) |
 | `0.1.43-m2-tweenalt` | TweenAlt × signed kinds | Split→Tween AltTimes=1; TAB1/TAV1/TRA1…; leaf ×34 + volume |
+| `0.1.44-m2-steptweenalt` | StepTweenAlt × signed kinds | Line FamilyTweenAlt Split→Tween; STA1; 3D MeshTweenAlt vol (= TweenAlt) |

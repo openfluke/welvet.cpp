@@ -2,6 +2,7 @@
 
 #include "welvet/runtime/training.hpp"
 #include "welvet/systems/tween.hpp"
+#include "welvet/systems/tween_alt.hpp"
 #include "welvet/systems/tween_split.hpp"
 
 #include <string>
@@ -136,6 +137,23 @@ Status tick(stack::Layer& ops, State* st, const TensorF32& input, const TensorF3
             !st_t) {
           return Status::Err(st_t.code, std::string("line split layer ") + std::to_string(j) +
                                             ": " + st_t.message);
+        }
+        TensorF32 next;
+        next.shape = fl.ins[static_cast<std::size_t>(j)].shape;
+        next.data.assign(fl.ins[static_cast<std::size_t>(j)].data.size(), 0.0f);
+        if (g.data.size() == next.data.size()) {
+          next.data = g.data;
+        }
+        g = std::move(next);
+      }
+    } else if (credit == Credit::FamilyTweenAlt) {
+      // Go trainTweenAltOp @ AltTimes=1; gin = copy gy if same len else zeros.
+      for (int j = n - 1; j >= 0; --j) {
+        if (auto st_t = systems::tween_alt::apply_alt_child(
+                *flat[static_cast<std::size_t>(j)], g, fl.ins[static_cast<std::size_t>(j)], lr, 1);
+            !st_t) {
+          return Status::Err(st_t.code, std::string("line alt layer ") + std::to_string(j) + ": " +
+                                            st_t.message);
         }
         TensorF32 next;
         next.shape = fl.ins[static_cast<std::size_t>(j)].shape;
