@@ -8,10 +8,12 @@
 #include "welvet/convt3.hpp"
 #include "welvet/dense.hpp"
 #include "welvet/embedding.hpp"
+#include "welvet/gdn.hpp"
 #include "welvet/layer.hpp"
 #include "welvet/layernorm.hpp"
 #include "welvet/lstm.hpp"
 #include "welvet/mamba.hpp"
+#include "welvet/metacognition.hpp"
 #include "welvet/mha.hpp"
 #include "welvet/rmsnorm.hpp"
 #include "welvet/residual.hpp"
@@ -57,6 +59,8 @@ enum class OpKind : int32_t {
   Residual = 17,
   Mamba = 18,
   Stack = 19, // thin Stack host (Line/StepBP children; volume = full-chain NormalBP)
+  Metacognition = 20,
+  GDN = 21,
 };
 
 // One processing unit in the grid (Go architecture.Cell topology subset).
@@ -82,6 +86,8 @@ struct Cell {
   residual::Layer residual_op;     // valid when op_kind == Residual
   mamba::Layer mamba_op;           // valid when op_kind == Mamba
   stack::Layer stack_op;           // valid when op_kind == Stack
+  metacognition::Layer metacognition_op; // valid when op_kind == Metacognition
+  gdn::Layer gdn_op;               // valid when op_kind == GDN
 
   bool is_remote_link = false;
   int target_z = 0, target_y = 0, target_x = 0, target_l = 0;
@@ -148,5 +154,7 @@ Status bind_sequential(Grid& g, int z, int y, int x, int l, sequential::Layer op
 Status bind_residual(Grid& g, int z, int y, int x, int l, residual::Layer op);
 Status bind_mamba(Grid& g, int z, int y, int x, int l, mamba::Layer op);
 Status bind_stack(Grid& g, int z, int y, int x, int l, stack::Layer op);
+Status bind_metacognition(Grid& g, int z, int y, int x, int l, metacognition::Layer op);
+Status bind_gdn(Grid& g, int z, int y, int x, int l, gdn::Layer op);
 
 } // namespace welvet::architecture

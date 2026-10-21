@@ -73,6 +73,10 @@ Status apply_one(architecture::Cell* cell, const TensorF32& dW, double lr) {
     return mamba::apply_grad_sgd(&cell->mamba_op, dW, lr);
   case architecture::OpKind::Stack:
     return stack::apply_grad_sgd(&cell->stack_op, dW, lr);
+  case architecture::OpKind::Metacognition:
+    return metacognition::apply_grad_sgd(&cell->metacognition_op, dW, lr);
+  case architecture::OpKind::GDN:
+    return gdn::apply_grad_sgd(&cell->gdn_op, dW, lr);
   default:
     return Status::Ok();
   }
@@ -224,16 +228,33 @@ TensorF32 project_gap(const TensorF32& src, const std::vector<int64_t>& dst_shap
 
 Status apply_projected_ops(stack::Layer& ops, const TensorF32& grad_out, const TensorF32& input,
                            double soft_lr) {
+  // Match Go applyProjectedTween: one collect forward per leaf, then credit.
+  // Do not call apply_projected after an outer forward for Meta/Dense/… —
+  // that re-forwards and desyncs Metacognition rule fire_count / last_gate
+  // (TweenAlt Meta ×34 broken). Seq/Res still use apply_projected (leaf expand).
   std::vector<stack::Child*> flat;
   stack::flatten_ops(ops, &flat);
   TensorF32 current = input;
   for (stack::Child* ch : flat) {
     if (!ch) continue;
+    if (ch->kind == stack::Kind::Sequential || ch->kind == stack::Kind::Residual) {
+      if (auto st = apply_projected(*ch, grad_out, current, soft_lr); !st) {
+        return st;
+      }
+      TensorF32 p, o;
+      if (auto st = stack::child_forward(*ch, current, &p, &o); !st) {
+        return st;
+      }
+      current = std::move(o);
+      continue;
+    }
     TensorF32 p, o;
     if (auto st = stack::child_forward(*ch, current, &p, &o); !st) {
       return st;
     }
-    if (auto st = apply_projected(*ch, grad_out, current, soft_lr); !st) {
+    TensorF32 proj = project_gap(grad_out, o.shape);
+    TensorF32 g_in;
+    if (auto st = stack::child_family_bp(*ch, proj, current, p, soft_lr, &g_in); !st) {
       return st;
     }
     current = std::move(o);

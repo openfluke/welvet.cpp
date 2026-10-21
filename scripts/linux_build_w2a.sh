@@ -35,6 +35,9 @@
 #   ./scripts/linux_build_w2a.sh --sequential-train # Sequential NormalBP leaf + volumetric
 #   ./scripts/linux_build_w2a.sh --residual-train # Residual NormalBP leaf + volumetric
 #   ./scripts/linux_build_w2a.sh --mamba-train # Mamba NormalBP leaf + volumetric
+#   ./scripts/linux_build_w2a.sh --metacognition-train # Metacognition NormalBP leaf + volumetric
+#   ./scripts/linux_build_w2a.sh --gdn-train # GDN truncated-BPTT NormalBP leaf + volumetric (f32)
+#   ./scripts/linux_build_w2a.sh --stack-train # Stack NestedStack-of-Dense NormalBP leaf + volumetric
 #   ./scripts/linux_build_w2a.sh --stepbp-train # Line StepBP (Stack + FamilyBP)
 #   ./scripts/linux_build_w2a.sh --tween-train  # ModeTween projected local + volume
 #   ./scripts/linux_build_w2a.sh --tweenchain-train  # ModeTweenChain FamilyBP @ full lr + volume
@@ -114,6 +117,9 @@ for arg in "$@"; do
     --sequential-train) MODE="sequential_train" ;;
     --residual-train) MODE="residual_train" ;;
     --mamba-train) MODE="mamba_train" ;;
+    --metacognition-train) MODE="metacognition_train" ;;
+    --gdn-train) MODE="gdn_train" ;;
+    --stack-train) MODE="stack_train" ;;
     --stepbp-train) MODE="stepbp_train" ;;
     --tween-train) MODE="tween_train" ;;
     --tweenchain-train) MODE="tweenchain_train" ;;
@@ -309,6 +315,18 @@ case "$MODE" in
   mamba_train)
     echo "==> w2a go_v_cpp Mamba NormalBP (leaf + volumetric)"
     go test ./tests/go_v_cpp/ -run '^TestGoVCppMambaTrain$' -v -count=1
+    ;;
+  metacognition_train)
+    echo "==> w2a go_v_cpp Metacognition NormalBP (leaf + volumetric)"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppMetacognitionTrain$' -v -count=1
+    ;;
+  gdn_train)
+    echo "==> w2a go_v_cpp GDN NormalBP (leaf + volumetric, f32)"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppGDNTrain$' -v -count=1
+    ;;
+  stack_train)
+    echo "==> w2a go_v_cpp Stack NestedStack-of-Dense NormalBP (leaf + volumetric)"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppStackTrain$' -v -count=1
     ;;
   stepbp_train)
     echo "==> w2a go_v_cpp StepBP Line (thin Stack + FamilyBP)"

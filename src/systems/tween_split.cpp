@@ -131,6 +131,10 @@ Status apply_cell_dw(architecture::Cell& cell, const TensorF32& dW, double lr) {
     return mamba::apply_grad_sgd(&cell.mamba_op, dW, lr);
   case architecture::OpKind::Stack:
     return stack::apply_grad_sgd(&cell.stack_op, dW, lr);
+  case architecture::OpKind::Metacognition:
+    return metacognition::apply_grad_sgd(&cell.metacognition_op, dW, lr);
+  case architecture::OpKind::GDN:
+    return gdn::apply_grad_sgd(&cell.gdn_op, dW, lr);
   default:
     return Status::Ok();
   }

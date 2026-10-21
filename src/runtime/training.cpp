@@ -140,6 +140,12 @@ Status sgd_dense(architecture::Grid& g, const forward::Result& fwd, const backwa
     case architecture::OpKind::Stack:
       st_a = stack::apply_grad_sgd(&cell->stack_op, *it->second, lr);
       break;
+    case architecture::OpKind::Metacognition:
+      st_a = metacognition::apply_grad_sgd(&cell->metacognition_op, *it->second, lr);
+      break;
+    case architecture::OpKind::GDN:
+      st_a = gdn::apply_grad_sgd(&cell->gdn_op, *it->second, lr);
+      break;
     default:
       return Status::Err(StatusCode::InvalidArgument, "training: SGD unsupported cell Op");
     }

@@ -431,4 +431,36 @@ Status bind_stack(Grid& g, int z, int y, int x, int l, stack::Layer op) {
   return Status::Ok();
 }
 
+Status bind_metacognition(Grid& g, int z, int y, int x, int l, metacognition::Layer op) {
+  Cell* c = at(g, z, y, x, l);
+  if (!c) {
+    return bad_coord("bind", z, y, x, l);
+  }
+  c->meta = op.meta;
+  c->meta.type = LayerType::Metacognition;
+  c->meta.z = z;
+  c->meta.y = y;
+  c->meta.x = x;
+  c->meta.l = l;
+  c->op_kind = OpKind::Metacognition;
+  c->metacognition_op = std::move(op);
+  return Status::Ok();
+}
+
+Status bind_gdn(Grid& g, int z, int y, int x, int l, gdn::Layer op) {
+  Cell* c = at(g, z, y, x, l);
+  if (!c) {
+    return bad_coord("bind", z, y, x, l);
+  }
+  c->meta = op.meta;
+  c->meta.type = LayerType::GDN;
+  c->meta.z = z;
+  c->meta.y = y;
+  c->meta.x = x;
+  c->meta.l = l;
+  c->op_kind = OpKind::GDN;
+  c->gdn_op = std::move(op);
+  return Status::Ok();
+}
+
 } // namespace welvet::architecture

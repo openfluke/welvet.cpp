@@ -1,6 +1,6 @@
 # welvet.cpp gap census
 
-**Version `0.1.47-m2-tweensplitfastproxy`** — see main [README](README.md) scoreboard (**70 / 100** engine + **13 / 100** extensions = **83 / 200**).
+**Version `0.1.67-m2-meta-gdn-stack-cascade`** — see main [README](README.md) scoreboard (**70 / 100** engine + **13 / 100** extensions = **83 / 200**).
 
 SIMD/GEMV code under `include/welvet/simd/` + `include/welvet/imported/` was **copied** from `welvet-to-rust_n_cpp/welvet_cpp` (kernels only — not that tree’s docs).
 
@@ -22,6 +22,8 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 ./scripts/linux_build_w2a.sh --sequential-train
 ./scripts/linux_build_w2a.sh --residual-train
 ./scripts/linux_build_w2a.sh --mamba-train
+./scripts/linux_build_w2a.sh --gdn-train
+./scripts/linux_build_w2a.sh --stack-train
 ./scripts/linux_build_w2a.sh --stepbp-train
 ./scripts/linux_build_w2a.sh --tween-train
 ./scripts/linux_build_w2a.sh --tweenchain-train
@@ -44,7 +46,7 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 ./build/welvet_dense_fwd --gaps
 ```
 
-## Done (through M2.42 Shadow + M2.41 Memory + M2.40 Adversarial + M2.39 Freeze + M2.38 StepTweenSplitSparse + StepTweenSplitHeadProxyAsync + StepTweenSplitLinearCache + StepTweenSplitFastProxy + StepTweenSplitLinear + StepTweenSplitHeadProxy + MeshTweenSplitSparse + MeshTweenSplit/Alt/SplitFastProxy + TweenSplitSparse + TweenSplitHeadProxyAsync + TweenSplitLinearCache + TweenSplitFastProxy + TweenSplitLinear + TweenSplitHeadProxy + StepTweenAlt + TweenAlt + StepTweenSplit + TweenSplit + MeshTween* + Step*/ModeTween* + MeshBP + StepBP Line + NormalBP credit)
+## Done (through M2.43 Meta/GDN/Stack cascade + M2.42 Shadow + M2.41 Memory + M2.40 Adversarial + M2.39 Freeze + M2.38 StepTweenSplitSparse + StepTweenSplitHeadProxyAsync + StepTweenSplitLinearCache + StepTweenSplitFastProxy + StepTweenSplitLinear + StepTweenSplitHeadProxy + MeshTweenSplitSparse + MeshTweenSplit/Alt/SplitFastProxy + TweenSplitSparse + TweenSplitHeadProxyAsync + TweenSplitLinearCache + TweenSplitFastProxy + TweenSplitLinear + TweenSplitHeadProxy + StepTweenAlt + TweenAlt + StepTweenSplit + TweenSplit + MeshTween* + Step*/ModeTween* + MeshBP + StepBP Line + NormalBP credit)
 
 | ID | Detail |
 |---|---|
@@ -63,6 +65,10 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 | **Sequential NormalBP** | Reverse Dense Dim→Dim chain + ApplySGD FormatNone×34; volume Step; w2a `SQB1`/`SQV1` |
 | **Residual NormalBP** | F reverse Dense + skip grad + ApplySGD FormatNone×34; volume Step; w2a `REB1`/`REV1` |
 | **Mamba NormalBP** | Scan BPTT + In/Out Dense + ALog/DSkip SGD FormatNone×34; volume Step; w2a `MBB1`/`MBV1` |
+| **Metacognition NormalBP** | lastGate-scale + Observed Dense bwd + ApplySGD FormatNone×34; volume Step; w2a `MCB1`/`MCV1` |
+| **GDN NormalBP** | Truncated-BPTT (state/conv stop-grad) f32; volume Step; w2a `GDB1`/`GDV1` |
+| **Stack NormalBP** | NestedStack-of-Dense Dim→Dim + ApplySGD FormatNone×34; volume Step; w2a `STKB`/`STKV` |
+| **Meta/GDN/Stack train cascade** | Leaf+vol wires across StepBP/Mesh*/Tween*/Freeze + cameral Shadow/Adv/Memory stack; magics `MCTV`…`MCFR` / `GDTV`…`GDFR` / `SKTV`…`SKFR`; GDN f32-only |
 | **StepBP (Line)** | Thin Stack + `runtime/line` TickLine/TrainLineMSE FamilyBP on pop; STB1/STBO; w2a `--stepbp-train` ×34 full spectrum tables |
 | **MeshBP** | `runtime/step` Forward+Backward+SGD; MBP1/MBPO Dense mesh-clock; ModeMeshBP volume 2×2×2×1 for NormalBP-signed kinds |
 | **ModeTween** | `systems/tween` + `runtime/tween_train` projected local @ lr×0.5; TWB1 leaf ×34; TWV1 + TRV1…MBTV volume 2×2×2×1 all signed kinds; w2a `--tween-train` |
@@ -96,14 +102,14 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 | **Memory** | Parallel BranchMode + CamKit SurpriseThresh; MMB1 Dense Add ×34; w2a `--memory-train` |
 | **Shadow** | Parallel BranchMode + CamKit KD; SHB1 Dense Add ×34; w2a `--shadow-train` |
 | Transformer / composition | Sequential+Residual NormalBP, seqmix Kind, **Parallel Dense×7 combines** |
-| Extended | ConvT, KMeans, Mamba NormalBP, Metacognition, GDN |
+| Extended | ConvT, KMeans, Mamba NormalBP, Metacognition, GDN NormalBP, Stack NestedStack NormalBP |
 | CNN / RNN / LSTM | FormatNone×34 forwards |
 | ABI wires | … / FRB1 / ADB1 / MMB1 / SHB1 |
 
 ## gap? — remaining
 
-- Parallel poly/nested/CamSync/DNA/Dream; full cameral Stack; 3D Parallel train (BranchModes Dense Add Adv/Memory/Shadow + CamKit core done)
-- Other layers’ Backward; Dense quants; remaining TrainModes; systems (DNA/evolution/TANHI/telemetry); model/IO; vendor accel
+- Parallel poly/nested/CamSync/DNA/Dream; Parallel Meta/GDN under Adv/Memory/Shadow 3D (stack Meta/GDN/NestedStack cameral Inside signed); full cameral Stack host
+- Other layers’ Backward; Dense quants; systems (DNA/evolution/TANHI/telemetry); model/IO; vendor accel
 
 See `src/gaps/registry.cpp`.
 

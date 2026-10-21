@@ -8,10 +8,12 @@
 #include "welvet/convt3.hpp"
 #include "welvet/dense.hpp"
 #include "welvet/embedding.hpp"
+#include "welvet/gdn.hpp"
 #include "welvet/layer.hpp"
 #include "welvet/layernorm.hpp"
 #include "welvet/lstm.hpp"
 #include "welvet/mamba.hpp"
+#include "welvet/metacognition.hpp"
 #include "welvet/mha.hpp"
 #include "welvet/residual.hpp"
 #include "welvet/rmsnorm.hpp"
@@ -37,7 +39,7 @@ struct SplitAccel {
   int sparse = 0;
 };
 
-// Matches architecture::OpKind values (Dense=1 … Mamba=18; NestedStack=19).
+// Matches architecture::OpKind values (Dense=1 … Mamba=18; NestedStack=19; Metacognition=20; GDN=21).
 enum class Kind : int32_t {
   None = 0,
   Dense = 1,
@@ -59,6 +61,8 @@ enum class Kind : int32_t {
   Residual = 17,
   Mamba = 18,
   NestedStack = 19,
+  Metacognition = 20,
+  GDN = 21,
 };
 
 // Thin heterogeneous chain host (Go parallel.Stack subset — no CamSync / BranchModes).
@@ -82,6 +86,8 @@ struct Child {
   sequential::Layer sequential_op;
   residual::Layer residual_op;
   mamba::Layer mamba_op;
+  metacognition::Layer metacognition_op;
+  gdn::Layer gdn_op;
   std::vector<Child> nested; // when kind == NestedStack
 };
 

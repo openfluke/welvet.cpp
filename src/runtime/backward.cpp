@@ -49,6 +49,10 @@ Status cell(architecture::Cell& cell, const TensorF32& grad_out, const TensorF32
     return mamba::backward_f32(cell.mamba_op, grad_out, input, pre, grad_in, dW);
   case architecture::OpKind::Stack:
     return stack::backward_f32(cell.stack_op, grad_out, input, pre, grad_in, dW);
+  case architecture::OpKind::Metacognition:
+    return metacognition::backward_f32(cell.metacognition_op, grad_out, input, pre, grad_in, dW);
+  case architecture::OpKind::GDN:
+    return gdn::backward_f32(cell.gdn_op, grad_out, input, pre, grad_in, dW);
   default:
     return Status::Err(StatusCode::InvalidArgument, "runtime.backward: unsupported cell Op");
   }

@@ -58,6 +58,10 @@ Status cell(architecture::Cell& cell, const TensorF32& in, TensorF32* pre, Tenso
     return mamba::forward(cell.mamba_op, in, pre, post);
   case architecture::OpKind::Stack:
     return stack::forward(cell.stack_op, in, pre, post);
+  case architecture::OpKind::Metacognition:
+    return metacognition::forward(cell.metacognition_op, in, pre, post);
+  case architecture::OpKind::GDN:
+    return gdn::forward(cell.gdn_op, in, pre, post);
   default:
     return Status::Gap("runtime.forward: unsupported cell Op");
   }

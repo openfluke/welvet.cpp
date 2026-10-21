@@ -357,6 +357,14 @@ WELVET_API welvet_status welvet_metacognition_forward_f32(
     int32_t batch, int32_t seq, int32_t dim, int32_t dtype, int32_t backend, const float* packed,
     const float* x, float* pre, float* post);
 
+/* Metacognition NormalBP leaf. use_target: 0=gradOut on post, 1=MSE target. lr==0 skips SGD.
+ * packed/dW/W_after: Observed [Dim×Dim].
+ */
+WELVET_API welvet_status welvet_metacognition_normalbp_f32(
+    int32_t batch, int32_t seq, int32_t dim, int32_t dtype, int32_t backend, const float* packed,
+    const float* x, const float* grad_or_target, int32_t use_target, double lr, float* pre,
+    float* post, float* dX, float* dW, float* W_after, double* loss);
+
 /* GDN (Gated DeltaNet). Float32 FormatNone. packed: InQKV|InZ|InB|InA|Out|Conv|ALog|DtBias|γ
  * x/pre/post: [batch*seq*hidden]. dtype ignored (must be Float32).
  */
@@ -364,6 +372,25 @@ WELVET_API welvet_status welvet_gdn_forward_f32(
     int32_t batch, int32_t seq, int32_t hidden, int32_t num_key_heads, int32_t num_value_heads,
     int32_t key_head_dim, int32_t value_head_dim, int32_t conv_kernel, int32_t dtype, int32_t backend,
     const float* packed, const float* x, float* pre, float* post);
+
+/* GDN truncated-BPTT NormalBP leaf (f32). use_target: 0=gradOut on post, 1=MSE target. lr==0 skips SGD.
+ * packed/dW/W_after: InQKV|InZ|InB|InA|Out|Conv|ALog|DtBias|γ. dtype ignored or must be Float32.
+ */
+WELVET_API welvet_status welvet_gdn_normalbp_f32(
+    int32_t batch, int32_t seq, int32_t hidden, int32_t num_key_heads, int32_t num_value_heads,
+    int32_t key_head_dim, int32_t value_head_dim, int32_t conv_kernel, int32_t dtype, int32_t backend,
+    const float* packed, const float* x, const float* grad_or_target, int32_t use_target, double lr,
+    float* pre, float* post, float* dX, float* dW, float* W_after, double* loss);
+
+/* Stack NestedStack of Dense Dim→Dim NormalBP leaf. packed: n_children×[Dim×Dim], x: [batch*seq*dim]
+ * (seq=1 → [batch*dim]). use_target: 0=gradOut on post, 1=MSE target. lr==0 skips SGD.
+ * dW/W_after: loom n_children×[Dim×Dim]. Prefer STKB/STKO (not STB1 StepBP).
+ */
+WELVET_API welvet_status welvet_stack_normalbp_f32(
+    int32_t batch, int32_t seq, int32_t dim, int32_t n_children, int32_t child_act, int32_t dtype,
+    int32_t backend, const float* packed, const float* x, const float* grad_or_target,
+    int32_t use_target, double lr, float* pre, float* post, float* dX, float* dW, float* W_after,
+    double* loss);
 
 /* seqmix Kind name. kind: 0=attention 1=ssm 2=linear_attn 3=conv_mix.
  * Writes NUL-terminated name into buf (max buf_len). Returns Ok or InvalidArgument.
