@@ -464,6 +464,85 @@ Status apply_linear_leaves(std::vector<Leaf>& leaves, const TensorF32& grad_out,
   return Status::Ok();
 }
 
+Status apply_hidden_dw_only(std::vector<Leaf>& leaves, int begin, int end, const TensorF32& src,
+                            double scale, double lr) {
+  for (int i = begin; i < end; ++i) {
+    Leaf& leaf = leaves[static_cast<std::size_t>(i)];
+    if (leaf.post.data.empty()) {
+      continue;
+    }
+    TensorF32 gi = systems::tween::project_gap(src, leaf.post.shape);
+    scale_gap(&gi, scale);
+    if (auto st = apply_leaf_dw_linear(leaf, gi, lr); !st) {
+      return Status::Err(st.code, std::string("tween_split fastproxy hidden: ") + st.message);
+    }
+  }
+  return Status::Ok();
+}
+
+Status linear_grad_in_leaf_nopre(Leaf& leaf, const TensorF32& gy, TensorF32* gx_out) {
+  // Go FastProxy: linearGradInAny(op, gy, in, nil) — Dense Wᵀ; else Backward with nil pre.
+  if (!gx_out) {
+    return Status::Err(StatusCode::InvalidArgument, "tween_split fastproxy: nil gx");
+  }
+  *gx_out = TensorF32{};
+  if (gy.data.empty() || leaf.input.data.empty()) {
+    return Status::Ok();
+  }
+  if (leaf.dense) {
+    return dense::linear_grad_in(*leaf.dense, gy, leaf.input, gx_out);
+  }
+  if (leaf.child && leaf.child->kind == stack::Kind::Dense) {
+    return dense::linear_grad_in(leaf.child->dense_op, gy, leaf.input, gx_out);
+  }
+  if (leaf.cell && leaf.cell->op_kind == architecture::OpKind::Dense) {
+    return dense::linear_grad_in(leaf.cell->dense_op, gy, leaf.input, gx_out);
+  }
+  TensorF32 empty_pre;
+  TensorF32 dW;
+  if (leaf.child) {
+    if (auto st = stack::child_family_bp(*leaf.child, gy, leaf.input, empty_pre, 0.0, gx_out); !st) {
+      *gx_out = systems::tween::project_gap(gy, leaf.input.shape);
+    }
+  } else if (leaf.cell) {
+    if (auto st = runtime::backward::cell(*leaf.cell, gy, leaf.input, empty_pre, gx_out, &dW); !st) {
+      *gx_out = systems::tween::project_gap(gy, leaf.input.shape);
+    }
+  } else {
+    *gx_out = systems::tween::project_gap(gy, leaf.input.shape);
+  }
+  if (gx_out->data.empty()) {
+    *gx_out = systems::tween::project_gap(gy, leaf.input.shape);
+  }
+  return Status::Ok();
+}
+
+Status apply_fast_proxy_leaves(std::vector<Leaf>& leaves, const TensorF32& grad_out, double lr) {
+  const int n = static_cast<int>(leaves.size());
+  if (n == 0) {
+    return Status::Ok();
+  }
+  Leaf& head = leaves[static_cast<std::size_t>(n - 1)];
+  if (head.post.data.empty()) {
+    return apply_leaves(leaves, grad_out, lr);
+  }
+  // Proxy before head SGD (Go linearGradInAny(head, gy, in, nil)).
+  TensorF32 proxy;
+  if (auto st = linear_grad_in_leaf_nopre(head, grad_out, &proxy); !st) {
+    return Status::Err(st.code, std::string("tween_split fastproxy: ") + st.message);
+  }
+  TensorF32 g_head = systems::tween::project_gap(grad_out, head.post.shape);
+  if (auto st = apply_leaf_dw_linear(head, g_head, lr); !st) {
+    return Status::Err(st.code, std::string("tween_split fastproxy head: ") + st.message);
+  }
+  if (n == 1) {
+    return Status::Ok();
+  }
+  const TensorF32& src = proxy.data.empty() ? grad_out : proxy;
+  const double scale = 1.0 / static_cast<double>(n - 1);
+  return apply_hidden_dw_only(leaves, 0, n - 1, src, scale, lr);
+}
+
 } // namespace
 
 Status apply_split(stack::Layer& ops, const TensorF32& grad_out, const TensorF32& input, double lr) {
@@ -583,6 +662,46 @@ Status train_volume_mse_linear(architecture::Grid& g, const runtime::forward::Re
     return st;
   }
   return apply_linear_leaves(leaves, gy, lr);
+}
+
+Status apply_fast_proxy(stack::Layer& ops, const TensorF32& grad_out, const TensorF32& input,
+                        double lr) {
+  std::vector<Leaf> leaves;
+  if (auto st = collect_stack_leaves(ops, input, &leaves); !st) {
+    return st;
+  }
+  return apply_fast_proxy_leaves(leaves, grad_out, lr);
+}
+
+Status apply_fast_proxy_child(stack::Child& c, const TensorF32& grad_out, const TensorF32& input,
+                              double lr) {
+  std::vector<Leaf> leaves;
+  if (auto st = collect_child(c, input, &leaves); !st) {
+    return st;
+  }
+  return apply_fast_proxy_leaves(leaves, grad_out, lr);
+}
+
+Status train_volume_mse_fast_proxy(architecture::Grid& g, const runtime::forward::Result& fwd,
+                                   const TensorF32& target, double lr, double* loss) {
+  if (!loss) {
+    return Status::Err(StatusCode::InvalidArgument, "tween_split fast_proxy: nil loss");
+  }
+  if (fwd.steps.empty()) {
+    return Status::Err(StatusCode::InvalidArgument, "tween_split fast_proxy: empty forward tape");
+  }
+  if (auto st = runtime::training::mse(fwd.output, target, loss); !st) {
+    return st;
+  }
+  TensorF32 gy;
+  if (auto st = runtime::training::mse_grad(fwd.output, target, &gy); !st) {
+    return st;
+  }
+  std::vector<Leaf> leaves;
+  if (auto st = collect_volume_leaves(g, fwd, &leaves); !st) {
+    return st;
+  }
+  return apply_fast_proxy_leaves(leaves, gy, lr);
 }
 
 } // namespace welvet::systems::tween_split

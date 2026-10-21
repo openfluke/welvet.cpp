@@ -1,6 +1,6 @@
 # welvet.cpp gap census
 
-**Version `0.1.46-m2-tweensplitlinear`** — see main [README](README.md) scoreboard (**70 / 100** engine + **13 / 100** extensions = **83 / 200**).
+**Version `0.1.47-m2-tweensplitfastproxy`** — see main [README](README.md) scoreboard (**70 / 100** engine + **13 / 100** extensions = **83 / 200**).
 
 SIMD/GEMV code under `include/welvet/simd/` + `include/welvet/imported/` was **copied** from `welvet-to-rust_n_cpp/welvet_cpp` (kernels only — not that tree’s docs).
 
@@ -35,6 +35,7 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 ./scripts/linux_build_w2a.sh --steptweenalt-train
 ./scripts/linux_build_w2a.sh --tweensplitheadproxy-train
 ./scripts/linux_build_w2a.sh --tweensplitlinear-train
+./scripts/linux_build_w2a.sh --tweensplitfastproxy-train
 ./scripts/linux_build_w2a.sh --parallel
 ./scripts/linux_build_w2a.sh --seqmix
 ./scripts/linux_build_w2a.sh --all
@@ -43,7 +44,7 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 ./build/welvet_dense_fwd --gaps
 ```
 
-## Done (through M2.26 TweenSplitLinear + TweenSplitHeadProxy + StepTweenAlt + TweenAlt + StepTweenSplit + TweenSplit + MeshTween* + Step*/ModeTween* + MeshBP + StepBP Line + NormalBP credit)
+## Done (through M2.27 TweenSplitFastProxy + TweenSplitLinear + TweenSplitHeadProxy + StepTweenAlt + TweenAlt + StepTweenSplit + TweenSplit + MeshTween* + Step*/ModeTween* + MeshBP + StepBP Line + NormalBP credit)
 
 | ID | Detail |
 |---|---|
@@ -76,14 +77,15 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 | **StepTweenAlt** | Line FamilyTweenAlt Split→Tween on pop; STA1 leaf ×34; 3D = MeshTweenAlt volume (= TweenAlt wires); w2a `--steptweenalt-train` |
 | **TweenSplitHeadProxy** | Head full Jᵀgy (+ gx); hidden 1/(N−1) P(gx_head); HPB1 leaf ×34; HPV1/HRP1… volume; w2a `--tweensplitheadproxy-train` |
 | **TweenSplitLinear** | Reverse walk 1/N P(gy); Dense gx=Wᵀgy (no act'); LLB1 leaf ×34; LLV1/LRP1… volume; w2a `--tweensplitlinear-train` |
+| **TweenSplitFastProxy** | Head GradWOnly on P(gy); proxy=Wᵀgy; hidden 1/(N−1) P(proxy); FPB1 leaf ×34; FPV1/FRP1… volume; w2a `--tweensplitfastproxy-train` |
 | Transformer / composition | Sequential+Residual NormalBP, seqmix Kind, **Parallel Dense×7 combines** |
 | Extended | ConvT, KMeans, Mamba NormalBP, Metacognition, GDN |
 | CNN / RNN / LSTM | FormatNone×34 forwards |
-| ABI wires | … / STW1 / STC1 / STS1 / STA1 / MTW1 / MTC1 / TSB1 / TSP1 / TAB1 / TAV1 / HPB1 / HPV1 / LLB1 / LLV1 |
+| ABI wires | … / HPB1 / HPV1 / LLB1 / LLV1 / FPB1 / FPV1 |
 
 ## gap? — remaining
 
-- Parallel poly/nested/cameral/train; full cameral Stack; MeshTweenSplit / MeshTweenAlt / FastProxy/Sparse/LinearCache Split variants
+- Parallel poly/nested/cameral/train; full cameral Stack; MeshTweenSplit / MeshTweenAlt / Sparse/LinearCache Split variants
 - Other layers’ Backward; Dense quants; remaining TrainModes; systems (DNA/evolution/TANHI/telemetry); model/IO; vendor accel
 
 See `src/gaps/registry.cpp`.

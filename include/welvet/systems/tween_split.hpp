@@ -38,4 +38,12 @@ Status apply_linear_child(stack::Child& c, const TensorF32& grad_out, const Tens
 Status train_volume_mse_linear(architecture::Grid& g, const runtime::forward::Result& fwd,
                                const TensorF32& target, double lr, double* loss);
 
+// ModeTweenSplitFastProxy: head GradWOnly on P(gy); proxy=Wᵀgy (no act'); hidden 1/(N-1) P(proxy).
+Status apply_fast_proxy(stack::Layer& ops, const TensorF32& grad_out, const TensorF32& input,
+                        double lr);
+Status apply_fast_proxy_child(stack::Child& c, const TensorF32& grad_out, const TensorF32& input,
+                              double lr);
+Status train_volume_mse_fast_proxy(architecture::Grid& g, const runtime::forward::Result& fwd,
+                                   const TensorF32& target, double lr, double* loss);
+
 } // namespace welvet::systems::tween_split
