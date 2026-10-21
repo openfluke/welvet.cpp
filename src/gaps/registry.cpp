@@ -52,6 +52,8 @@ const std::vector<Entry>& build() {
        "C ABI welvet_seqmix_kind_name + mixer tags + WSX1 smoke", true},
       {"abi.parallel_forward_f32", "interop",
        "C ABI welvet_parallel_forward_f32 + WPL1 (7 combine modes)", true},
+      {"abi.parallel_normalbp_f32", "interop",
+       "C ABI welvet_parallel_normalbp_f32 + Dense-branch SGD pack", true},
       {"backends.cpu", "backends", "Native CPU target available", true},
       {"core.layer_types", "core", "LayerType 0–22 + LayerMeta descriptor", true},
       {"arch.volume", "architecture", "Grid/Cell/Coord/HopOrder/remote links", true},
