@@ -10,9 +10,23 @@
 #include "welvet/dense.hpp"
 #include "welvet/embedding.hpp"
 #include "welvet/gaps.hpp"
+#include "welvet/runtime/freeze_train.hpp"
 #include "welvet/runtime/line.hpp"
+#include "welvet/runtime/parallel_train.hpp"
+#include "welvet/runtime/step.hpp"
 #include "welvet/runtime/training.hpp"
+#include "welvet/runtime/tween_alt_train.hpp"
+#include "welvet/runtime/tween_chain_train.hpp"
+#include "welvet/runtime/tween_split_fast_proxy_train.hpp"
+#include "welvet/runtime/tween_split_head_proxy_async_train.hpp"
+#include "welvet/runtime/tween_split_head_proxy_train.hpp"
+#include "welvet/runtime/tween_split_linear_cache_train.hpp"
+#include "welvet/runtime/tween_split_linear_train.hpp"
+#include "welvet/runtime/tween_split_sparse_train.hpp"
+#include "welvet/runtime/tween_split_train.hpp"
+#include "welvet/runtime/tween_train.hpp"
 #include "welvet/stack.hpp"
+#include "welvet/train_mode.hpp"
 #include "welvet/kmeans.hpp"
 #include "welvet/layernorm.hpp"
 #include "welvet/lstm.hpp"
@@ -2907,7 +2921,526 @@ welvet_status welvet_stack_stepbp_dense_f32(int32_t n_children, int32_t n_ticks,
   return to_c(welvet::Status::Ok());
 }
 
-const char* welvet_version(void) { return "0.1.83-m2-parallel-nbp"; }
+namespace {
+
+welvet::Status stack_family_bp_mse(welvet::stack::Layer& layer, const welvet::TensorF32& input,
+                                   const welvet::TensorF32& target, double lr, double* loss) {
+  welvet::TensorF32 pre_t, post_t;
+  auto st = welvet::stack::forward(layer, input, &pre_t, &post_t);
+  if (!st) return st;
+  st = welvet::runtime::training::mse(post_t, target, loss);
+  if (!st) return st;
+  welvet::TensorF32 gy;
+  st = welvet::runtime::training::mse_grad(post_t, target, &gy);
+  if (!st) return st;
+  welvet::TensorF32 dx_t, dw_t;
+  st = welvet::stack::backward_f32(layer, gy, input, pre_t, &dx_t, &dw_t);
+  if (!st) return st;
+  if (lr != 0.0) {
+    st = welvet::stack::apply_grad_sgd(&layer, dw_t, lr);
+    if (!st) return st;
+  }
+  return welvet::Status::Ok();
+}
+
+welvet::Status dispatch_stack_train_mse(welvet::TrainMode mode, welvet::stack::Layer& layer,
+                                        const welvet::TensorF32& input,
+                                        const welvet::TensorF32& target, double lr, double* loss) {
+  const welvet::TrainMode m = welvet::resolve_train_mode(mode, welvet::TrainMode::NormalBP);
+  switch (m) {
+  case welvet::TrainMode::Freeze:
+  case welvet::TrainMode::Shadow:
+    return welvet::runtime::freeze_train::train_stack_mse(layer, input, target, lr, loss);
+  case welvet::TrainMode::Tween:
+  case welvet::TrainMode::StepTween:
+  case welvet::TrainMode::MeshTween:
+    return welvet::runtime::tween_train::train_stack_mse(layer, input, target, lr, loss);
+  case welvet::TrainMode::TweenChain:
+  case welvet::TrainMode::StepTweenChain:
+  case welvet::TrainMode::MeshTweenChain:
+    return welvet::runtime::tween_chain_train::train_stack_mse(layer, input, target, lr, loss);
+  case welvet::TrainMode::TweenAlt:
+  case welvet::TrainMode::StepTweenAlt:
+  case welvet::TrainMode::MeshTweenAlt:
+    return welvet::runtime::tween_alt_train::train_stack_mse(layer, input, target, lr, loss);
+  case welvet::TrainMode::TweenSplit:
+  case welvet::TrainMode::StepTweenSplit:
+  case welvet::TrainMode::MeshTweenSplit:
+    return welvet::runtime::tween_split_train::train_stack_mse(layer, input, target, lr, loss);
+  case welvet::TrainMode::TweenSplitHeadProxy:
+  case welvet::TrainMode::StepTweenSplitHeadProxy:
+    return welvet::runtime::tween_split_head_proxy_train::train_stack_mse(layer, input, target, lr,
+                                                                          loss);
+  case welvet::TrainMode::TweenSplitLinear:
+  case welvet::TrainMode::StepTweenSplitLinear:
+    return welvet::runtime::tween_split_linear_train::train_stack_mse(layer, input, target, lr,
+                                                                     loss);
+  case welvet::TrainMode::TweenSplitFastProxy:
+  case welvet::TrainMode::MeshTweenSplitFastProxy:
+  case welvet::TrainMode::StepTweenSplitFastProxy:
+    return welvet::runtime::tween_split_fast_proxy_train::train_stack_mse(layer, input, target, lr,
+                                                                          loss);
+  case welvet::TrainMode::TweenSplitLinearCache:
+  case welvet::TrainMode::StepTweenSplitLinearCache:
+    return welvet::runtime::tween_split_linear_cache_train::train_stack_mse(layer, input, target, lr,
+                                                                            loss);
+  case welvet::TrainMode::TweenSplitHeadProxyAsync:
+  case welvet::TrainMode::StepTweenSplitHeadProxyAsync:
+    return welvet::runtime::tween_split_head_proxy_async_train::train_stack_mse(layer, input, target,
+                                                                                lr, loss);
+  case welvet::TrainMode::TweenSplitSparse:
+  case welvet::TrainMode::MeshTweenSplitSparse:
+  case welvet::TrainMode::StepTweenSplitSparse:
+    return welvet::runtime::tween_split_sparse_train::train_stack_mse(layer, input, target, lr,
+                                                                     loss);
+  case welvet::TrainMode::Adversarial:
+  case welvet::TrainMode::Memory:
+  case welvet::TrainMode::NormalBP:
+  case welvet::TrainMode::StepBP:
+  case welvet::TrainMode::MeshBP:
+  case welvet::TrainMode::Inherit:
+  default:
+    // Adv/Memory ≡ FamilyBP on stack leaf; Step*/Mesh* BP ≡ NormalBP leaf credit.
+    return stack_family_bp_mse(layer, input, target, lr, loss);
+  }
+}
+
+} // namespace
+
+welvet_status welvet_stack_train_mse(int32_t mode, int32_t batch, int32_t seq, int32_t dim,
+                                     int32_t n_children, int32_t child_act, int32_t dtype,
+                                     int32_t backend, const float* packed, const float* x,
+                                     const float* target, double lr, float* W_after, double* loss) {
+  if (batch <= 0 || seq <= 0 || dim <= 0 || n_children <= 0 || !packed || !x || !target ||
+      !W_after || !loss) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "stack train: invalid argument");
+    return st;
+  }
+  if (mode < 0 || mode > static_cast<int32_t>(welvet::TrainMode::Memory)) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "stack train: bad mode %d", mode);
+    return st;
+  }
+  if (backend != 0 && backend != 1) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "stack train: bad backend");
+    return st;
+  }
+  if (dtype < 0 || dtype >= welvet::kNumDTypes) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "stack train: bad dtype %d", dtype);
+    return st;
+  }
+  const auto be = backend == 1 ? welvet::Backend::SIMD : welvet::Backend::CPUTiled;
+  welvet::stack::Layer layer;
+  auto st = make_nested_stack_dense(dim, n_children, static_cast<welvet::Activation>(child_act),
+                                    static_cast<welvet::DType>(dtype), packed, be, &layer);
+  if (!st) return to_c(st);
+  const int batch_flat = batch * seq;
+  welvet::TensorF32 input;
+  input.shape = {batch_flat, dim};
+  input.data.assign(x, x + static_cast<std::size_t>(batch_flat * dim));
+  welvet::TensorF32 tgt;
+  tgt.shape = {batch_flat, dim};
+  tgt.data.assign(target, target + static_cast<std::size_t>(batch_flat * dim));
+  *loss = 0.0;
+  st = dispatch_stack_train_mse(static_cast<welvet::TrainMode>(mode), layer, input, tgt, lr, loss);
+  if (!st) return to_c(st);
+  st = welvet::stack::export_packed_f32(layer, W_after);
+  if (!st) return to_c(st);
+  return to_c(welvet::Status::Ok());
+}
+
+welvet_status welvet_parallel_train_mse(int32_t mode, int32_t batch, int32_t seq, int32_t dim,
+                                        int32_t out_feat, int32_t branches, int32_t combine,
+                                        int32_t sparse_k, int32_t dtype, int32_t backend,
+                                        double disagree_beta, const float* packed, const float* x,
+                                        const float* target, double lr, float* W_after,
+                                        double* loss) {
+  if (batch <= 0 || seq <= 0 || dim <= 0 || out_feat <= 0 || branches <= 0 || !packed || !x ||
+      !target || !W_after || !loss) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "parallel train: invalid argument");
+    return st;
+  }
+  if (mode < 0 || mode > static_cast<int32_t>(welvet::TrainMode::Memory)) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "parallel train: bad mode %d", mode);
+    return st;
+  }
+  if (backend != 0 && backend != 1) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "parallel train: bad backend");
+    return st;
+  }
+  if (combine < 0 || combine > 6) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "parallel train: bad combine");
+    return st;
+  }
+  if (dtype < 0 || dtype >= welvet::kNumDTypes) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "parallel train: bad dtype %d", dtype);
+    return st;
+  }
+  welvet::parallel::Config cfg;
+  cfg.dim = dim;
+  cfg.out_feat = out_feat;
+  cfg.branches = branches;
+  cfg.combine = static_cast<welvet::parallel::Combine>(combine);
+  cfg.seq_len = seq == 1 ? 0 : seq;
+  cfg.sparse_k = sparse_k;
+  cfg.disagree_beta = disagree_beta;
+  welvet::parallel::Layer layer;
+  auto st =
+      welvet::parallel::new_configured(cfg, static_cast<welvet::DType>(dtype), packed, &layer);
+  if (!st) return to_c(st);
+  layer.backend = backend == 1 ? welvet::Backend::SIMD : welvet::Backend::CPUTiled;
+  welvet::TensorF32 input;
+  if (seq == 1) {
+    input.shape = {batch, dim};
+  } else {
+    input.shape = {batch, seq, dim};
+  }
+  input.data.assign(x, x + static_cast<std::size_t>(batch * seq * dim));
+  const int out_dim =
+      (cfg.combine == welvet::parallel::Combine::Concat) ? branches * out_feat : out_feat;
+  welvet::TensorF32 tgt;
+  if (seq == 1) {
+    tgt.shape = {batch, out_dim};
+  } else {
+    tgt.shape = {batch, seq, out_dim};
+  }
+  tgt.data.assign(target, target + static_cast<std::size_t>(batch * seq * out_dim));
+  *loss = 0.0;
+  st = welvet::runtime::parallel_train::train_mse(layer, input, tgt,
+                                                  static_cast<welvet::TrainMode>(mode), lr, loss);
+  if (!st) return to_c(st);
+  st = welvet::parallel::export_packed_f32(layer, W_after);
+  if (!st) return to_c(st);
+  return to_c(welvet::Status::Ok());
+}
+
+namespace {
+
+welvet::runtime::step::Credit credit_from_mesh_mode(welvet::TrainMode m) {
+  using C = welvet::runtime::step::Credit;
+  switch (m) {
+  case welvet::TrainMode::MeshTween:
+  case welvet::TrainMode::StepTween:
+  case welvet::TrainMode::Tween:
+    return C::FamilyTween;
+  case welvet::TrainMode::MeshTweenSplit:
+  case welvet::TrainMode::TweenSplit:
+  case welvet::TrainMode::StepTweenSplit:
+    return C::FamilyTweenSplit;
+  case welvet::TrainMode::MeshTweenAlt:
+  case welvet::TrainMode::TweenAlt:
+  case welvet::TrainMode::StepTweenAlt:
+    return C::FamilyTweenAlt;
+  case welvet::TrainMode::MeshTweenSplitFastProxy:
+  case welvet::TrainMode::TweenSplitFastProxy:
+  case welvet::TrainMode::StepTweenSplitFastProxy:
+    return C::FamilyTweenSplitFastProxy;
+  case welvet::TrainMode::MeshTweenSplitSparse:
+  case welvet::TrainMode::TweenSplitSparse:
+  case welvet::TrainMode::StepTweenSplitSparse:
+    return C::FamilyTweenSplitSparse;
+  default:
+    // MeshBP / MeshTweenChain / BP family → FamilyBP
+    return C::FamilyBP;
+  }
+}
+
+welvet::runtime::line::Credit credit_from_line_mode(welvet::TrainMode m) {
+  using C = welvet::runtime::line::Credit;
+  switch (m) {
+  case welvet::TrainMode::StepTween:
+  case welvet::TrainMode::Tween:
+  case welvet::TrainMode::MeshTween:
+    return C::FamilyTween;
+  case welvet::TrainMode::StepTweenSplit:
+  case welvet::TrainMode::TweenSplit:
+  case welvet::TrainMode::MeshTweenSplit:
+    return C::FamilyTweenSplit;
+  case welvet::TrainMode::StepTweenAlt:
+  case welvet::TrainMode::TweenAlt:
+  case welvet::TrainMode::MeshTweenAlt:
+    return C::FamilyTweenAlt;
+  case welvet::TrainMode::StepTweenSplitHeadProxy:
+  case welvet::TrainMode::TweenSplitHeadProxy:
+    return C::FamilyTweenSplitHeadProxy;
+  case welvet::TrainMode::StepTweenSplitLinear:
+  case welvet::TrainMode::TweenSplitLinear:
+    return C::FamilyTweenSplitLinear;
+  case welvet::TrainMode::StepTweenSplitFastProxy:
+  case welvet::TrainMode::TweenSplitFastProxy:
+  case welvet::TrainMode::MeshTweenSplitFastProxy:
+    return C::FamilyTweenSplitFastProxy;
+  case welvet::TrainMode::StepTweenSplitLinearCache:
+  case welvet::TrainMode::TweenSplitLinearCache:
+    return C::FamilyTweenSplitLinearCache;
+  case welvet::TrainMode::StepTweenSplitHeadProxyAsync:
+  case welvet::TrainMode::TweenSplitHeadProxyAsync:
+    return C::FamilyTweenSplitHeadProxyAsync;
+  case welvet::TrainMode::StepTweenSplitSparse:
+  case welvet::TrainMode::TweenSplitSparse:
+  case welvet::TrainMode::MeshTweenSplitSparse:
+    return C::FamilyTweenSplitSparse;
+  default:
+    return C::FamilyBP;
+  }
+}
+
+int cell_pack_floats(int cell_kind, int dim, int n_sub) {
+  if (dim <= 0) return 0;
+  if (cell_kind == static_cast<int>(welvet::architecture::OpKind::Dense)) {
+    return dim * dim;
+  }
+  if (cell_kind == static_cast<int>(welvet::architecture::OpKind::Stack)) {
+    if (n_sub <= 0) return 0;
+    return n_sub * dim * dim;
+  }
+  if (cell_kind == static_cast<int>(welvet::architecture::OpKind::Parallel)) {
+    if (n_sub <= 0) return 0;
+    // Dense branches Dim→Dim + optional gate unused (Combine Add): n_sub * dim*dim
+    return n_sub * dim * dim;
+  }
+  return 0;
+}
+
+welvet::Status place_grid_cell(welvet::architecture::Grid& g, const welvet::architecture::Coord& c,
+                               int cell_kind, int dim, int n_sub, welvet::Activation child_act,
+                               welvet::DType dtype, welvet::Backend be, const float* packed) {
+  if (cell_kind == static_cast<int>(welvet::architecture::OpKind::Dense)) {
+    welvet::dense::Layer layer;
+    auto st = welvet::dense::new_layer(dim, dim, child_act, dtype, packed, &layer);
+    if (!st) return st;
+    layer.backend = be;
+    layer.multi_core = false;
+    return welvet::architecture::bind_dense(g, c.z, c.y, c.x, c.l, std::move(layer));
+  }
+  if (cell_kind == static_cast<int>(welvet::architecture::OpKind::Stack)) {
+    welvet::stack::Layer stack;
+    auto st = make_nested_stack_dense(dim, n_sub, child_act, dtype, packed, be, &stack);
+    if (!st) return st;
+    return welvet::architecture::bind_stack(g, c.z, c.y, c.x, c.l, std::move(stack));
+  }
+  if (cell_kind == static_cast<int>(welvet::architecture::OpKind::Parallel)) {
+    welvet::parallel::Config cfg;
+    cfg.dim = dim;
+    cfg.out_feat = dim;
+    cfg.branches = n_sub;
+    cfg.combine = welvet::parallel::Combine::Add;
+    cfg.seq_len = 0;
+    cfg.sparse_k = 0;
+    cfg.disagree_beta = 0.0;
+    welvet::parallel::Layer layer;
+    auto st = welvet::parallel::new_configured(cfg, dtype, packed, &layer);
+    if (!st) return st;
+    layer.backend = be;
+    return welvet::architecture::bind_parallel(g, c.z, c.y, c.x, c.l, std::move(layer));
+  }
+  return welvet::Status::Err(welvet::StatusCode::InvalidArgument, "grid train: bad cell_kind");
+}
+
+welvet::Status export_grid_cell(const welvet::architecture::Cell& cell, int cell_kind, float* dst) {
+  if (cell_kind == static_cast<int>(welvet::architecture::OpKind::Dense)) {
+    return cell.dense_op.weights.export_f32(dst);
+  }
+  if (cell_kind == static_cast<int>(welvet::architecture::OpKind::Stack)) {
+    return welvet::stack::export_packed_f32(cell.stack_op, dst);
+  }
+  if (cell_kind == static_cast<int>(welvet::architecture::OpKind::Parallel)) {
+    return welvet::parallel::export_packed_f32(cell.parallel_op, dst);
+  }
+  return welvet::Status::Err(welvet::StatusCode::InvalidArgument, "grid train: bad cell_kind export");
+}
+
+} // namespace
+
+welvet_status welvet_grid_train_mse(int32_t mode, int32_t depth, int32_t rows, int32_t cols,
+                                    int32_t lpc, int32_t batch, int32_t ticks, int32_t dim,
+                                    int32_t cell_kind, int32_t n_sub, int32_t child_act,
+                                    int32_t dtype, int32_t backend, const float* packed,
+                                    const float* x, const float* target, double lr, float* W_after,
+                                    double* loss) {
+  if (depth <= 0 || rows <= 0 || cols <= 0 || lpc <= 0 || batch <= 0 || ticks <= 0 || dim <= 0 ||
+      !packed || !x || !target || !W_after || !loss) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "grid train: invalid argument");
+    return st;
+  }
+  if (mode < 0 || mode > static_cast<int32_t>(welvet::TrainMode::Memory)) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "grid train: bad mode %d", mode);
+    return st;
+  }
+  if (backend != 0 && backend != 1) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "grid train: bad backend");
+    return st;
+  }
+  if (dtype < 0 || dtype >= welvet::kNumDTypes) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "grid train: bad dtype %d", dtype);
+    return st;
+  }
+  const int pack_n = cell_pack_floats(cell_kind, dim, n_sub);
+  if (pack_n <= 0) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "grid train: bad cell_kind/n_sub");
+    return st;
+  }
+  if (cell_kind != static_cast<int32_t>(welvet::architecture::OpKind::Dense) && n_sub <= 0) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "grid train: n_sub required");
+    return st;
+  }
+  const auto be = backend == 1 ? welvet::Backend::SIMD : welvet::Backend::CPUTiled;
+  const auto act = static_cast<welvet::Activation>(child_act);
+  const auto dt = static_cast<welvet::DType>(dtype);
+
+  auto g = welvet::architecture::new_grid(depth, rows, cols, lpc);
+  const auto hops = welvet::architecture::hop_order(g);
+  int off = 0;
+  for (const auto& c : hops) {
+    auto st = place_grid_cell(g, c, cell_kind, dim, n_sub <= 0 ? 1 : n_sub, act, dt, be,
+                              packed + off);
+    if (!st) return to_c(st);
+    off += pack_n;
+  }
+
+  welvet::TensorF32 input;
+  input.shape = {batch, dim};
+  input.data.assign(x, x + static_cast<std::size_t>(batch * dim));
+  welvet::TensorF32 tgt;
+  tgt.shape = {batch, dim};
+  tgt.data.assign(target, target + static_cast<std::size_t>(batch * dim));
+  *loss = 0.0;
+  auto st = welvet::runtime::step::train_mse(g, input, tgt, ticks, lr, loss,
+                                             credit_from_mesh_mode(static_cast<welvet::TrainMode>(mode)));
+  if (!st) return to_c(st);
+
+  off = 0;
+  for (const auto& c : hops) {
+    const welvet::architecture::Cell* cell = welvet::architecture::at(g, c.z, c.y, c.x, c.l);
+    if (!cell) {
+      welvet_status err{};
+      err.code = 1;
+      std::snprintf(err.message, sizeof(err.message), "grid train: missing cell");
+      return err;
+    }
+    st = export_grid_cell(*cell, cell_kind, W_after + off);
+    if (!st) return to_c(st);
+    off += pack_n;
+  }
+  return to_c(welvet::Status::Ok());
+}
+
+welvet_status welvet_stack_line_train_mse(int32_t mode, int32_t n_children, int32_t n_ticks,
+                                          int32_t batch, double lr, int32_t dtype,
+                                          const int32_t* in_h, const int32_t* out_h,
+                                          const int32_t* act, const float* packed_W,
+                                          const float* x_ticks, const float* target_ticks,
+                                          float* W_after, double* loss) {
+  if (n_children <= 0 || n_ticks <= 0 || batch <= 0 || !in_h || !out_h || !act || !packed_W ||
+      !x_ticks || !target_ticks || !W_after || !loss) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "stack line: invalid argument");
+    return st;
+  }
+  if (mode < 0 || mode > static_cast<int32_t>(welvet::TrainMode::Memory)) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "stack line: bad mode %d", mode);
+    return st;
+  }
+  if (dtype < 0 || dtype >= welvet::kNumDTypes) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "stack line: bad dtype %d", dtype);
+    return st;
+  }
+
+  welvet::stack::Layer stack;
+  stack.meta.type = welvet::LayerType::Stack;
+  stack.meta.dtype = static_cast<welvet::DType>(dtype);
+  stack.backend = welvet::Backend::CPUTiled;
+  int w_off = 0;
+  for (int32_t i = 0; i < n_children; ++i) {
+    if (in_h[i] <= 0 || out_h[i] <= 0) {
+      welvet_status st{};
+      st.code = 1;
+      std::snprintf(st.message, sizeof(st.message), "stack line: bad child dims");
+      return st;
+    }
+    welvet::stack::Child ch;
+    ch.kind = welvet::stack::Kind::Dense;
+    auto st = welvet::dense::new_layer(in_h[i], out_h[i], static_cast<welvet::Activation>(act[i]),
+                                       static_cast<welvet::DType>(dtype), packed_W + w_off,
+                                       &ch.dense_op);
+    if (!st) return to_c(st);
+    ch.dense_op.backend = welvet::Backend::CPUTiled;
+    ch.dense_op.multi_core = false;
+    w_off += out_h[i] * in_h[i];
+    stack.children.push_back(std::move(ch));
+  }
+  stack.meta.input_height = in_h[0];
+  stack.meta.output_height = out_h[n_children - 1];
+
+  const auto credit = credit_from_line_mode(static_cast<welvet::TrainMode>(mode));
+  const int x_stride = batch * in_h[0];
+  const int t_stride = batch * out_h[n_children - 1];
+  welvet::runtime::line::State line_st;
+  double last_loss = 0.0;
+  for (int32_t t = 0; t < n_ticks; ++t) {
+    welvet::TensorF32 xin;
+    xin.shape = {batch, in_h[0]};
+    xin.data.assign(x_ticks + static_cast<std::size_t>(t) * static_cast<std::size_t>(x_stride),
+                    x_ticks + static_cast<std::size_t>(t + 1) * static_cast<std::size_t>(x_stride));
+    welvet::TensorF32 tgt;
+    tgt.shape = {batch, out_h[n_children - 1]};
+    tgt.data.assign(target_ticks + static_cast<std::size_t>(t) * static_cast<std::size_t>(t_stride),
+                    target_ticks +
+                        static_cast<std::size_t>(t + 1) * static_cast<std::size_t>(t_stride));
+    double tick_loss = 0.0;
+    auto st = welvet::runtime::line::train_mse(stack, &line_st, xin, tgt, lr, &tick_loss, credit);
+    if (!st) return to_c(st);
+    if (tick_loss != 0.0 || t == n_ticks - 1) {
+      last_loss = tick_loss;
+    }
+  }
+  *loss = last_loss;
+
+  int off = 0;
+  for (const auto& ch : stack.children) {
+    const int cn = ch.dense_op.weights.rows * ch.dense_op.weights.cols;
+    auto st = ch.dense_op.weights.export_f32(W_after + off);
+    if (!st) return to_c(st);
+    off += cn;
+  }
+  return to_c(welvet::Status::Ok());
+}
+
+const char* welvet_version(void) { return "0.1.85-m2-grid-line-trainmodes"; }
 
 int32_t welvet_gap_count(void) { return static_cast<int32_t>(welvet::gaps::count_gaps()); }
 

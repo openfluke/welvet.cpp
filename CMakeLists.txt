@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(welvet VERSION 0.1.83 LANGUAGES CXX)
+project(welvet VERSION 0.1.85 LANGUAGES CXX)
 
 # One tree → many OS: Linux, macOS, Windows, Android, iOS (toolchains under cmake/).
 set(CMAKE_CXX_STANDARD 20)
@@ -133,10 +133,9 @@ target_include_directories(welvet
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
+# Single unversioned SONAME (libwelvet.so) so Go ships one linux_amd64 artifact.
 set_target_properties(welvet PROPERTIES
   OUTPUT_NAME welvet
-  VERSION ${PROJECT_VERSION}
-  SOVERSION 0
   POSITION_INDEPENDENT_CODE ON
 )
 if(WIN32)

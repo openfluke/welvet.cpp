@@ -1,6 +1,6 @@
 # welvet.cpp gap census
 
-**Version `0.1.82-m2-parallel-cascade`** — see main [README](README.md) scoreboard (**73 / 100** engine + **13 / 100** extensions = **86 / 200**).
+**Version `0.1.85-m2-grid-line-trainmodes`** — C ABI TrainMode dispatchers (`stack`/`parallel`/`grid`/`line` train_mse); see main [README](README.md) scoreboard (**73 / 100** engine + **13 / 100** extensions = **86 / 200**).
 
 SIMD/GEMV code under `include/welvet/simd/` + `include/welvet/imported/` was **copied** from `welvet-to-rust_n_cpp/welvet_cpp` (kernels only — not that tree’s docs).
 

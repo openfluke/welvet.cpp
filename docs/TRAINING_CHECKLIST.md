@@ -15,7 +15,7 @@ Canonical enum: Go `layers/parallel/train_mode.go` (`TrainMode`).
 
 Tick `[x]` when done. Put the **release tag** in **Ver** when that row (or the whole mode table) is signed.
 
-**Current engine:** `0.1.82-m2-parallel-cascade`
+**Current engine:** `0.1.85-m2-grid-line-trainmodes` (Go NativeCPU TrainMode C ABI)
 
 ---
 
