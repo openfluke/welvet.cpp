@@ -29,6 +29,8 @@ Status dispatch_cell(architecture::Cell& cell, const TensorF32& in, TensorF32* p
     return swiglu::forward(cell.swiglu_op, in, pre, post);
   case architecture::OpKind::Softmax:
     return softmax::forward(cell.softmax_op, in, pre, post);
+  case architecture::OpKind::Embedding:
+    return embedding::forward(cell.embedding_op, in, pre, post);
   default:
     return Status::Gap("runtime.forward: unsupported cell Op");
   }

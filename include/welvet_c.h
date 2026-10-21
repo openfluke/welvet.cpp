@@ -191,6 +191,16 @@ WELVET_API welvet_status welvet_embedding_forward_f32(
     int32_t act, int32_t dtype, int32_t backend, const float* W, const float* x, float* pre,
     float* post);
 
+/* Embedding NormalBP leaf: gather → (MSEGrad | grad_out) → scatter dW → optional SGD.
+ * use_target: 0 = grad_or_target is gradOut [out_n]; 1 = target (MSE) same layout as post.
+ * Outputs: pre/post [out_n], dX zeros [x_n], dW/W_after [vocab*emb], *loss.
+ */
+WELVET_API welvet_status welvet_embedding_normalbp_f32(
+    int32_t batch, int32_t vocab, int32_t emb, int32_t seq_len, int32_t in_rank, int32_t in_last,
+    int32_t act, int32_t dtype, int32_t backend, const float* W_init, const float* x,
+    const float* grad_or_target, int32_t use_target, double lr, float* pre, float* post, float* dX,
+    float* dW, float* W_after, double* loss);
+
 /* Softmax (weightless). All Kind variants. x: [n] flat or shaped via rank/dims.
  * kind: 0 std 1 temp 2 gumbel 3 masked 4 sparse 5 entmax 6 grid 7 hierarchical
  * mask: uint8 0/1 length mask_len (KindMasked); hier: int32 levels (KindHierarchical)

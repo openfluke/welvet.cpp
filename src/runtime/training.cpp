@@ -1,5 +1,6 @@
 #include "welvet/runtime/training.hpp"
 
+#include "welvet/embedding.hpp"
 #include "welvet/layernorm.hpp"
 #include "welvet/rmsnorm.hpp"
 #include "welvet/softmax.hpp"
@@ -83,6 +84,9 @@ Status sgd_dense(architecture::Grid& g, const forward::Result& fwd, const backwa
       break;
     case architecture::OpKind::Softmax:
       st_a = softmax::apply_grad_sgd(&cell->softmax_op, *it->second, lr);
+      break;
+    case architecture::OpKind::Embedding:
+      st_a = embedding::apply_grad_sgd(&cell->embedding_op, *it->second, lr);
       break;
     default:
       return Status::Err(StatusCode::InvalidArgument, "training: SGD unsupported cell Op");

@@ -15,7 +15,7 @@ Canonical enum: Go `layers/parallel/train_mode.go` (`TrainMode`).
 
 Tick `[x]` when done. Put the **release tag** in **Ver** when that row (or the whole mode table) is signed.
 
-**Current engine:** `0.1.25-m2-softmax-nbp`
+**Current engine:** `0.1.26-m2-embedding-nbp`
 
 ---
 
@@ -101,6 +101,22 @@ Timing: same `--bench=N` / spd%Δ convention. Softmax = dX only (weightless).
 | 8 | Volume 2×2×2×1 Float32 | [x] | 3D volumetric + speed |
 | 9 | Volume 2×1×1×1 × all 34 dtypes | [x] | multi-cell ×34 |
 
+## w2a Go↔C++ (Embedding NormalBP) — sign-off evidence
+
+Run: `./scripts/linux_build_w2a.sh --embedding-train`  
+Wire: `WEB1`/`WEBO` (leaf), `WEV1`/`WEVO` (volume). Exact_bit vs Go.  
+Timing: same `--bench=N` / spd%Δ convention. dX zeros (discrete IDs); dW scatter.
+
+| # | Case | Status | Notes |
+|---|---|:---:|---|
+| 1 | Leaf Float32 (dX/dW/W/loss) | [x] | exact_bit + speed |
+| 2 | Leaf × all 34 dtypes | [x] | exact_bit + speed table |
+| 3 | Volume 1×1×1×1 Float32 | [x] | inside-node + speed |
+| 4 | Volume 1×1×1×2 chain Float32 | [x] | multi-layer cell + speed |
+| 5 | Volume 1×1×1×1 × all 34 dtypes | [x] | + spectrum |
+| 6 | Volume 2×2×2×1 Float32 | [x] | 3D volumetric + speed |
+| 7 | Volume 2×1×1×1 × all 34 dtypes | [x] | multi-cell ×34 |
+
 ---
 
 ## 1 — NormalBP
@@ -114,7 +130,7 @@ Chain-rule Backward + ApplyGradSGD. Start here. Dense first.
 | LayerNorm | [x] | [x] | [x] | `0.1.23-m2-layernorm-nbp` |
 | SwiGLU | [x] | [x] | [x] | `0.1.24-m2-swiglu-nbp` |
 | Softmax | [x] | [x] | [x] | `0.1.25-m2-softmax-nbp` |
-| Embedding | [ ] | [ ] | [ ] | |
+| Embedding | [x] | [x] | [x] | `0.1.26-m2-embedding-nbp` |
 | MHA | [ ] | [ ] | [ ] | |
 | CNN1 | [ ] | [ ] | [ ] | |
 | CNN2 | [ ] | [ ] | [ ] | |
@@ -1217,4 +1233,5 @@ Fill as you tick rows / finish mode tables.
 | `0.1.23-m2-layernorm-nbp` | NormalBP LayerNorm | Leaf+vol w2a exact_bit ×34; dγ/dβ/dx + ApplySGD FormatNone |
 | `0.1.24-m2-swiglu-nbp` | NormalBP SwiGLU | Leaf+vol w2a exact_bit ×34; Gate/Up/Down + SiLU⊙ grads |
 | `0.1.25-m2-softmax-nbp` | NormalBP Softmax | Leaf+vol w2a exact_bit all Kind×34; Jacobian dX (weightless); gumbel smoke |
+| `0.1.26-m2-embedding-nbp` | NormalBP Embedding | Leaf+vol w2a exact_bit ×34; scatter dW (dX=0) + ApplySGD |
 | | | |
