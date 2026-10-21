@@ -297,6 +297,15 @@ Status apply_split(stack::Layer& ops, const TensorF32& grad_out, const TensorF32
   return apply_leaves(leaves, grad_out, lr);
 }
 
+Status apply_split_child(stack::Child& c, const TensorF32& grad_out, const TensorF32& input,
+                         double lr) {
+  std::vector<Leaf> leaves;
+  if (auto st = collect_child(c, input, &leaves); !st) {
+    return st;
+  }
+  return apply_leaves(leaves, grad_out, lr);
+}
+
 Status train_volume_mse(architecture::Grid& g, const runtime::forward::Result& fwd,
                         const TensorF32& target, double lr, double* loss) {
   if (!loss) {

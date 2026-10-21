@@ -15,7 +15,7 @@ Canonical enum: Go `layers/parallel/train_mode.go` (`TrainMode`).
 
 Tick `[x]` when done. Put the **release tag** in **Ver** when that row (or the whole mode table) is signed.
 
-**Current engine:** `0.1.41-m2-tweensplit`
+**Current engine:** `0.1.42-m2-steptweensplit`
 
 ---
 
@@ -317,6 +317,16 @@ Wires: `TSB1`/`TSBO` (Stack 1/N @ full lr); `TSP1`/`TSPO` + `TRP1`…`MBTP` (vol
 |---|---|:---:|---|
 | 1–28 | Leaf kinds ×34 | [x] | FamilyTweenSplit OpenSplitTape twin |
 | 29–48 | Volume 2×2×2×1 all signed kinds | [x] | TSP1/TRP1… collect leaves 1/N |
+
+## w2a Go↔C++ (StepTweenSplit ModeStepTweenSplit) — sign-off evidence
+
+Run: `./scripts/linux_build_w2a.sh --steptweensplit-train`  
+Wires: `STS1`/`STSO` (Line FamilyTweenSplit 1/N @ full lr on pop); 3D via TweenSplit volume wires `TSP1`/`TRP1`… (MeshTweenSplit volume credit). Exact_bit vs Go.
+
+| # | Case | Status | Notes |
+|---|---|:---:|---|
+| 1–28 | Line leaf kinds ×34 | [x] | FamilyTweenSplit per hop |
+| 29–48 | MeshTweenSplit volume 2×2×2×1 | [x] | = ModeTweenSplit volume wires |
 
 ## w2a Go↔C++ (MeshTween mesh-clock) — sign-off evidence
 
@@ -716,35 +726,37 @@ CNN2/3 & ConvT2/3 share CNN1/ConvT1 path. Softmax weightless (N may be 0).
 
 ## 11 — StepTweenSplit
 
-Needs Line + TweenSplit.
+Needs Line + TweenSplit.  
+Ship: `runtime/line` Credit::FamilyTweenSplit on pop (`apply_split_child` 1/N @ full lr); wire `STS1`/`STSO`; w2a `--steptweensplit-train`.  
+**3D volumetric** = MeshTweenSplit volume (= ModeTweenSplit / TweenSplit volume wires `TSP1`/`TRP1`…). CNN2/3 & ConvT2/3 share CNN1/ConvT1 path.
 
 | Layer | Inside node | 3D volumetric | Fully signed off | Ver |
 |---|:---:|:---:|:---:|---|
-| Dense | [ ] | [ ] | [ ] | |
-| RMSNorm | [ ] | [ ] | [ ] | |
-| LayerNorm | [ ] | [ ] | [ ] | |
-| SwiGLU | [ ] | [ ] | [ ] | |
-| Softmax | [ ] | [ ] | [ ] | |
-| Embedding | [ ] | [ ] | [ ] | |
-| MHA | [ ] | [ ] | [ ] | |
-| CNN1 | [ ] | [ ] | [ ] | |
-| CNN2 | [ ] | [ ] | [ ] | |
-| CNN3 | [ ] | [ ] | [ ] | |
-| ConvT1 | [ ] | [ ] | [ ] | |
-| ConvT2 | [ ] | [ ] | [ ] | |
-| ConvT3 | [ ] | [ ] | [ ] | |
-| RNN | [ ] | [ ] | [ ] | |
-| LSTM | [ ] | [ ] | [ ] | |
-| Sequential | [ ] | [ ] | [ ] | |
-| Residual | [ ] | [ ] | [ ] | |
+| Dense | [x] | [x] | [x] | `0.1.42-m2-steptweensplit` |
+| RMSNorm | [x] | [x] | [x] | `0.1.42-m2-steptweensplit` |
+| LayerNorm | [x] | [x] | [x] | `0.1.42-m2-steptweensplit` |
+| SwiGLU | [x] | [x] | [x] | `0.1.42-m2-steptweensplit` |
+| Softmax | [x] | [x] | [x] | `0.1.42-m2-steptweensplit` |
+| Embedding | [x] | [x] | [x] | `0.1.42-m2-steptweensplit` |
+| MHA | [x] | [x] | [x] | `0.1.42-m2-steptweensplit` |
+| CNN1 | [x] | [x] | [x] | `0.1.42-m2-steptweensplit` |
+| CNN2 | [x] | [x] | [x] | `0.1.42-m2-steptweensplit` |
+| CNN3 | [x] | [x] | [x] | `0.1.42-m2-steptweensplit` |
+| ConvT1 | [x] | [x] | [x] | `0.1.42-m2-steptweensplit` |
+| ConvT2 | [x] | [x] | [x] | `0.1.42-m2-steptweensplit` |
+| ConvT3 | [x] | [x] | [x] | `0.1.42-m2-steptweensplit` |
+| RNN | [x] | [x] | [x] | `0.1.42-m2-steptweensplit` |
+| LSTM | [x] | [x] | [x] | `0.1.42-m2-steptweensplit` |
+| Sequential | [x] | [x] | [x] | `0.1.42-m2-steptweensplit` |
+| Residual | [x] | [x] | [x] | `0.1.42-m2-steptweensplit` |
 | KMeans | [ ] | [ ] | [ ] | |
-| Mamba | [ ] | [ ] | [ ] | |
+| Mamba | [x] | [x] | [x] | `0.1.42-m2-steptweensplit` |
 | Metacognition | [ ] | [ ] | [ ] | |
 | GDN | [ ] | [ ] | [ ] | |
 | Parallel | [ ] | [ ] | [ ] | |
 | Stack | [ ] | [ ] | [ ] | |
 
-**Checkpoint:** bump version when this mode table advances.
+**Checkpoint:** `0.1.42-m2-steptweensplit` — Line StepTweenSplit Inside+×34 + MeshTweenSplit volume 2×2×2×1 (TweenSplit credit).
 
 ---
 
@@ -1503,3 +1515,4 @@ Fill as you tick rows / finish mode tables.
 | `0.1.39-m2-steptweenchain` | StepTweenChain × signed kinds | Line FamilyBP @ full lr; STC1; 3D MeshTweenChain vol (= TweenChain) |
 | `0.1.40-m2-meshtween` | MeshTween + MeshTweenChain × signed kinds | MTW1 FamilyTween mesh-clock; MTC1 FamilyBP (= MeshBP); volume ModeTween/TweenChain |
 | `0.1.41-m2-tweensplit` | TweenSplit × signed kinds | 1/N projected gap @ full lr; TSB1/TSP1/TRP1…; leaf ×34 + volume |
+| `0.1.42-m2-steptweensplit` | StepTweenSplit × signed kinds | Line FamilyTweenSplit 1/N @ full lr; STS1; 3D MeshTweenSplit vol (= TweenSplit) |

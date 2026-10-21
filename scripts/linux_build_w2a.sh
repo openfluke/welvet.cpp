@@ -43,6 +43,7 @@
 #   ./scripts/linux_build_w2a.sh --meshtween-train  # MeshTween mesh-clock FamilyTween + volume
 #   ./scripts/linux_build_w2a.sh --meshtweenchain-train  # MeshTweenChain mesh-clock FamilyBP + volume
 #   ./scripts/linux_build_w2a.sh --tweensplit-train  # ModeTweenSplit 1/N @ full lr + volume
+#   ./scripts/linux_build_w2a.sh --steptweensplit-train  # Line StepTweenSplit FamilyTweenSplit + MeshTweenSplit vol
 #   ./scripts/linux_build_w2a.sh --go-v-cpp   # same as default
 #   ./scripts/linux_build_w2a.sh --all        # entire w2a go test ./...
 #   BUILD_DIR=/tmp/welvet-build ./scripts/linux_build_w2a.sh
@@ -99,8 +100,9 @@ for arg in "$@"; do
     --meshtween-train) MODE="meshtween_train" ;;
     --meshtweenchain-train) MODE="meshtweenchain_train" ;;
     --tweensplit-train) MODE="tweensplit_train" ;;
+    --steptweensplit-train) MODE="steptweensplit_train" ;;
     -h|--help)
-      sed -n '2,47p' "$0"
+      sed -n '2,48p' "$0"
       exit 0
       ;;
     *)
@@ -295,6 +297,10 @@ case "$MODE" in
   tweensplit_train)
     echo "==> w2a go_v_cpp TweenSplit train (1/N gap @ full lr + volume)"
     go test ./tests/go_v_cpp/ -run '^TestGoVCppTweenSplitTrain$' -v -count=1
+    ;;
+  steptweensplit_train)
+    echo "==> w2a go_v_cpp StepTweenSplit train (Line FamilyTweenSplit + MeshTweenSplit volume)"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppStepTweenSplitTrain$' -v -count=1
     ;;
   all)
     echo "==> w2a full suite (go test ./...)"
