@@ -1,6 +1,6 @@
 # welvet.cpp gap census
 
-**Version `0.1.29-m2-convt-nbp`** — see main [README](README.md) scoreboard (**58 / 100** engine + **13 / 100** extensions = **71 / 200**).
+**Version `0.1.30-m2-rnn-lstm-nbp`** — see main [README](README.md) scoreboard (**58 / 100** engine + **13 / 100** extensions = **71 / 200**).
 
 SIMD/GEMV code under `include/welvet/simd/` + `include/welvet/imported/` was **copied** from `welvet-to-rust_n_cpp/welvet_cpp` (kernels only — not that tree’s docs).
 
@@ -17,6 +17,8 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 ./scripts/linux_build_w2a.sh --mha-train
 ./scripts/linux_build_w2a.sh --cnn-train
 ./scripts/linux_build_w2a.sh --convt-train
+./scripts/linux_build_w2a.sh --rnn-train
+./scripts/linux_build_w2a.sh --lstm-train
 ./scripts/linux_build_w2a.sh --parallel
 ./scripts/linux_build_w2a.sh --seqmix
 ./scripts/linux_build_w2a.sh --all
@@ -25,7 +27,7 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 ./build/welvet_dense_fwd --gaps
 ```
 
-## Done (through M2.09 ConvT NormalBP)
+## Done (through M2.10 RNN+LSTM NormalBP)
 
 | ID | Detail |
 |---|---|
@@ -39,10 +41,12 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 | **MHA NormalBP** | ModeSelf attn+RoPEᵀ + Q/K/V/O grads FormatNone×34; volume Step; w2a `WHB1`/`WHV1` |
 | **CNN1/2/3 NormalBP** | im2col+Dense bwd+col2im FormatNone×34; volume Step; w2a `C1/C2/C3` B/V |
 | **ConvT1/2/3 NormalBP** | scatter adjoint + ApplySGD FormatNone×34; volume Step; w2a `T1/T2/T3` B/V |
+| **RNN NormalBP** | BPTT Dense IH/HH + tanh′ + bias SGD FormatNone×34; volume Step; w2a `RNB1`/`RNV1` |
+| **LSTM NormalBP** | BPTT 4-gate Dense + bias SGD FormatNone×34; volume Step; w2a `LSB1`/`LSV1` |
 | Transformer / composition | Sequential, Residual, seqmix Kind, **Parallel Dense×7 combines** |
 | Extended | ConvT, KMeans, Mamba, Metacognition, GDN |
 | CNN / RNN / LSTM | FormatNone×34 forwards |
-| ABI wires | … / C*B / C*V / T1B1 / T1V1 / T2B1 / T2V1 / T3B1 / T3V1 |
+| ABI wires | … / T*B / T*V / RNB1 / RNV1 / LSB1 / LSV1 |
 
 ## gap? — remaining
 

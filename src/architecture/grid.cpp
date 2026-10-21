@@ -335,4 +335,36 @@ Status bind_convt3(Grid& g, int z, int y, int x, int l, convt3::Layer op) {
   return Status::Ok();
 }
 
+Status bind_rnn(Grid& g, int z, int y, int x, int l, rnn::Layer op) {
+  Cell* c = at(g, z, y, x, l);
+  if (!c) {
+    return bad_coord("bind", z, y, x, l);
+  }
+  c->meta = op.meta;
+  c->meta.type = LayerType::RNN;
+  c->meta.z = z;
+  c->meta.y = y;
+  c->meta.x = x;
+  c->meta.l = l;
+  c->op_kind = OpKind::RNN;
+  c->rnn_op = std::move(op);
+  return Status::Ok();
+}
+
+Status bind_lstm(Grid& g, int z, int y, int x, int l, lstm::Layer op) {
+  Cell* c = at(g, z, y, x, l);
+  if (!c) {
+    return bad_coord("bind", z, y, x, l);
+  }
+  c->meta = op.meta;
+  c->meta.type = LayerType::LSTM;
+  c->meta.z = z;
+  c->meta.y = y;
+  c->meta.x = x;
+  c->meta.l = l;
+  c->op_kind = OpKind::LSTM;
+  c->lstm_op = std::move(op);
+  return Status::Ok();
+}
+
 } // namespace welvet::architecture

@@ -1132,4 +1132,20 @@ Status WeightStore::apply_sgd(const double* dW, double lr) {
   return Status::Ok();
 }
 
+Status WeightStore::apply_bias_sgd(const double* dB, int n, double lr) {
+  if (bias.empty()) {
+    return Status::Ok();
+  }
+  if (!dB) {
+    return Status::Err(StatusCode::InvalidArgument, "weights: ApplyBiasSGD nil dB");
+  }
+  if (n < static_cast<int>(bias.size())) {
+    return Status::Err(StatusCode::InvalidArgument, "weights: ApplyBiasSGD dB short");
+  }
+  for (std::size_t i = 0; i < bias.size(); ++i) {
+    bias[i] -= lr * dB[i];
+  }
+  return Status::Ok();
+}
+
 } // namespace welvet

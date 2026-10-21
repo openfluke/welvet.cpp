@@ -8,8 +8,10 @@
 #include "welvet/convt3.hpp"
 #include "welvet/embedding.hpp"
 #include "welvet/layernorm.hpp"
+#include "welvet/lstm.hpp"
 #include "welvet/mha.hpp"
 #include "welvet/rmsnorm.hpp"
+#include "welvet/rnn.hpp"
 #include "welvet/softmax.hpp"
 #include "welvet/swiglu.hpp"
 
@@ -115,6 +117,12 @@ Status sgd_dense(architecture::Grid& g, const forward::Result& fwd, const backwa
       break;
     case architecture::OpKind::ConvT3:
       st_a = convt3::apply_grad_sgd(&cell->convt3_op, *it->second, lr);
+      break;
+    case architecture::OpKind::RNN:
+      st_a = rnn::apply_grad_sgd(&cell->rnn_op, *it->second, lr);
+      break;
+    case architecture::OpKind::LSTM:
+      st_a = lstm::apply_grad_sgd(&cell->lstm_op, *it->second, lr);
       break;
     default:
       return Status::Err(StatusCode::InvalidArgument, "training: SGD unsupported cell Op");

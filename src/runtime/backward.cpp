@@ -73,6 +73,12 @@ Status volume_dense(architecture::Grid& g, const forward::Result& fwd, const Ten
     case architecture::OpKind::ConvT3:
       st_b = convt3::backward_f32(cell->convt3_op, gy, st.input, st.pre, &gx, &dw);
       break;
+    case architecture::OpKind::RNN:
+      st_b = rnn::backward_f32(cell->rnn_op, gy, st.input, st.pre, &gx, &dw);
+      break;
+    case architecture::OpKind::LSTM:
+      st_b = lstm::backward_f32(cell->lstm_op, gy, st.input, st.pre, &gx, &dw);
+      break;
     default: {
       std::ostringstream oss;
       oss << "runtime.backward: unsupported Op at z=" << st.coord.z << " y=" << st.coord.y

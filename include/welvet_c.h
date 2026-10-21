@@ -239,6 +239,21 @@ WELVET_API welvet_status welvet_lstm_forward_f32(
     int32_t batch, int32_t input_size, int32_t hidden_size, int32_t seq_len, int32_t dtype,
     int32_t backend, const float* packed, const float* x, float* pre, float* post);
 
+/* RNN/LSTM NormalBP leaf. use_target: 0=gradOut on post, 1=MSE target. lr==0 skips SGD.
+ * dW/W_after: loom pack (RNN [IH|HH|bias]; LSTM 4×gate).
+ */
+WELVET_API welvet_status welvet_rnn_normalbp_f32(
+    int32_t batch, int32_t input_size, int32_t hidden_size, int32_t seq_len, int32_t dtype,
+    int32_t backend, const float* packed, const float* x, const float* grad_or_target,
+    int32_t use_target, double lr, float* pre, float* post, float* dX, float* dW, float* W_after,
+    double* loss);
+
+WELVET_API welvet_status welvet_lstm_normalbp_f32(
+    int32_t batch, int32_t input_size, int32_t hidden_size, int32_t seq_len, int32_t dtype,
+    int32_t backend, const float* packed, const float* x, const float* grad_or_target,
+    int32_t use_target, double lr, float* pre, float* post, float* dX, float* dW, float* W_after,
+    double* loss);
+
 /* Embedding gather. W: [vocab*emb], x: [batch*seq*in_last] token ids as f32
  * in_rank 1..3; in_last 1 (or emb for chain). pre/post: [batch*seq*emb] (rank1→seq*emb)
  */

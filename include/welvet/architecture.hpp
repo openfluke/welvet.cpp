@@ -10,8 +10,10 @@
 #include "welvet/embedding.hpp"
 #include "welvet/layer.hpp"
 #include "welvet/layernorm.hpp"
+#include "welvet/lstm.hpp"
 #include "welvet/mha.hpp"
 #include "welvet/rmsnorm.hpp"
+#include "welvet/rnn.hpp"
 #include "welvet/softmax.hpp"
 #include "welvet/status.hpp"
 #include "welvet/swiglu.hpp"
@@ -45,6 +47,8 @@ enum class OpKind : int32_t {
   ConvT1 = 11,
   ConvT2 = 12,
   ConvT3 = 13,
+  RNN = 14,
+  LSTM = 15,
   // gap? other layer ops
 };
 
@@ -65,6 +69,8 @@ struct Cell {
   convt1::Layer convt1_op;       // valid when op_kind == ConvT1
   convt2::Layer convt2_op;       // valid when op_kind == ConvT2
   convt3::Layer convt3_op;       // valid when op_kind == ConvT3
+  rnn::Layer rnn_op;             // valid when op_kind == RNN
+  lstm::Layer lstm_op;           // valid when op_kind == LSTM
 
   bool is_remote_link = false;
   int target_z = 0, target_y = 0, target_x = 0, target_l = 0;
@@ -124,5 +130,7 @@ Status bind_cnn3(Grid& g, int z, int y, int x, int l, cnn3::Layer op);
 Status bind_convt1(Grid& g, int z, int y, int x, int l, convt1::Layer op);
 Status bind_convt2(Grid& g, int z, int y, int x, int l, convt2::Layer op);
 Status bind_convt3(Grid& g, int z, int y, int x, int l, convt3::Layer op);
+Status bind_rnn(Grid& g, int z, int y, int x, int l, rnn::Layer op);
+Status bind_lstm(Grid& g, int z, int y, int x, int l, lstm::Layer op);
 
 } // namespace welvet::architecture

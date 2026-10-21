@@ -42,6 +42,9 @@ struct WeightStore {
 
   // w <- w - lr*dW in native FormatNone storage (Go weights.ApplySGD).
   Status apply_sgd(const double* dW, double lr);
+
+  // Bias ← Bias − lr·dB (float64 host bias; no-op if bias empty). Go ApplyBiasSGD.
+  Status apply_bias_sgd(const double* dB, int n, double lr);
 };
 
 } // namespace welvet
