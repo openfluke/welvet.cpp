@@ -2,6 +2,7 @@
 
 #include "welvet/dense.hpp"
 #include "welvet/layer.hpp"
+#include "welvet/layernorm.hpp"
 #include "welvet/rmsnorm.hpp"
 #include "welvet/status.hpp"
 
@@ -23,6 +24,7 @@ enum class OpKind : int32_t {
   None = 0,
   Dense = 1,
   RMSNorm = 2,
+  LayerNorm = 3,
   // gap? other layer ops
 };
 
@@ -30,8 +32,9 @@ enum class OpKind : int32_t {
 struct Cell {
   LayerMeta meta;
   OpKind op_kind = OpKind::None;
-  dense::Layer dense_op;       // valid when op_kind == Dense
-  rmsnorm::Layer rmsnorm_op;   // valid when op_kind == RMSNorm
+  dense::Layer dense_op;         // valid when op_kind == Dense
+  rmsnorm::Layer rmsnorm_op;     // valid when op_kind == RMSNorm
+  layernorm::Layer layernorm_op; // valid when op_kind == LayerNorm
 
   bool is_remote_link = false;
   int target_z = 0, target_y = 0, target_x = 0, target_l = 0;
@@ -80,5 +83,6 @@ const Cell* resolve_hop(const Grid& g, const Cell* c);
 // Bind a Dense op at coordinates (syncs meta type/geometry from the dense layer).
 Status bind_dense(Grid& g, int z, int y, int x, int l, dense::Layer op);
 Status bind_rmsnorm(Grid& g, int z, int y, int x, int l, rmsnorm::Layer op);
+Status bind_layernorm(Grid& g, int z, int y, int x, int l, layernorm::Layer op);
 
 } // namespace welvet::architecture

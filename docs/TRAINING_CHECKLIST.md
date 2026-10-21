@@ -15,7 +15,7 @@ Canonical enum: Go `layers/parallel/train_mode.go` (`TrainMode`).
 
 Tick `[x]` when done. Put the **release tag** in **Ver** when that row (or the whole mode table) is signed.
 
-**Current engine:** `0.1.22-m2-rmsnorm-nbp`
+**Current engine:** `0.1.23-m2-layernorm-nbp`
 
 ---
 
@@ -51,6 +51,22 @@ Timing: same `--bench=N` / spd%Δ convention as Dense.
 | 6 | Volume 2×2×2×1 Float32 | [x] | 3D volumetric + speed |
 | 7 | Volume 2×1×1×1 × all 34 dtypes | [x] | multi-cell ×34 + speed table |
 
+## w2a Go↔C++ (LayerNorm NormalBP) — sign-off evidence
+
+Run: `./scripts/linux_build_w2a.sh --layernorm-train`  
+Wire: `WLB1`/`WLBO` (leaf), `WLV1`/`WLVO` (volume). Exact_bit vs Go.  
+Timing: same `--bench=N` / spd%Δ convention as Dense/RMSNorm.
+
+| # | Case | Status | Notes |
+|---|---|:---:|---|
+| 1 | Leaf Float32 (dX/dγβ/γβ/loss) | [x] | exact_bit + speed |
+| 2 | Leaf × all 34 dtypes | [x] | exact_bit + speed table |
+| 3 | Volume 1×1×1×1 Float32 | [x] | inside-node + speed |
+| 4 | Volume 1×1×1×2 chain Float32 | [x] | multi-layer cell + speed |
+| 5 | Volume 1×1×1×1 × all 34 dtypes | [x] | + speed table |
+| 6 | Volume 2×2×2×1 Float32 | [x] | 3D volumetric + speed |
+| 7 | Volume 2×1×1×1 × all 34 dtypes | [x] | multi-cell ×34 + speed table |
+
 ---
 
 ## 1 — NormalBP
@@ -61,7 +77,7 @@ Chain-rule Backward + ApplyGradSGD. Start here. Dense first.
 |---|:---:|:---:|:---:|---|
 | Dense | [x] | [x] | [x] | `0.1.21-m2-dense-nbp` |
 | RMSNorm | [x] | [x] | [x] | `0.1.22-m2-rmsnorm-nbp` |
-| LayerNorm | [ ] | [ ] | [ ] | |
+| LayerNorm | [x] | [x] | [x] | `0.1.23-m2-layernorm-nbp` |
 | SwiGLU | [ ] | [ ] | [ ] | |
 | Softmax | [ ] | [ ] | [ ] | |
 | Embedding | [ ] | [ ] | [ ] | |
@@ -1164,4 +1180,5 @@ Fill as you tick rows / finish mode tables.
 | `0.1.20-m1-par` | — | Forward Parallel; train not started |
 | `0.1.21-m2-dense-nbp` | NormalBP Dense | Leaf+vol w2a exact_bit ×34; MatVecT + ApplySGD FormatNone |
 | `0.1.22-m2-rmsnorm-nbp` | NormalBP RMSNorm | Leaf+vol w2a exact_bit ×34; dγ/dx + ApplySGD FormatNone |
+| `0.1.23-m2-layernorm-nbp` | NormalBP LayerNorm | Leaf+vol w2a exact_bit ×34; dγ/dβ/dx + ApplySGD FormatNone |
 | | | |

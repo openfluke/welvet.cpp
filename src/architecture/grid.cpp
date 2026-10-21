@@ -159,4 +159,20 @@ Status bind_rmsnorm(Grid& g, int z, int y, int x, int l, rmsnorm::Layer op) {
   return Status::Ok();
 }
 
+Status bind_layernorm(Grid& g, int z, int y, int x, int l, layernorm::Layer op) {
+  Cell* c = at(g, z, y, x, l);
+  if (!c) {
+    return bad_coord("bind", z, y, x, l);
+  }
+  c->meta = op.meta;
+  c->meta.type = LayerType::LayerNorm;
+  c->meta.z = z;
+  c->meta.y = y;
+  c->meta.x = x;
+  c->meta.l = l;
+  c->op_kind = OpKind::LayerNorm;
+  c->layernorm_op = std::move(op);
+  return Status::Ok();
+}
+
 } // namespace welvet::architecture

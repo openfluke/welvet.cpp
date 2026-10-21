@@ -23,6 +23,7 @@
 #   ./scripts/linux_build_w2a.sh --parallel   # Parallel Dense × 7 combine modes
 #   ./scripts/linux_build_w2a.sh --dense-train # Dense NormalBP leaf + volumetric
 #   ./scripts/linux_build_w2a.sh --rmsnorm-train # RMSNorm NormalBP leaf + volumetric
+#   ./scripts/linux_build_w2a.sh --layernorm-train # LayerNorm NormalBP leaf + volumetric
 #   ./scripts/linux_build_w2a.sh --go-v-cpp   # same as default
 #   ./scripts/linux_build_w2a.sh --all        # entire w2a go test ./...
 #   BUILD_DIR=/tmp/welvet-build ./scripts/linux_build_w2a.sh
@@ -59,8 +60,9 @@ for arg in "$@"; do
     --parallel) MODE="parallel" ;;
     --dense-train) MODE="dense_train" ;;
     --rmsnorm-train) MODE="rmsnorm_train" ;;
+    --layernorm-train) MODE="layernorm_train" ;;
     -h|--help)
-      sed -n '2,33p' "$0"
+      sed -n '2,34p' "$0"
       exit 0
       ;;
     *)
@@ -175,6 +177,10 @@ case "$MODE" in
   rmsnorm_train)
     echo "==> w2a go_v_cpp RMSNorm NormalBP (leaf + volumetric)"
     go test ./tests/go_v_cpp/ -run '^TestGoVCppRMSNormTrain$' -v -count=1
+    ;;
+  layernorm_train)
+    echo "==> w2a go_v_cpp LayerNorm NormalBP (leaf + volumetric)"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppLayerNormTrain$' -v -count=1
     ;;
   all)
     echo "==> w2a full suite (go test ./...)"
