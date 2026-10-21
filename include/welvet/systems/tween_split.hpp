@@ -55,4 +55,13 @@ Status apply_linear_cache_child(stack::Child& c, const TensorF32& grad_out, cons
 Status train_volume_mse_linear_cache(architecture::Grid& g, const runtime::forward::Result& fwd,
                                      const TensorF32& target, double lr, double* loss);
 
+// ModeTweenSplitHeadProxyAsync: if stale proxy → hidden 1/(N-1) P(stale) first;
+// head GradWOnly on P(gy); store proxy=Wᵀgy (nil pre); if no stale, hidden on fresh proxy.
+Status apply_head_proxy_async(stack::Layer& ops, const TensorF32& grad_out, const TensorF32& input,
+                              double lr);
+Status apply_head_proxy_async_child(stack::Child& c, const TensorF32& grad_out,
+                                    const TensorF32& input, double lr, stack::SplitAccel* accel);
+Status train_volume_mse_head_proxy_async(architecture::Grid& g, const runtime::forward::Result& fwd,
+                                         const TensorF32& target, double lr, double* loss);
+
 } // namespace welvet::systems::tween_split
