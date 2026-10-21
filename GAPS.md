@@ -44,7 +44,7 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 ./build/welvet_dense_fwd --gaps
 ```
 
-## Done (through M2.33 StepTweenSplitHeadProxy + MeshTweenSplitSparse + MeshTweenSplit/Alt/SplitFastProxy + TweenSplitSparse + TweenSplitHeadProxyAsync + TweenSplitLinearCache + TweenSplitFastProxy + TweenSplitLinear + TweenSplitHeadProxy + StepTweenAlt + TweenAlt + StepTweenSplit + TweenSplit + MeshTween* + Step*/ModeTween* + MeshBP + StepBP Line + NormalBP credit)
+## Done (through M2.34 StepTweenSplitLinear + StepTweenSplitHeadProxy + MeshTweenSplitSparse + MeshTweenSplit/Alt/SplitFastProxy + TweenSplitSparse + TweenSplitHeadProxyAsync + TweenSplitLinearCache + TweenSplitFastProxy + TweenSplitLinear + TweenSplitHeadProxy + StepTweenAlt + TweenAlt + StepTweenSplit + TweenSplit + MeshTween* + Step*/ModeTween* + MeshBP + StepBP Line + NormalBP credit)
 
 | ID | Detail |
 |---|---|
@@ -78,6 +78,7 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 | **TweenSplit** | `systems/tween_split` 1/N projected gap @ full lr; TSB1 leaf ×34; TSP1/TRP1… volume; w2a `--tweensplit-train` |
 | **StepTweenSplit** | Line FamilyTweenSplit 1/N @ full lr on pop; STS1 leaf ×34; 3D = MeshTweenSplit volume (= TweenSplit wires); w2a `--steptweensplit-train` |
 | **StepTweenSplitHeadProxy** | Line FamilyTweenSplitHeadProxy on pop; STH1 leaf ×34; 3D = HeadProxy volume; w2a `--steptweensplitheadproxy-train` |
+| **StepTweenSplitLinear** | Line FamilyTweenSplitLinear on pop; STL1 leaf ×34; 3D = Linear volume; w2a `--steptweensplitlinear-train` |
 | **TweenAlt** | Split→Tween (AltTimes=1); TAB1 leaf ×34; TAV1/TRA1…MBTA volume; w2a `--tweenalt-train` |
 | **StepTweenAlt** | Line FamilyTweenAlt Split→Tween on pop; STA1 leaf ×34; 3D = MeshTweenAlt volume (= TweenAlt wires); w2a `--steptweenalt-train` |
 | **TweenSplitHeadProxy** | Head full Jᵀgy (+ gx); hidden 1/(N−1) P(gx_head); HPB1 leaf ×34; HPV1/HRP1… volume; w2a `--tweensplitheadproxy-train` |
@@ -89,11 +90,11 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 | Transformer / composition | Sequential+Residual NormalBP, seqmix Kind, **Parallel Dense×7 combines** |
 | Extended | ConvT, KMeans, Mamba NormalBP, Metacognition, GDN |
 | CNN / RNN / LSTM | FormatNone×34 forwards |
-| ABI wires | … / MSS1 / STH1 |
+| ABI wires | … / MSS1 / STH1 / STL1 |
 
 ## gap? — remaining
 
-- Parallel poly/nested/cameral/train; full cameral Stack; StepTweenSplitLinear / Step* Sparse variants
+- Parallel poly/nested/cameral/train; full cameral Stack; StepTweenSplitFastProxy / Step* Sparse variants
 - Other layers’ Backward; Dense quants; remaining TrainModes; systems (DNA/evolution/TANHI/telemetry); model/IO; vendor accel
 
 See `src/gaps/registry.cpp`.
