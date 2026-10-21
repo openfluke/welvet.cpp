@@ -23,7 +23,7 @@ Applications can choose **automatic placement** or **force an explicit backend**
 
 ## Support scorecard — so far
 
-**Version `0.1.71` — M2 Adversarial ModeAdversarial ≡ FamilyBP cascade (all Freeze/Shadow-signed kinds leaf+vol; Parallel BranchMode neg-LR kept) + prior Shadow + KMeans cascade + Meta/GDN/Stack cascade + NestedStack NormalBP + GDN truncated-BPTT + Metacognition + Memory + Freeze + StepTweenSplit* + MeshTween* + Tween* + MeshBP + StepBP Line ×34 + prior NormalBP**. Engine board **71 / 100**, extensions **13 / 100**, combined **84 / 200**. Live inventory: `GAPS.md` / `welvet_dense_fwd --gaps` / `welvet_dense_fwd --version`.
+**Version `0.1.72` — M2 Memory ModeMemory ≡ FamilyBP cascade (all Adversarial/Shadow-signed kinds leaf+vol; Parallel BranchMode CamKit SurpriseThresh kept) + prior Adversarial + Shadow + KMeans cascade + Meta/GDN/Stack cascade + NestedStack NormalBP + GDN truncated-BPTT + Metacognition + Freeze + StepTweenSplit* + MeshTween* + Tween* + MeshBP + StepBP Line ×34 + prior NormalBP**. Engine board **72 / 100**, extensions **13 / 100**, combined **85 / 200**. Live inventory: `GAPS.md` / `welvet_dense_fwd --gaps` / `welvet_dense_fwd --version`.
 
 - [ ] **Layers:** Dense + MHA + SwiGLU + norms + Softmax + Sequential + Residual + Parallel + CNN1/2/3 + ConvT1/2/3 + RNN + LSTM + Embedding + KMeans + Mamba + Metacognition + GDN — **22 / 23** kinds have any forward; **NormalBP + StepBP/MeshBP + ModeTween/TweenChain/TweenSplit/TweenAlt/TweenSplitHeadProxy/TweenSplitLinear/TweenSplitFastProxy/TweenSplitLinearCache/TweenSplitHeadProxyAsync/TweenSplitSparse/Freeze + StepTween/StepTweenChain/StepTweenSplit/StepTweenAlt + MeshTween/MeshTweenChain** signed for Dense+norms+SwiGLU+Softmax+Embedding+MHA+CNN+ConvT+RNN+LSTM+Sequential+Residual+**KMeans**+Mamba+Meta+**GDN(f32)**+**Stack NestedStack-of-Dense** (Meta/GDN/Stack cascade leaf+vol; Linear-family Meta+Stack 3D closed; Parallel Meta/GDN Adv/Memory/Shadow 3D gap); thin Stack host done (full cameral Stack gap); seqmix Kind helper done.
 - [x] **Dtypes:** FormatNone pack/decode + Dense MatVec for **all 34** storage types (quant formats still `gap?`).
@@ -62,9 +62,9 @@ The long-term destination is a standalone C++ Welvet engine that discovers avail
 
 | Project state | Readout |
 |---|---|
-| **Version** | **`0.1.71-m2-adversarial`** (`welvet_dense_fwd --version` / CMake `0.1.71`) |
-| **Runway** | **71 / 100 engine + 13 / 100 extensions = 84 / 200** |
-| **Milestone** | **M2.44** — Adversarial ModeAdversarial ≡ FamilyBP cascade (TCB1/TRC1…); Parallel BranchMode neg-LR kept; 3D Parallel gap |
+| **Version** | **`0.1.72-m2-memory`** (`welvet_dense_fwd --version` / CMake `0.1.72`) |
+| **Runway** | **72 / 100 engine + 13 / 100 extensions = 85 / 200** |
+| **Milestone** | **M2.45** — Memory ModeMemory ≡ FamilyBP cascade (TCB1/TRC1…); Parallel BranchMode CamKit SurpriseThresh kept; 3D Parallel gap |
 | **Scope** | Full Welvet engine rebuild: architecture, runtime, layers, numerical types, training, systems, model/IO; extended hardware, integration and distribution |
 | **Platforms** | Linux (host build) · macOS / Windows / Android / iOS (toolchain placeholders) |
 | **Hardware families** | Native CPU · NVIDIA · AMD · Intel GPU/NPU · Apple GPU/Neural Engine · Qualcomm GPU/NPU · Google TPU |

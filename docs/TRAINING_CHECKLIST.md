@@ -15,7 +15,7 @@ Canonical enum: Go `layers/parallel/train_mode.go` (`TrainMode`).
 
 Tick `[x]` when done. Put the **release tag** in **Ver** when that row (or the whole mode table) is signed.
 
-**Current engine:** `0.1.71-m2-adversarial`
+**Current engine:** `0.1.72-m2-memory`
 
 ---
 
@@ -1569,36 +1569,36 @@ Ship: `runtime/parallel_train` BranchMode Adversarial (ADB1); Stack ModeAdversar
 
 ## 33 — Memory
 
-Needs CamKit (surprise gate).
-Ship: `runtime/parallel_train` BranchMode Memory + CamKit SurpriseThresh; wire `MMB1`; w2a `--memory-train`.
+Needs CamKit (surprise gate) on **Parallel BranchMode**; top-level **Stack ModeMemory ≡ FamilyBP** (same credit as ModeAdversarial / Meta cascade / ModeTweenChain — no surprise gate on stack alone).
+Ship: `runtime/parallel_train` BranchMode Memory + CamKit SurpriseThresh (MMB1); Stack ModeMemory via `TrainStackMSE` + C++ **TCB1** / TweenChain volume `TRC1`…`MBTC`; w2a `--memory-train`.
 
 | Layer | Inside node | 3D volumetric | Fully signed off | Ver |
 |---|:---:|:---:|:---:|---|
-| Dense | [ ] | [ ] | [ ] | |
-| RMSNorm | [ ] | [ ] | [ ] | |
-| LayerNorm | [ ] | [ ] | [ ] | |
-| SwiGLU | [ ] | [ ] | [ ] | |
-| Softmax | [ ] | [ ] | [ ] | |
-| Embedding | [ ] | [ ] | [ ] | |
-| MHA | [ ] | [ ] | [ ] | |
-| CNN1 | [ ] | [ ] | [ ] | |
-| CNN2 | [ ] | [ ] | [ ] | |
-| CNN3 | [ ] | [ ] | [ ] | |
-| ConvT1 | [ ] | [ ] | [ ] | |
-| ConvT2 | [ ] | [ ] | [ ] | |
-| ConvT3 | [ ] | [ ] | [ ] | |
-| RNN | [ ] | [ ] | [ ] | |
-| LSTM | [ ] | [ ] | [ ] | |
-| Sequential | [ ] | [ ] | [ ] | |
-| Residual | [ ] | [ ] | [ ] | |
-| KMeans | [x] | [ ] | [x] | `0.1.69-m2-kmeans-cascade` |
-| Mamba | [ ] | [ ] | [ ] | |
-| Metacognition | [x] | [ ] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
-| GDN | [x] | [ ] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
+| Dense | [x] | [x] | [x] | `0.1.72-m2-memory` |
+| RMSNorm | [x] | [x] | [x] | `0.1.72-m2-memory` |
+| LayerNorm | [x] | [x] | [x] | `0.1.72-m2-memory` |
+| SwiGLU | [x] | [x] | [x] | `0.1.72-m2-memory` |
+| Softmax | [x] | [x] | [x] | `0.1.72-m2-memory` |
+| Embedding | [x] | [x] | [x] | `0.1.72-m2-memory` |
+| MHA | [x] | [x] | [x] | `0.1.72-m2-memory` |
+| CNN1 | [x] | [x] | [x] | `0.1.72-m2-memory` |
+| CNN2 | [x] | [x] | [x] | `0.1.72-m2-memory` |
+| CNN3 | [x] | [x] | [x] | `0.1.72-m2-memory` |
+| ConvT1 | [x] | [x] | [x] | `0.1.72-m2-memory` |
+| ConvT2 | [x] | [x] | [x] | `0.1.72-m2-memory` |
+| ConvT3 | [x] | [x] | [x] | `0.1.72-m2-memory` |
+| RNN | [x] | [x] | [x] | `0.1.72-m2-memory` |
+| LSTM | [x] | [x] | [x] | `0.1.72-m2-memory` |
+| Sequential | [x] | [x] | [x] | `0.1.72-m2-memory` |
+| Residual | [x] | [x] | [x] | `0.1.72-m2-memory` |
+| KMeans | [x] | [x] | [x] | `0.1.72-m2-memory` |
+| Mamba | [x] | [x] | [x] | `0.1.72-m2-memory` |
+| Metacognition | [x] | [x] | [x] | `0.1.72-m2-memory` |
+| GDN | [x] | [x] | [x] | `0.1.72-m2-memory` |
 | Parallel | [x] | [ ] | [x] | `0.1.61-m2-memory` |
-| Stack | [x] | [ ] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
+| Stack | [x] | [x] | [x] | `0.1.72-m2-memory` |
 
-**Checkpoint:** `0.1.61-m2-memory` — Parallel Dense Add BranchMode Memory Inside+×34 (3D Parallel gap).
+**Checkpoint:** `0.1.72-m2-memory` — ModeMemory Inside+×34 + volume 2×2×2×1 for Adversarial/Shadow-signed kinds (Stack ≡ FamilyBP / TCB1); Parallel BranchMode CamKit SurpriseThresh Inside+Fully (3D Parallel gap). Note: Stack ModeMemory ≡ FamilyBP; Parallel BranchMode keeps CamKit surprise gate.
 
 ---
 
@@ -1608,6 +1608,7 @@ Fill as you tick rows / finish mode tables.
 
 | Ver | Mode / layers | Notes |
 |---|---|---|
+| `0.1.72-m2-memory` | Memory ModeMemory cascade | Clone TweenChain leaf+vol across all signed kinds (ModeMemory≡FamilyBP); Parallel BranchMode CamKit surprise gate kept; 3D Parallel gap |
 | `0.1.71-m2-adversarial` | Adversarial ModeAdversarial cascade | Clone TweenChain leaf+vol across all signed kinds (ModeAdversarial≡FamilyBP); Parallel BranchMode neg-LR kept; 3D Parallel gap |
 | `0.1.70-m2-shadow` | Shadow ModeShadow cascade | Clone Freeze leaf+vol across all signed kinds (ModeShadow≡Freeze); Parallel KD kept; 3D Parallel gap |
 | `0.1.69-m2-kmeans-cascade` | KMeans train-mode cascade | Clone Meta leaf+vol across Step/Tween/Mesh/Freeze/Shadow/Adv/Memory; Linear GradIn Backward; Parallel BranchMode KMeans gap |
