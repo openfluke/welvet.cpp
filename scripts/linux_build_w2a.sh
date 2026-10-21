@@ -25,6 +25,7 @@
 #   ./scripts/linux_build_w2a.sh --rmsnorm-train # RMSNorm NormalBP leaf + volumetric
 #   ./scripts/linux_build_w2a.sh --layernorm-train # LayerNorm NormalBP leaf + volumetric
 #   ./scripts/linux_build_w2a.sh --swiglu-train # SwiGLU NormalBP leaf + volumetric
+#   ./scripts/linux_build_w2a.sh --softmax-train # Softmax NormalBP (all Kind) leaf + volumetric
 #   ./scripts/linux_build_w2a.sh --go-v-cpp   # same as default
 #   ./scripts/linux_build_w2a.sh --all        # entire w2a go test ./...
 #   BUILD_DIR=/tmp/welvet-build ./scripts/linux_build_w2a.sh
@@ -63,8 +64,9 @@ for arg in "$@"; do
     --rmsnorm-train) MODE="rmsnorm_train" ;;
     --layernorm-train) MODE="layernorm_train" ;;
     --swiglu-train) MODE="swiglu_train" ;;
+    --softmax-train) MODE="softmax_train" ;;
     -h|--help)
-      sed -n '2,35p' "$0"
+      sed -n '2,36p' "$0"
       exit 0
       ;;
     *)
@@ -187,6 +189,10 @@ case "$MODE" in
   swiglu_train)
     echo "==> w2a go_v_cpp SwiGLU NormalBP (leaf + volumetric)"
     go test ./tests/go_v_cpp/ -run '^TestGoVCppSwiGLUTrain$' -v -count=1
+    ;;
+  softmax_train)
+    echo "==> w2a go_v_cpp Softmax NormalBP (all Kind; leaf + volumetric)"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppSoftmaxTrain$' -v -count=1
     ;;
   all)
     echo "==> w2a full suite (go test ./...)"

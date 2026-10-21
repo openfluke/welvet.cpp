@@ -46,6 +46,9 @@ Status volume_dense(architecture::Grid& g, const forward::Result& fwd, const Ten
     case architecture::OpKind::SwiGLU:
       st_b = swiglu::backward_f32(cell->swiglu_op, gy, st.input, st.pre, &gx, &dw);
       break;
+    case architecture::OpKind::Softmax:
+      st_b = softmax::backward_f32(cell->softmax_op, gy, st.input, st.pre, &gx, &dw);
+      break;
     default: {
       std::ostringstream oss;
       oss << "runtime.backward: unsupported Op at z=" << st.coord.z << " y=" << st.coord.y
@@ -56,7 +59,10 @@ Status volume_dense(architecture::Grid& g, const forward::Result& fwd, const Ten
     if (!st_b) {
       return st_b;
     }
-    result.grad_ws.push_back(GradW{st.coord, std::move(dw)});
+    // Softmax (weightless) returns empty dW — skip like Go (nil GradW omitted).
+    if (!dw.data.empty()) {
+      result.grad_ws.push_back(GradW{st.coord, std::move(dw)});
+    }
     gy = std::move(gx);
   }
 

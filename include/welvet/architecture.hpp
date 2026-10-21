@@ -4,6 +4,7 @@
 #include "welvet/layer.hpp"
 #include "welvet/layernorm.hpp"
 #include "welvet/rmsnorm.hpp"
+#include "welvet/softmax.hpp"
 #include "welvet/status.hpp"
 #include "welvet/swiglu.hpp"
 
@@ -27,6 +28,7 @@ enum class OpKind : int32_t {
   RMSNorm = 2,
   LayerNorm = 3,
   SwiGLU = 4,
+  Softmax = 5,
   // gap? other layer ops
 };
 
@@ -38,6 +40,7 @@ struct Cell {
   rmsnorm::Layer rmsnorm_op;     // valid when op_kind == RMSNorm
   layernorm::Layer layernorm_op; // valid when op_kind == LayerNorm
   swiglu::Layer swiglu_op;       // valid when op_kind == SwiGLU
+  softmax::Layer softmax_op;     // valid when op_kind == Softmax
 
   bool is_remote_link = false;
   int target_z = 0, target_y = 0, target_x = 0, target_l = 0;
@@ -88,5 +91,6 @@ Status bind_dense(Grid& g, int z, int y, int x, int l, dense::Layer op);
 Status bind_rmsnorm(Grid& g, int z, int y, int x, int l, rmsnorm::Layer op);
 Status bind_layernorm(Grid& g, int z, int y, int x, int l, layernorm::Layer op);
 Status bind_swiglu(Grid& g, int z, int y, int x, int l, swiglu::Layer op);
+Status bind_softmax(Grid& g, int z, int y, int x, int l, softmax::Layer op);
 
 } // namespace welvet::architecture

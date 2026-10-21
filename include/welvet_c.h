@@ -202,6 +202,17 @@ WELVET_API welvet_status welvet_softmax_forward_f32(
     int32_t rank, const int32_t* shape, const uint8_t* mask, int32_t mask_len, const int32_t* hier,
     int32_t hier_len, const float* x, float* pre, float* post);
 
+/* Softmax NormalBP leaf: forward → (MSEGrad | grad_out) → Jacobian dX; weightless.
+ * use_target: 0 = grad_or_target is gradOut; 1 = target (MSE). lr: ApplyGradSGD no-op.
+ * Outputs: pre/post/dX [n], *loss (0 if !use_target).
+ */
+WELVET_API welvet_status welvet_softmax_normalbp_f32(
+    int32_t n, int32_t dim, int32_t seq_len, int32_t kind, int32_t rows, int32_t cols,
+    double temperature, double entmax_alpha, int32_t gumbel_seed, int32_t dtype, int32_t backend,
+    int32_t rank, const int32_t* shape, const uint8_t* mask, int32_t mask_len, const int32_t* hier,
+    int32_t hier_len, const float* x, const float* grad_or_target, int32_t use_target, double lr,
+    float* pre, float* post, float* dX, double* loss);
+
 /* Soft KMeans. W: [K*D] centers, x: flat input last-dim=D.
  * output_mode: 0=probabilities (out K), 1=features (out D). pre/post length batch*out_dim
  */

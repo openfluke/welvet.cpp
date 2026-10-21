@@ -30,6 +30,8 @@
 //   WLV1 — Volume LayerNorm NormalBP
 //   WSB1 — SwiGLU NormalBP leaf
 //   WSV1 — Volume SwiGLU NormalBP
+//   WXB1 — Softmax NormalBP leaf (all Kind; dX-only)
+//   WXV1 — Volume Softmax NormalBP
 //
 // WVA1 stdin:
 //   magic "WVA1"
@@ -62,6 +64,7 @@
 #include "welvet/runtime/backward.hpp"
 #include "welvet/runtime/forward.hpp"
 #include "welvet/runtime/training.hpp"
+#include "welvet/softmax.hpp"
 #include "welvet/swiglu.hpp"
 
 #include <chrono>
@@ -2408,6 +2411,291 @@ int run_volume_swiglu_normalbp(int bench_iters) {
   return 0;
 }
 
+// WXB1 — Softmax NormalBP leaf (weightless dX)
+// stdin: same header as WSM1 + x + use_target + gyt + lr
+// stdout WXBO: pre ; post ; dX ; dW(0) ; W_after(0) ; loss
+int run_softmax_normalbp(int bench_iters) {
+  int32_t n = 0, dim = 0, seq = 0, kind = 0, rows = 0, cols = 0, gumbel_seed = 0, dtype = 1,
+          backend = 0, rank = 0, mask_len = 0, hier_len = 0;
+  double temperature = 1.0, entmax_alpha = 0.0;
+  if (!read_exact(&n, 1) || !read_exact(&dim, 1) || !read_exact(&seq, 1) || !read_exact(&kind, 1) ||
+      !read_exact(&rows, 1) || !read_exact(&cols, 1) || !read_exact(&temperature, 1) ||
+      !read_exact(&entmax_alpha, 1) || !read_exact(&gumbel_seed, 1) || !read_exact(&dtype, 1) ||
+      !read_exact(&backend, 1) || !read_exact(&rank, 1)) {
+    std::fprintf(stderr, "welvet_dense_fwd: short WXB1 header\n");
+    return 2;
+  }
+  if (rank < 1 || rank > 8) {
+    std::fprintf(stderr, "welvet_dense_fwd: bad softmax nbp rank\n");
+    return 2;
+  }
+  std::vector<int32_t> shape(static_cast<std::size_t>(rank));
+  if (!read_exact(shape.data(), shape.size())) return 2;
+  if (!read_exact(&mask_len, 1)) return 2;
+  std::vector<uint8_t> mask(static_cast<std::size_t>(mask_len > 0 ? mask_len : 0));
+  if (mask_len > 0 && !read_exact(mask.data(), mask.size())) return 2;
+  if (!read_exact(&hier_len, 1)) return 2;
+  std::vector<int32_t> hier(static_cast<std::size_t>(hier_len > 0 ? hier_len : 0));
+  if (hier_len > 0 && !read_exact(hier.data(), hier.size())) return 2;
+  std::vector<float> x(static_cast<std::size_t>(n));
+  if (!read_exact(x.data(), x.size())) return 2;
+  int32_t use_target = 0;
+  if (!read_exact(&use_target, 1)) return 2;
+  std::vector<float> gyt(static_cast<std::size_t>(n));
+  if (!read_exact(gyt.data(), gyt.size())) return 2;
+  double lr = 0.0;
+  if (!read_exact(&lr, 1)) return 2;
+
+  std::vector<float> pre(static_cast<std::size_t>(n));
+  std::vector<float> post(pre.size()), dX(pre.size());
+  double loss = 0.0;
+
+  auto once = [&]() -> welvet_status {
+    return welvet_softmax_normalbp_f32(
+        n, dim, seq, kind, rows, cols, temperature, entmax_alpha, gumbel_seed, dtype, backend, rank,
+        shape.data(), mask_len > 0 ? mask.data() : nullptr, mask_len,
+        hier_len > 0 ? hier.data() : nullptr, hier_len, x.data(), gyt.data(), use_target, lr,
+        pre.data(), post.data(), dX.data(), &loss);
+  };
+
+  if (bench_iters > 0) {
+    for (int i = 0; i < 3; ++i) {
+      auto st = once();
+      if (st.code != 0) {
+        std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message);
+        return 1;
+      }
+    }
+    const auto t0 = std::chrono::steady_clock::now();
+    for (int i = 0; i < bench_iters; ++i) {
+      auto st = once();
+      if (st.code != 0) {
+        std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message);
+        return 1;
+      }
+    }
+    const auto t1 = std::chrono::steady_clock::now();
+    const int64_t ns =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(t1 - t0).count();
+    const int32_t iters32 = static_cast<int32_t>(bench_iters);
+    if (!write_exact("WVB1", 4) || !write_exact(&ns, 1) || !write_exact(&iters32, 1)) {
+      return 2;
+    }
+  } else {
+    auto st = once();
+    if (st.code != 0) {
+      std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message);
+      return 1;
+    }
+  }
+
+  const int32_t pre_n = static_cast<int32_t>(pre.size());
+  const int32_t post_n = static_cast<int32_t>(post.size());
+  const int32_t dx_n = static_cast<int32_t>(dX.size());
+  const int32_t dw_n = 0;
+  const int32_t w_n = 0;
+  if (!write_magic("WXBO") || !write_exact(&pre_n, 1) || !write_exact(pre.data(), pre.size()) ||
+      !write_exact(&post_n, 1) || !write_exact(post.data(), post.size()) ||
+      !write_exact(&dx_n, 1) || !write_exact(dX.data(), dX.size()) || !write_exact(&dw_n, 1) ||
+      !write_exact(&w_n, 1) || !write_exact(&loss, 1)) {
+    return 2;
+  }
+  return 0;
+}
+
+// WXV1 — Volume Softmax NormalBP
+int run_volume_softmax_normalbp(int bench_iters) {
+  int32_t depth = 0, rows = 0, cols = 0, lpc = 0, batch = 0, backend = 0, n_links = 0;
+  if (!read_exact(&depth, 1) || !read_exact(&rows, 1) || !read_exact(&cols, 1) ||
+      !read_exact(&lpc, 1) || !read_exact(&batch, 1) || !read_exact(&backend, 1) ||
+      !read_exact(&n_links, 1)) {
+    std::fprintf(stderr, "welvet_dense_fwd: short WXV1 header\n");
+    return 2;
+  }
+  if (batch <= 0) {
+    std::fprintf(stderr, "welvet_dense_fwd: bad batch\n");
+    return 2;
+  }
+  (void)backend;
+
+  std::vector<int32_t> links(static_cast<std::size_t>(n_links) * 8);
+  if (n_links > 0 && !read_exact(links.data(), links.size())) return 2;
+
+  struct CellInit {
+    bool enabled = false;
+    int dim = 0, seq_len = 1, kind = 0, rows = 0, cols = 0, gumbel_seed = 0, dtype = 1;
+    double temperature = 1.0, entmax_alpha = 0.0;
+    std::vector<uint8_t> mask;
+    std::vector<int32_t> hier;
+    welvet::architecture::Coord coord{};
+  };
+  auto hops = welvet::architecture::hop_order(
+      welvet::architecture::new_grid(depth, rows, cols, lpc));
+  std::vector<CellInit> cells;
+  cells.reserve(hops.size());
+  int first_dim = -1;
+  for (const auto& coord : hops) {
+    CellInit c;
+    c.coord = coord;
+    int32_t en = 0;
+    if (!read_exact(&en, 1)) return 2;
+    c.enabled = en != 0;
+    if (!c.enabled) {
+      cells.push_back(std::move(c));
+      continue;
+    }
+    int32_t dim = 0, seq = 0, kind = 0, crow = 0, ccol = 0, gumbel_seed = 0, dtype = 1;
+    double temperature = 1.0, entmax_alpha = 0.0;
+    int32_t mask_len = 0, hier_len = 0;
+    if (!read_exact(&dim, 1) || !read_exact(&seq, 1) || !read_exact(&kind, 1) ||
+        !read_exact(&crow, 1) || !read_exact(&ccol, 1) || !read_exact(&temperature, 1) ||
+        !read_exact(&entmax_alpha, 1) || !read_exact(&gumbel_seed, 1) || !read_exact(&dtype, 1) ||
+        !read_exact(&mask_len, 1)) {
+      return 2;
+    }
+    c.dim = dim;
+    c.seq_len = seq;
+    c.kind = kind;
+    c.rows = crow;
+    c.cols = ccol;
+    c.temperature = temperature;
+    c.entmax_alpha = entmax_alpha;
+    c.gumbel_seed = gumbel_seed;
+    c.dtype = dtype;
+    c.mask.resize(static_cast<std::size_t>(mask_len > 0 ? mask_len : 0));
+    if (mask_len > 0 && !read_exact(c.mask.data(), c.mask.size())) return 2;
+    if (!read_exact(&hier_len, 1)) return 2;
+    c.hier.resize(static_cast<std::size_t>(hier_len > 0 ? hier_len : 0));
+    if (hier_len > 0 && !read_exact(c.hier.data(), c.hier.size())) return 2;
+    if (first_dim < 0) first_dim = dim;
+    cells.push_back(std::move(c));
+  }
+  if (first_dim < 0) {
+    std::fprintf(stderr, "welvet_dense_fwd: no enabled cells\n");
+    return 1;
+  }
+
+  welvet::TensorF32 input;
+  input.shape = {batch, first_dim};
+  input.data.resize(static_cast<std::size_t>(batch * first_dim));
+  if (!read_exact(input.data.data(), input.data.size())) return 2;
+
+  int final_dim = 0;
+  for (auto it = cells.rbegin(); it != cells.rend(); ++it) {
+    if (it->enabled) {
+      final_dim = it->dim;
+      break;
+    }
+  }
+  welvet::TensorF32 target;
+  target.shape = {batch, final_dim};
+  target.data.resize(static_cast<std::size_t>(batch * final_dim));
+  if (!read_exact(target.data.data(), target.data.size())) return 2;
+  double lr = 0.0;
+  if (!read_exact(&lr, 1)) return 2;
+
+  welvet::architecture::Grid g;
+  welvet::runtime::forward::Result fwd;
+  welvet::runtime::backward::Result bwd;
+  double loss = 0.0;
+
+  auto rebuild_and_step = [&]() -> welvet::Status {
+    g = welvet::architecture::new_grid(depth, rows, cols, lpc);
+    for (int32_t i = 0; i < n_links; ++i) {
+      const int32_t* L = links.data() + static_cast<std::size_t>(i) * 8;
+      if (auto st = welvet::architecture::set_remote_link(g, L[0], L[1], L[2], L[3], L[4], L[5],
+                                                          L[6], L[7]);
+          !st) {
+        return st;
+      }
+    }
+    for (const auto& c : cells) {
+      if (!c.enabled) continue;
+      welvet::softmax::Config cfg;
+      cfg.dim = c.dim;
+      cfg.seq_len = c.seq_len <= 0 ? 1 : c.seq_len;
+      cfg.rows = c.rows;
+      cfg.cols = c.cols;
+      cfg.temperature = c.temperature;
+      cfg.kind = static_cast<welvet::softmax::Kind>(c.kind);
+      cfg.entmax_alpha = c.entmax_alpha;
+      cfg.gumbel_seed = static_cast<uint32_t>(c.gumbel_seed);
+      if (!c.mask.empty()) {
+        cfg.mask.resize(c.mask.size());
+        for (std::size_t i = 0; i < c.mask.size(); ++i) {
+          cfg.mask[i] = c.mask[i] != 0;
+        }
+      }
+      if (!c.hier.empty()) {
+        cfg.hierarchy_levels.assign(c.hier.begin(), c.hier.end());
+      }
+      welvet::softmax::Layer layer;
+      auto st = welvet::softmax::new_configured(cfg, static_cast<welvet::DType>(c.dtype), &layer);
+      if (!st) return st;
+      layer.backend = welvet::Backend::CPUTiled;
+      st = welvet::architecture::bind_softmax(g, c.coord.z, c.coord.y, c.coord.x, c.coord.l,
+                                              std::move(layer));
+      if (!st) return st;
+    }
+    if (auto st = welvet::runtime::forward::volume_dense(g, input, &fwd); !st) {
+      return st;
+    }
+    return welvet::runtime::training::step_dense(g, fwd, target, lr, &loss, &bwd);
+  };
+
+  if (bench_iters > 0) {
+    for (int i = 0; i < 3; ++i) {
+      auto st = rebuild_and_step();
+      if (!st) {
+        std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message.c_str());
+        return 1;
+      }
+    }
+    const auto t0 = std::chrono::steady_clock::now();
+    for (int i = 0; i < bench_iters; ++i) {
+      auto st = rebuild_and_step();
+      if (!st) {
+        std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message.c_str());
+        return 1;
+      }
+    }
+    const auto t1 = std::chrono::steady_clock::now();
+    const int64_t ns =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(t1 - t0).count();
+    const int32_t iters32 = static_cast<int32_t>(bench_iters);
+    if (!write_exact("WVB1", 4) || !write_exact(&ns, 1) || !write_exact(&iters32, 1)) {
+      return 2;
+    }
+  } else {
+    auto st = rebuild_and_step();
+    if (!st) {
+      std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message.c_str());
+      return 1;
+    }
+  }
+
+  if (!write_magic("WXVO") || !write_exact(&loss, 1)) return 2;
+  const int32_t gin_n = static_cast<int32_t>(bwd.grad_in.data.size());
+  if (!write_exact(&gin_n, 1) || !write_exact(bwd.grad_in.data.data(), bwd.grad_in.data.size())) {
+    return 2;
+  }
+  int32_t n_cells = 0;
+  for (const auto& c : cells) {
+    if (c.enabled) ++n_cells;
+  }
+  if (!write_exact(&n_cells, 1)) return 2;
+  for (const auto& c : cells) {
+    if (!c.enabled) continue;
+    const int32_t nw = 0; // weightless
+    if (!write_exact(&nw, 1)) return 2;
+  }
+  const int32_t out_n = static_cast<int32_t>(fwd.output.data.size());
+  if (!write_exact(&out_n, 1) || !write_exact(fwd.output.data.data(), fwd.output.data.size())) {
+    return 2;
+  }
+  return 0;
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -2527,13 +2815,19 @@ int main(int argc, char** argv) {
   if (std::memcmp(magic, "WSV1", 4) == 0) {
     return run_volume_swiglu_normalbp(bench_iters);
   }
+  if (std::memcmp(magic, "WXB1", 4) == 0) {
+    return run_softmax_normalbp(bench_iters);
+  }
+  if (std::memcmp(magic, "WXV1", 4) == 0) {
+    return run_volume_softmax_normalbp(bench_iters);
+  }
   const bool v3 = std::memcmp(magic, "WVD3", 4) == 0;
   const bool v2 = std::memcmp(magic, "WVD2", 4) == 0;
   const bool v1 = std::memcmp(magic, "WVD1", 4) == 0;
   if (!v1 && !v2 && !v3) {
     std::fprintf(stderr, "welvet_dense_fwd: bad magic (want WVD*/WVA1/WVF1/WVM1/WVS1/WVR1/WVL1/"
                          "WVC1/2/3/WVT1/2/3/WRN1/WLS1/WEM1/WSM1/WKM1/WSQ1/WRE1/WMB1/WMC1/WGD1/WSX1/"
-                         "WPL1/WDB1/WVN1/WRB1/WRV1/WLB1/WLV1/WSB1/WSV1)\n");
+                         "WPL1/WDB1/WVN1/WRB1/WRV1/WLB1/WLV1/WSB1/WSV1/WXB1/WXV1)\n");
     return 2;
   }
   return run_dense(v1, v2, v3, bench_iters);

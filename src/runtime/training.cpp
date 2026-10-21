@@ -2,6 +2,7 @@
 
 #include "welvet/layernorm.hpp"
 #include "welvet/rmsnorm.hpp"
+#include "welvet/softmax.hpp"
 #include "welvet/swiglu.hpp"
 
 #include <map>
@@ -79,6 +80,9 @@ Status sgd_dense(architecture::Grid& g, const forward::Result& fwd, const backwa
       break;
     case architecture::OpKind::SwiGLU:
       st_a = swiglu::apply_grad_sgd(&cell->swiglu_op, *it->second, lr);
+      break;
+    case architecture::OpKind::Softmax:
+      st_a = softmax::apply_grad_sgd(&cell->softmax_op, *it->second, lr);
       break;
     default:
       return Status::Err(StatusCode::InvalidArgument, "training: SGD unsupported cell Op");
