@@ -161,7 +161,7 @@ const std::vector<Entry>& build() {
        "thin Stack host (ordered children + FamilyBP); full cameral NewFromOps/CamSync gap?", true},
       {"layer.stack.cameral", "layers", "gap? Stack NewFromOps + CamSync / BranchModes", false},
       {"runtime.line_stepbp", "runtime",
-       "Line TickLine FamilyBP/…/FamilyTweenSplitHeadProxyAsync on pop; STB1/…/SLC1/SHA1 + welvet_stack_stepbp_dense_f32", true},
+       "Line TickLine FamilyBP/…/FamilyTweenSplitSparse on pop; STB1/…/SHA1/SSP1 + welvet_stack_stepbp_dense_f32", true},
       {"abi.stack_stepbp_f32", "interop", "C ABI welvet_stack_stepbp_dense_f32 + STB1/STBO tool", true},
       {"layer.seqmix", "layers",
        "seqmix Kind/Contract helper + MHA/Mamba/GDN tags (no Forward)", true},

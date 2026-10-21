@@ -1387,35 +1387,37 @@ Ship: `runtime/line` `Credit::FamilyTweenSplitHeadProxyAsync` on pop (`apply_hea
 
 ## 29 — StepTweenSplitSparse
 
-Needs Line + TweenSplitSparse.
+Needs Line + TweenSplitSparse.  
+Ship: `runtime/line` `Credit::FamilyTweenSplitSparse` on pop (`apply_sparse_child`, Dense hops accel=nil → hidden idx=0); wire `SSP1`/`SSPO`; w2a `--steptweensplitsparse-train`.  
+**3D volumetric** = ModeTweenSplitSparse / TweenSplitSparse volume credit (`SPV1`/`SRP1`…). CNN2/3 & ConvT2/3 share CNN1/ConvT1 path.
 
 | Layer | Inside node | 3D volumetric | Fully signed off | Ver |
 |---|:---:|:---:|:---:|---|
-| Dense | [ ] | [ ] | [ ] | |
-| RMSNorm | [ ] | [ ] | [ ] | |
-| LayerNorm | [ ] | [ ] | [ ] | |
-| SwiGLU | [ ] | [ ] | [ ] | |
-| Softmax | [ ] | [ ] | [ ] | |
-| Embedding | [ ] | [ ] | [ ] | |
-| MHA | [ ] | [ ] | [ ] | |
-| CNN1 | [ ] | [ ] | [ ] | |
-| CNN2 | [ ] | [ ] | [ ] | |
-| CNN3 | [ ] | [ ] | [ ] | |
-| ConvT1 | [ ] | [ ] | [ ] | |
-| ConvT2 | [ ] | [ ] | [ ] | |
-| ConvT3 | [ ] | [ ] | [ ] | |
-| RNN | [ ] | [ ] | [ ] | |
-| LSTM | [ ] | [ ] | [ ] | |
-| Sequential | [ ] | [ ] | [ ] | |
-| Residual | [ ] | [ ] | [ ] | |
+| Dense | [x] | [x] | [x] | `0.1.58-m2-steptweensplitsparse` |
+| RMSNorm | [x] | [x] | [x] | `0.1.58-m2-steptweensplitsparse` |
+| LayerNorm | [x] | [x] | [x] | `0.1.58-m2-steptweensplitsparse` |
+| SwiGLU | [x] | [x] | [x] | `0.1.58-m2-steptweensplitsparse` |
+| Softmax | [x] | [x] | [x] | `0.1.58-m2-steptweensplitsparse` |
+| Embedding | [x] | [x] | [x] | `0.1.58-m2-steptweensplitsparse` |
+| MHA | [x] | [x] | [x] | `0.1.58-m2-steptweensplitsparse` |
+| CNN1 | [x] | [x] | [x] | `0.1.58-m2-steptweensplitsparse` |
+| CNN2 | [x] | [x] | [x] | `0.1.58-m2-steptweensplitsparse` |
+| CNN3 | [x] | [x] | [x] | `0.1.58-m2-steptweensplitsparse` |
+| ConvT1 | [x] | [x] | [x] | `0.1.58-m2-steptweensplitsparse` |
+| ConvT2 | [x] | [x] | [x] | `0.1.58-m2-steptweensplitsparse` |
+| ConvT3 | [x] | [x] | [x] | `0.1.58-m2-steptweensplitsparse` |
+| RNN | [x] | [x] | [x] | `0.1.58-m2-steptweensplitsparse` |
+| LSTM | [x] | [x] | [x] | `0.1.58-m2-steptweensplitsparse` |
+| Sequential | [x] | [x] | [x] | `0.1.58-m2-steptweensplitsparse` |
+| Residual | [x] | [x] | [x] | `0.1.58-m2-steptweensplitsparse` |
 | KMeans | [ ] | [ ] | [ ] | |
-| Mamba | [ ] | [ ] | [ ] | |
+| Mamba | [x] | [x] | [x] | `0.1.58-m2-steptweensplitsparse` |
 | Metacognition | [ ] | [ ] | [ ] | |
 | GDN | [ ] | [ ] | [ ] | |
 | Parallel | [ ] | [ ] | [ ] | |
 | Stack | [ ] | [ ] | [ ] | |
 
-**Checkpoint:** bump version when this mode table advances.
+**Checkpoint:** `0.1.58-m2-steptweensplitsparse` — Line StepTweenSplitSparse Inside+×34 + Sparse volume 2×2×2×1.
 
 ---
 
@@ -1592,3 +1594,4 @@ Fill as you tick rows / finish mode tables.
 | `0.1.55-m2-steptweensplitfastproxy` | StepTweenSplitFastProxy × signed kinds | Line FastProxy on pop; STF1; 3D FastProxy vol |
 | `0.1.56-m2-steptweensplitlinearcache` | StepTweenSplitLinearCache × signed kinds | Line LinearCache on pop; SLC1; 3D LinearCache vol |
 | `0.1.57-m2-steptweensplitheadproxyasync` | StepTweenSplitHeadProxyAsync × signed kinds | Line HeadProxyAsync on pop; SHA1; 3D HeadProxyAsync vol |
+| `0.1.58-m2-steptweensplitsparse` | StepTweenSplitSparse × signed kinds | Line Sparse on pop; SSP1; 3D Sparse vol |

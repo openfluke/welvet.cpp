@@ -61,6 +61,7 @@
 #   ./scripts/linux_build_w2a.sh --steptweensplitfastproxy-train # Line StepTweenSplitFastProxy + FastProxy vol
 #   ./scripts/linux_build_w2a.sh --steptweensplitlinearcache-train # Line StepTweenSplitLinearCache + LinearCache vol
 #   ./scripts/linux_build_w2a.sh --steptweensplitheadproxyasync-train # Line StepTweenSplitHeadProxyAsync + HeadProxyAsync vol
+#   ./scripts/linux_build_w2a.sh --steptweensplitsparse-train # Line StepTweenSplitSparse + Sparse vol
 #   ./scripts/linux_build_w2a.sh --go-v-cpp   # same as default
 #   ./scripts/linux_build_w2a.sh --all        # entire w2a go test ./...
 #   BUILD_DIR=/tmp/welvet-build ./scripts/linux_build_w2a.sh
@@ -135,6 +136,7 @@ for arg in "$@"; do
     --steptweensplitfastproxy-train) MODE="steptweensplitfastproxy_train" ;;
     --steptweensplitlinearcache-train) MODE="steptweensplitlinearcache_train" ;;
     --steptweensplitheadproxyasync-train) MODE="steptweensplitheadproxyasync_train" ;;
+    --steptweensplitsparse-train) MODE="steptweensplitsparse_train" ;;
     -h|--help)
       sed -n '2,60p' "$0"
       exit 0
@@ -403,6 +405,10 @@ case "$MODE" in
   steptweensplitheadproxyasync_train)
     echo "==> w2a go_v_cpp StepTweenSplitHeadProxyAsync train (Line HeadProxyAsync + HeadProxyAsync volume)"
     go test ./tests/go_v_cpp/ -run '^TestGoVCppStepTweenSplitHeadProxyAsyncTrain$' -v -count=1
+    ;;
+  steptweensplitsparse_train)
+    echo "==> w2a go_v_cpp StepTweenSplitSparse train (Line Sparse + Sparse volume)"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppStepTweenSplitSparseTrain$' -v -count=1
     ;;
   all)
     echo "==> w2a full suite (go test ./...)"
