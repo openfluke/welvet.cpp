@@ -384,6 +384,16 @@ WELVET_API welvet_status welvet_parallel_forward_f32(
     int32_t sparse_k, int32_t dtype, int32_t backend, double disagree_beta, const float* packed,
     const float* x, float* pre, float* post);
 
+/* Line StepBP (FamilyBP on pop) over a thin Stack of Dense children.
+ * packed_W / W_after: concat of child [out×in] matrices. Bias omitted (empty).
+ * x_ticks: n_ticks × [batch × in_h[0]]; target_ticks: n_ticks × [batch × out_h[last]].
+ * loss: last RoleTrain pop MSE (0 if pipe not yet flushed). Prefer STB1/STBO for multi-kind.
+ */
+WELVET_API welvet_status welvet_stack_stepbp_dense_f32(
+    int32_t n_children, int32_t n_ticks, int32_t batch, double lr, int32_t dtype,
+    const int32_t* in_h, const int32_t* out_h, const int32_t* act, const float* packed_W,
+    const float* x_ticks, const float* target_ticks, float* W_after, double* loss);
+
 WELVET_API const char* welvet_version(void);
 WELVET_API int32_t welvet_gap_count(void);
 WELVET_API void welvet_print_gaps(void);

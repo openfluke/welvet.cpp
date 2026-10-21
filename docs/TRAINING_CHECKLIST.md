@@ -15,7 +15,7 @@ Canonical enum: Go `layers/parallel/train_mode.go` (`TrainMode`).
 
 Tick `[x]` when done. Put the **release tag** in **Ver** when that row (or the whole mode table) is signed.
 
-**Current engine:** `0.1.33-m2-mamba-nbp`
+**Current engine:** `0.1.34-m2-stepbp`
 
 ---
 
@@ -227,6 +227,31 @@ Timing: same `--bench=N` / spd%Δ convention. Scan BPTT + In/Out Dense; loom In|
 
 ---
 
+## w2a Go↔C++ (StepBP Line) — sign-off evidence
+
+Run: `./scripts/linux_build_w2a.sh --stepbp-train`  
+Wire: `STB1`/`STBO` (Line TickLine/TrainLineMSE + FamilyBP on pop). Exact_bit vs Go.  
+Each kind prints a dtype band table (Dense also prints goµs/cppµs/spd%Δ).  
+Volumetric StepBP → MeshBP (not this ship). CNN2/3 & ConvT2/3 share CNN1/ConvT1 FamilyBP path.
+
+| # | Case | Status | Notes |
+|---|---|:---:|---|
+| 1 | Dense multi-hop Float32 (W/loss) | [x] | warm-up ticks until first pop |
+| 2 | Dense 1-hop ×34 | [x] | spectrum + speed table |
+| 3–4 | RMSNorm f32 + ×34 | [x] | spectrum table |
+| 5–6 | LayerNorm f32 + ×34 | [x] | spectrum table |
+| 7–8 | Softmax f32 + ×34 | [x] | loss-only / spectrum table |
+| 9–10 | SwiGLU f32 + ×34 | [x] | spectrum table |
+| 11–12 | Sequential f32 + ×34 | [x] | spectrum table |
+| 13–14 | Residual f32 + ×34 | [x] | spectrum table |
+| 15–16 | Mamba f32 + ×34 | [x] | spectrum table |
+| 17–18 | Embedding f32 + ×34 | [x] | spectrum table |
+| 19–20 | MHA f32 + ×34 | [x] | spectrum table |
+| 21–22 | CNN1 f32 + ×34 | [x] | spectrum table (CNN2/3 share) |
+| 23–24 | ConvT1 f32 + ×34 | [x] | spectrum table (ConvT2/3 share) |
+| 25–26 | RNN f32 + ×34 | [x] | spectrum table |
+| 27–28 | LSTM f32 + ×34 | [x] | spectrum table |
+
 ## 1 — NormalBP
 
 Chain-rule Backward + ApplyGradSGD. Start here. Dense first.
@@ -263,35 +288,37 @@ Chain-rule Backward + ApplyGradSGD. Start here. Dense first.
 
 ## 2 — StepBP
 
-Needs Step `Line` pipe + NormalBP on the leaf.
+Needs Step `Line` pipe + FamilyBP (NormalBP credit) on pop.  
+Ship: thin Stack host + `runtime/line` TickLine/TrainLineMSE; wire `STB1`/`STBO`; w2a `--stepbp-train`.  
+**3D volumetric** for StepBP = MeshBP (deferred). CNN2/3 and ConvT2/3 share CNN1/ConvT1 FamilyBP dispatch.
 
 | Layer | Inside node | 3D volumetric | Fully signed off | Ver |
 |---|:---:|:---:|:---:|---|
-| Dense | [ ] | [ ] | [ ] | |
-| RMSNorm | [ ] | [ ] | [ ] | |
-| LayerNorm | [ ] | [ ] | [ ] | |
-| SwiGLU | [ ] | [ ] | [ ] | |
-| Softmax | [ ] | [ ] | [ ] | |
-| Embedding | [ ] | [ ] | [ ] | |
-| MHA | [ ] | [ ] | [ ] | |
-| CNN1 | [ ] | [ ] | [ ] | |
-| CNN2 | [ ] | [ ] | [ ] | |
-| CNN3 | [ ] | [ ] | [ ] | |
-| ConvT1 | [ ] | [ ] | [ ] | |
-| ConvT2 | [ ] | [ ] | [ ] | |
-| ConvT3 | [ ] | [ ] | [ ] | |
-| RNN | [ ] | [ ] | [ ] | |
-| LSTM | [ ] | [ ] | [ ] | |
-| Sequential | [ ] | [ ] | [ ] | |
-| Residual | [ ] | [ ] | [ ] | |
+| Dense | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
+| RMSNorm | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
+| LayerNorm | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
+| SwiGLU | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
+| Softmax | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
+| Embedding | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
+| MHA | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
+| CNN1 | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
+| CNN2 | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
+| CNN3 | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
+| ConvT1 | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
+| ConvT2 | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
+| ConvT3 | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
+| RNN | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
+| LSTM | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
+| Sequential | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
+| Residual | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
 | KMeans | [ ] | [ ] | [ ] | |
-| Mamba | [ ] | [ ] | [ ] | |
+| Mamba | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
 | Metacognition | [ ] | [ ] | [ ] | |
 | GDN | [ ] | [ ] | [ ] | |
 | Parallel | [ ] | [ ] | [ ] | |
 | Stack | [ ] | [ ] | [ ] | |
 
-**Checkpoint:** bump version when this mode table advances.
+**Checkpoint:** `0.1.34-m2-stepbp` — Line Inside+×34 for NormalBP-signed kinds; MeshBP / full cameral Stack still open.
 
 ---
 

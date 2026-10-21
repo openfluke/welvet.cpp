@@ -10,7 +10,9 @@
 #include "welvet/dense.hpp"
 #include "welvet/embedding.hpp"
 #include "welvet/gaps.hpp"
+#include "welvet/runtime/line.hpp"
 #include "welvet/runtime/training.hpp"
+#include "welvet/stack.hpp"
 #include "welvet/kmeans.hpp"
 #include "welvet/layernorm.hpp"
 #include "welvet/lstm.hpp"
@@ -2446,7 +2448,86 @@ welvet_status welvet_parallel_forward_f32(int32_t batch, int32_t seq, int32_t di
   return to_c(welvet::Status::Ok());
 }
 
-const char* welvet_version(void) { return "0.1.33-m2-mamba-nbp"; }
+welvet_status welvet_stack_stepbp_dense_f32(int32_t n_children, int32_t n_ticks, int32_t batch,
+                                            double lr, int32_t dtype, const int32_t* in_h,
+                                            const int32_t* out_h, const int32_t* act,
+                                            const float* packed_W, const float* x_ticks,
+                                            const float* target_ticks, float* W_after,
+                                            double* loss) {
+  if (n_children <= 0 || n_ticks <= 0 || batch <= 0 || !in_h || !out_h || !act || !packed_W ||
+      !x_ticks || !target_ticks || !W_after || !loss) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "stack stepbp: invalid argument");
+    return st;
+  }
+  if (dtype < 0 || dtype >= welvet::kNumDTypes) {
+    welvet_status st{};
+    st.code = 1;
+    std::snprintf(st.message, sizeof(st.message), "stack stepbp: bad dtype %d", dtype);
+    return st;
+  }
+
+  welvet::stack::Layer stack;
+  stack.meta.type = welvet::LayerType::Stack;
+  stack.meta.dtype = static_cast<welvet::DType>(dtype);
+  stack.backend = welvet::Backend::CPUTiled;
+  int w_off = 0;
+  for (int32_t i = 0; i < n_children; ++i) {
+    if (in_h[i] <= 0 || out_h[i] <= 0) {
+      welvet_status st{};
+      st.code = 1;
+      std::snprintf(st.message, sizeof(st.message), "stack stepbp: bad child dims");
+      return st;
+    }
+    welvet::stack::Child ch;
+    ch.kind = welvet::stack::Kind::Dense;
+    auto st = welvet::dense::new_layer(in_h[i], out_h[i], static_cast<welvet::Activation>(act[i]),
+                                       static_cast<welvet::DType>(dtype), packed_W + w_off,
+                                       &ch.dense_op);
+    if (!st) return to_c(st);
+    ch.dense_op.backend = welvet::Backend::CPUTiled;
+    ch.dense_op.multi_core = false;
+    w_off += out_h[i] * in_h[i];
+    stack.children.push_back(std::move(ch));
+  }
+  stack.meta.input_height = in_h[0];
+  stack.meta.output_height = out_h[n_children - 1];
+
+  const int x_stride = batch * in_h[0];
+  const int t_stride = batch * out_h[n_children - 1];
+  welvet::runtime::line::State line_st;
+  double last_loss = 0.0;
+  for (int32_t t = 0; t < n_ticks; ++t) {
+    welvet::TensorF32 xin;
+    xin.shape = {batch, in_h[0]};
+    xin.data.assign(x_ticks + static_cast<std::size_t>(t) * static_cast<std::size_t>(x_stride),
+                    x_ticks + static_cast<std::size_t>(t + 1) * static_cast<std::size_t>(x_stride));
+    welvet::TensorF32 tgt;
+    tgt.shape = {batch, out_h[n_children - 1]};
+    tgt.data.assign(target_ticks + static_cast<std::size_t>(t) * static_cast<std::size_t>(t_stride),
+                    target_ticks +
+                        static_cast<std::size_t>(t + 1) * static_cast<std::size_t>(t_stride));
+    double tick_loss = 0.0;
+    auto st = welvet::runtime::line::train_mse(stack, &line_st, xin, tgt, lr, &tick_loss);
+    if (!st) return to_c(st);
+    if (tick_loss != 0.0 || t == n_ticks - 1) {
+      last_loss = tick_loss;
+    }
+  }
+  *loss = last_loss;
+
+  int off = 0;
+  for (const auto& ch : stack.children) {
+    const int cn = ch.dense_op.weights.rows * ch.dense_op.weights.cols;
+    auto st = ch.dense_op.weights.export_f32(W_after + off);
+    if (!st) return to_c(st);
+    off += cn;
+  }
+  return to_c(welvet::Status::Ok());
+}
+
+const char* welvet_version(void) { return "0.1.34-m2-stepbp"; }
 
 int32_t welvet_gap_count(void) { return static_cast<int32_t>(welvet::gaps::count_gaps()); }
 

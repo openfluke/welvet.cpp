@@ -18,6 +18,7 @@
 #include "welvet/rnn.hpp"
 #include "welvet/sequential.hpp"
 #include "welvet/softmax.hpp"
+#include "welvet/stack.hpp"
 #include "welvet/status.hpp"
 #include "welvet/swiglu.hpp"
 
@@ -55,7 +56,7 @@ enum class OpKind : int32_t {
   Sequential = 16,
   Residual = 17,
   Mamba = 18,
-  // gap? other layer ops
+  Stack = 19, // thin Stack host (Line/StepBP children; volume = full-chain NormalBP)
 };
 
 // One processing unit in the grid (Go architecture.Cell topology subset).
@@ -80,6 +81,7 @@ struct Cell {
   sequential::Layer sequential_op; // valid when op_kind == Sequential
   residual::Layer residual_op;     // valid when op_kind == Residual
   mamba::Layer mamba_op;           // valid when op_kind == Mamba
+  stack::Layer stack_op;           // valid when op_kind == Stack
 
   bool is_remote_link = false;
   int target_z = 0, target_y = 0, target_x = 0, target_l = 0;
@@ -144,5 +146,6 @@ Status bind_lstm(Grid& g, int z, int y, int x, int l, lstm::Layer op);
 Status bind_sequential(Grid& g, int z, int y, int x, int l, sequential::Layer op);
 Status bind_residual(Grid& g, int z, int y, int x, int l, residual::Layer op);
 Status bind_mamba(Grid& g, int z, int y, int x, int l, mamba::Layer op);
+Status bind_stack(Grid& g, int z, int y, int x, int l, stack::Layer op);
 
 } // namespace welvet::architecture

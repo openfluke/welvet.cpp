@@ -48,6 +48,7 @@
 //   REV1 — Volume Residual NormalBP
 //   MBB1 — Mamba NormalBP leaf
 //   MBV1 — Volume Mamba NormalBP
+//   STB1 — Line StepBP (thin Stack + FamilyBP on pop)
 //
 // WVA1 stdin:
 //   magic "WVA1"
@@ -75,12 +76,27 @@
 #include "welvet_c.h"
 
 #include "welvet/architecture.hpp"
+#include "welvet/cnn1.hpp"
+#include "welvet/cnn2.hpp"
+#include "welvet/cnn3.hpp"
+#include "welvet/convt1.hpp"
+#include "welvet/convt2.hpp"
+#include "welvet/convt3.hpp"
+#include "welvet/embedding.hpp"
 #include "welvet/layernorm.hpp"
+#include "welvet/lstm.hpp"
+#include "welvet/mamba.hpp"
+#include "welvet/mha.hpp"
+#include "welvet/residual.hpp"
 #include "welvet/rmsnorm.hpp"
+#include "welvet/rnn.hpp"
 #include "welvet/runtime/backward.hpp"
 #include "welvet/runtime/forward.hpp"
+#include "welvet/runtime/line.hpp"
 #include "welvet/runtime/training.hpp"
+#include "welvet/sequential.hpp"
 #include "welvet/softmax.hpp"
+#include "welvet/stack.hpp"
 #include "welvet/swiglu.hpp"
 
 #include <chrono>
@@ -5491,6 +5507,451 @@ int run_volume_mamba_normalbp(int bench_iters) {
   return write_cnn_vol_nbp_out("MBVO", loss, bwd, fwd, Ws);
 }
 
+// ---------------------------------------------------------------------------
+// STB1 — Line StepBP (thin Stack + FamilyBP credit on pop)
+// stdin:
+//   i32 n_children, n_ticks, batch
+//   f64 lr
+//   for each child:
+//     i32 kind  (OpKind: Dense=1 … Mamba=18)
+//     Dense: i32 in,out,act,dtype ; f32 W[out*in] ; u32 bias_len ; f64 bias[]
+//     RMSNorm: i32 dim,dtype ; f64 eps ; f32 gamma[dim]
+//     LayerNorm: i32 dim,dtype ; f64 eps ; f32 gamma[dim] ; f32 beta[dim]
+//     SwiGLU: i32 in,inter,dtype ; f32 Gate|Up|Down
+//     Softmax: i32 dim,dtype,kind ; f64 temperature
+//     Embedding: i32 vocab,emb,seq,act,dtype ; f32 table[vocab*emb]
+//     MHA: i32 seq,d_model,num_heads,num_kv,head_dim,msl,mask,pos,dtype
+//          ; f32 Q|K|V|O
+//     CNN1: i32 in_ch,filters,seq,kernel,stride,pad,act,dtype ; f32 W[proj]
+//     CNN2/3 / ConvT1/2/3: same field layout as their NormalBP leaf headers + W
+//     RNN/LSTM: i32 in,hid,seq,dtype ; f32 packed
+//     Sequential/Residual: i32 dim,seq,depth,child_act,dtype ; f32 packed
+//     Mamba: i32 d_model,d_state,expand,seq,dtype ; f32 packed
+//   i32 x_ndim ; i32 x_shape[x_ndim]
+//   i32 t_ndim ; i32 t_shape[t_ndim]
+//   for each tick: f32 x[prod(x)] ; f32 target[prod(t)]
+// stdout STBO: f64 loss ; i32 n_children ; per child: i32 n ; f32 W_after[n]
+// ---------------------------------------------------------------------------
+
+int prod_shape(const std::vector<int32_t>& sh) {
+  int p = 1;
+  for (int32_t d : sh) p *= static_cast<int>(d);
+  return p;
+}
+
+bool read_child(welvet::stack::Child* ch) {
+  int32_t kind = 0;
+  if (!read_exact(&kind, 1)) return false;
+  ch->kind = static_cast<welvet::stack::Kind>(kind);
+  switch (ch->kind) {
+  case welvet::stack::Kind::Dense: {
+    int32_t in = 0, out = 0, act = 0, dtype = 1;
+    if (!read_exact(&in, 1) || !read_exact(&out, 1) || !read_exact(&act, 1) ||
+        !read_exact(&dtype, 1)) {
+      return false;
+    }
+    std::vector<float> W(static_cast<std::size_t>(out * in));
+    if (!read_exact(W.data(), W.size())) return false;
+    uint32_t bias_len = 0;
+    if (!read_exact(&bias_len, 1)) return false;
+    std::vector<double> bias(bias_len);
+    if (bias_len > 0 && !read_exact(bias.data(), bias.size())) return false;
+    auto st = welvet::dense::new_layer(in, out, static_cast<welvet::Activation>(act),
+                                       static_cast<welvet::DType>(dtype), W.data(), &ch->dense_op);
+    if (!st) {
+      std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message.c_str());
+      return false;
+    }
+    ch->dense_op.backend = welvet::Backend::CPUTiled;
+    ch->dense_op.multi_core = false;
+    if (bias_len > 0) {
+      ch->dense_op.weights.bias = std::move(bias);
+    }
+    return true;
+  }
+  case welvet::stack::Kind::RMSNorm: {
+    int32_t dim = 0, dtype = 1;
+    double eps = 0.0;
+    if (!read_exact(&dim, 1) || !read_exact(&dtype, 1) || !read_exact(&eps, 1)) return false;
+    std::vector<float> g(static_cast<std::size_t>(dim));
+    if (!read_exact(g.data(), g.size())) return false;
+    welvet::rmsnorm::Config cfg;
+    cfg.dim = dim;
+    cfg.eps = eps;
+    auto st = welvet::rmsnorm::new_configured(cfg, static_cast<welvet::DType>(dtype), g.data(),
+                                              &ch->rmsnorm_op);
+    if (!st) return false;
+    ch->rmsnorm_op.backend = welvet::Backend::CPUTiled;
+    return true;
+  }
+  case welvet::stack::Kind::LayerNorm: {
+    int32_t dim = 0, dtype = 1;
+    double eps = 0.0;
+    if (!read_exact(&dim, 1) || !read_exact(&dtype, 1) || !read_exact(&eps, 1)) return false;
+    std::vector<float> g(static_cast<std::size_t>(dim)), b(static_cast<std::size_t>(dim));
+    if (!read_exact(g.data(), g.size()) || !read_exact(b.data(), b.size())) return false;
+    welvet::layernorm::Config cfg;
+    cfg.dim = dim;
+    cfg.eps = eps;
+    auto st = welvet::layernorm::new_configured(cfg, static_cast<welvet::DType>(dtype), g.data(),
+                                                b.data(), &ch->layernorm_op);
+    if (!st) return false;
+    ch->layernorm_op.backend = welvet::Backend::CPUTiled;
+    return true;
+  }
+  case welvet::stack::Kind::SwiGLU: {
+    int32_t in = 0, inter = 0, dtype = 1;
+    if (!read_exact(&in, 1) || !read_exact(&inter, 1) || !read_exact(&dtype, 1)) return false;
+    const int ng = inter * in;
+    const int nu = inter * in;
+    const int nd = in * inter;
+    std::vector<float> packed(static_cast<std::size_t>(ng + nu + nd));
+    if (!read_exact(packed.data(), packed.size())) return false;
+    welvet::swiglu::Config cfg;
+    cfg.input_dim = in;
+    cfg.intermediate_dim = inter;
+    auto st = welvet::swiglu::new_configured(cfg, static_cast<welvet::DType>(dtype), packed.data(),
+                                             packed.data() + ng, packed.data() + ng + nu,
+                                             &ch->swiglu_op);
+    if (!st) return false;
+    ch->swiglu_op.backend = welvet::Backend::CPUTiled;
+    return true;
+  }
+  case welvet::stack::Kind::Softmax: {
+    int32_t dim = 0, dtype = 1, sk = 0;
+    double temperature = 1.0;
+    if (!read_exact(&dim, 1) || !read_exact(&dtype, 1) || !read_exact(&sk, 1) ||
+        !read_exact(&temperature, 1)) {
+      return false;
+    }
+    welvet::softmax::Config cfg;
+    cfg.dim = dim;
+    cfg.kind = static_cast<welvet::softmax::Kind>(sk);
+    cfg.temperature = temperature;
+    auto st = welvet::softmax::new_configured(cfg, static_cast<welvet::DType>(dtype), &ch->softmax_op);
+    if (!st) return false;
+    ch->softmax_op.backend = welvet::Backend::CPUTiled;
+    return true;
+  }
+  case welvet::stack::Kind::Embedding: {
+    int32_t vocab = 0, emb = 0, seq = 0, act = -1, dtype = 1;
+    if (!read_exact(&vocab, 1) || !read_exact(&emb, 1) || !read_exact(&seq, 1) ||
+        !read_exact(&act, 1) || !read_exact(&dtype, 1)) {
+      return false;
+    }
+    std::vector<float> W(static_cast<std::size_t>(vocab * emb));
+    if (!read_exact(W.data(), W.size())) return false;
+    welvet::embedding::Config cfg;
+    cfg.vocab_size = vocab;
+    cfg.embedding_dim = emb;
+    cfg.seq_len = seq;
+    auto st = welvet::embedding::new_configured(cfg, static_cast<welvet::DType>(dtype),
+                                                static_cast<welvet::Activation>(act), W.data(),
+                                                &ch->embedding_op);
+    if (!st) return false;
+    ch->embedding_op.backend = welvet::Backend::CPUTiled;
+    return true;
+  }
+  case welvet::stack::Kind::MHA: {
+    int32_t seq = 0, d_model = 0, num_heads = 0, num_kv = 0, head_dim = 0, msl = 0;
+    int32_t mask = 0, pos = 0, dtype = 1;
+    if (!read_exact(&seq, 1) || !read_exact(&d_model, 1) || !read_exact(&num_heads, 1) ||
+        !read_exact(&num_kv, 1) || !read_exact(&head_dim, 1) || !read_exact(&msl, 1) ||
+        !read_exact(&mask, 1) || !read_exact(&pos, 1) || !read_exact(&dtype, 1)) {
+      return false;
+    }
+    const int hd = head_dim > 0 ? head_dim : d_model / num_heads;
+    const int kv_heads = num_kv > 0 ? num_kv : num_heads;
+    const int q_dim = num_heads * hd;
+    const int kv_dim = kv_heads * hd;
+    std::vector<float> Q(static_cast<std::size_t>(q_dim * d_model));
+    std::vector<float> K(static_cast<std::size_t>(kv_dim * d_model));
+    std::vector<float> V(static_cast<std::size_t>(kv_dim * d_model));
+    std::vector<float> O(static_cast<std::size_t>(d_model * q_dim));
+    if (!read_exact(Q.data(), Q.size()) || !read_exact(K.data(), K.size()) ||
+        !read_exact(V.data(), V.size()) || !read_exact(O.data(), O.size())) {
+      return false;
+    }
+    welvet::mha::Config cfg = welvet::mha::decoder_causal(d_model, num_heads, kv_heads);
+    cfg.max_seq_len = msl > 0 ? msl : seq;
+    cfg.mask = static_cast<welvet::mha::MaskKind>(mask);
+    cfg.pos = static_cast<welvet::mha::PosKind>(pos);
+    if (head_dim > 0) cfg.head_dim = head_dim;
+    auto st = welvet::mha::new_configured(cfg, static_cast<welvet::DType>(dtype), Q.data(), K.data(),
+                                          V.data(), O.data(), &ch->mha_op);
+    if (!st) return false;
+    ch->mha_op.backend = welvet::Backend::CPUTiled;
+    (void)seq;
+    return true;
+  }
+  case welvet::stack::Kind::CNN1: {
+    int32_t in_ch = 0, filters = 0, seq = 0, kernel = 0, stride = 0, pad = 0, act = 0, dtype = 1;
+    if (!read_exact(&in_ch, 1) || !read_exact(&filters, 1) || !read_exact(&seq, 1) ||
+        !read_exact(&kernel, 1) || !read_exact(&stride, 1) || !read_exact(&pad, 1) ||
+        !read_exact(&act, 1) || !read_exact(&dtype, 1)) {
+      return false;
+    }
+    welvet::cnn1::Config cfg;
+    cfg.in_channels = in_ch;
+    cfg.filters = filters;
+    cfg.seq_len = seq;
+    cfg.kernel = kernel;
+    cfg.stride = stride;
+    cfg.padding = pad;
+    cfg.activation = static_cast<welvet::Activation>(act);
+    const int nw = filters * in_ch * kernel;
+    std::vector<float> W(static_cast<std::size_t>(nw));
+    if (!read_exact(W.data(), W.size())) return false;
+    auto st = welvet::cnn1::new_configured(cfg, static_cast<welvet::DType>(dtype), W.data(),
+                                           &ch->cnn1_op);
+    if (!st) return false;
+    ch->cnn1_op.backend = welvet::Backend::CPUTiled;
+    return true;
+  }
+  case welvet::stack::Kind::Sequential:
+  case welvet::stack::Kind::Residual: {
+    int32_t dim = 0, seq = 0, depth = 0, child_act = -1, dtype = 1;
+    if (!read_exact(&dim, 1) || !read_exact(&seq, 1) || !read_exact(&depth, 1) ||
+        !read_exact(&child_act, 1) || !read_exact(&dtype, 1)) {
+      return false;
+    }
+    std::vector<float> W(static_cast<std::size_t>(depth * dim * dim));
+    if (!read_exact(W.data(), W.size())) return false;
+    if (ch->kind == welvet::stack::Kind::Sequential) {
+      welvet::sequential::Config cfg;
+      cfg.dim = dim;
+      cfg.seq_len = seq;
+      cfg.depth = depth;
+      auto st = welvet::sequential::new_configured(cfg, static_cast<welvet::DType>(dtype),
+                                                   static_cast<welvet::Activation>(child_act),
+                                                   W.data(), &ch->sequential_op);
+      if (!st) return false;
+      ch->sequential_op.backend = welvet::Backend::CPUTiled;
+    } else {
+      welvet::residual::Config cfg;
+      cfg.dim = dim;
+      cfg.seq_len = seq;
+      cfg.depth = depth;
+      auto st = welvet::residual::new_configured(cfg, static_cast<welvet::DType>(dtype),
+                                                 static_cast<welvet::Activation>(child_act),
+                                                 W.data(), &ch->residual_op);
+      if (!st) return false;
+      ch->residual_op.backend = welvet::Backend::CPUTiled;
+    }
+    return true;
+  }
+  case welvet::stack::Kind::Mamba: {
+    int32_t d_model = 0, d_state = 0, expand = 0, seq = 0, dtype = 1;
+    if (!read_exact(&d_model, 1) || !read_exact(&d_state, 1) || !read_exact(&expand, 1) ||
+        !read_exact(&seq, 1) || !read_exact(&dtype, 1)) {
+      return false;
+    }
+    welvet::mamba::Config cfg;
+    cfg.d_model = d_model;
+    cfg.d_state = d_state;
+    cfg.expand = expand;
+    cfg.seq_len = seq;
+    const int nw = welvet::mamba::weight_count(cfg);
+    std::vector<float> W(static_cast<std::size_t>(nw));
+    if (!read_exact(W.data(), W.size())) return false;
+    auto st =
+        welvet::mamba::new_configured(cfg, static_cast<welvet::DType>(dtype), W.data(), &ch->mamba_op);
+    if (!st) return false;
+    ch->mamba_op.backend = welvet::Backend::CPUTiled;
+    return true;
+  }
+  case welvet::stack::Kind::ConvT1: {
+    int32_t in_ch = 0, filters = 0, seq = 0, kernel = 0, stride = 0, pad = 0, out_pad = 0,
+            act = 0, dtype = 1;
+    if (!read_exact(&in_ch, 1) || !read_exact(&filters, 1) || !read_exact(&seq, 1) ||
+        !read_exact(&kernel, 1) || !read_exact(&stride, 1) || !read_exact(&pad, 1) ||
+        !read_exact(&out_pad, 1) || !read_exact(&act, 1) || !read_exact(&dtype, 1)) {
+      return false;
+    }
+    welvet::convt1::Config cfg;
+    cfg.in_channels = in_ch;
+    cfg.filters = filters;
+    cfg.seq_len = seq;
+    cfg.kernel = kernel;
+    cfg.stride = stride;
+    cfg.padding = pad;
+    cfg.output_padding = out_pad;
+    cfg.activation = static_cast<welvet::Activation>(act);
+    const int nw = filters * in_ch * kernel;
+    std::vector<float> W(static_cast<std::size_t>(nw));
+    if (!read_exact(W.data(), W.size())) return false;
+    auto st = welvet::convt1::new_configured(cfg, static_cast<welvet::DType>(dtype), W.data(),
+                                             &ch->convt1_op);
+    if (!st) return false;
+    ch->convt1_op.backend = welvet::Backend::CPUTiled;
+    return true;
+  }
+  case welvet::stack::Kind::RNN:
+  case welvet::stack::Kind::LSTM: {
+    int32_t in = 0, hid = 0, seq = 0, dtype = 1;
+    if (!read_exact(&in, 1) || !read_exact(&hid, 1) || !read_exact(&seq, 1) ||
+        !read_exact(&dtype, 1)) {
+      return false;
+    }
+    if (ch->kind == welvet::stack::Kind::RNN) {
+      welvet::rnn::Config cfg;
+      cfg.input_size = in;
+      cfg.hidden_size = hid;
+      cfg.seq_len = seq;
+      const int nw = welvet::rnn::weight_count(cfg);
+      std::vector<float> W(static_cast<std::size_t>(nw));
+      if (!read_exact(W.data(), W.size())) return false;
+      auto st =
+          welvet::rnn::new_configured(cfg, static_cast<welvet::DType>(dtype), W.data(), &ch->rnn_op);
+      if (!st) return false;
+      ch->rnn_op.backend = welvet::Backend::CPUTiled;
+    } else {
+      welvet::lstm::Config cfg;
+      cfg.input_size = in;
+      cfg.hidden_size = hid;
+      cfg.seq_len = seq;
+      const int nw = welvet::lstm::weight_count(cfg);
+      std::vector<float> W(static_cast<std::size_t>(nw));
+      if (!read_exact(W.data(), W.size())) return false;
+      auto st = welvet::lstm::new_configured(cfg, static_cast<welvet::DType>(dtype), W.data(),
+                                             &ch->lstm_op);
+      if (!st) return false;
+      ch->lstm_op.backend = welvet::Backend::CPUTiled;
+    }
+    return true;
+  }
+  default:
+    std::fprintf(stderr, "welvet_dense_fwd: STB1 unsupported kind %d\n", kind);
+    return false;
+  }
+}
+
+int run_stepbp(int bench_iters) {
+  int32_t n_children = 0, n_ticks = 0, batch = 0;
+  double lr = 0.0;
+  if (!read_exact(&n_children, 1) || !read_exact(&n_ticks, 1) || !read_exact(&batch, 1) ||
+      !read_exact(&lr, 1)) {
+    std::fprintf(stderr, "welvet_dense_fwd: short STB1 header\n");
+    return 2;
+  }
+  if (n_children <= 0 || n_ticks <= 0 || batch <= 0) return 1;
+
+  welvet::stack::Layer stack;
+  stack.meta.type = welvet::LayerType::Stack;
+  stack.backend = welvet::Backend::CPUTiled;
+  stack.children.resize(static_cast<std::size_t>(n_children));
+  for (int32_t i = 0; i < n_children; ++i) {
+    if (!read_child(&stack.children[static_cast<std::size_t>(i)])) {
+      std::fprintf(stderr, "welvet_dense_fwd: bad STB1 child %d\n", i);
+      return 2;
+    }
+  }
+
+  int32_t x_ndim = 0, t_ndim = 0;
+  if (!read_exact(&x_ndim, 1) || x_ndim <= 0 || x_ndim > 4) return 2;
+  std::vector<int32_t> x_shape(static_cast<std::size_t>(x_ndim));
+  if (!read_exact(x_shape.data(), x_shape.size())) return 2;
+  if (!read_exact(&t_ndim, 1) || t_ndim <= 0 || t_ndim > 4) return 2;
+  std::vector<int32_t> t_shape(static_cast<std::size_t>(t_ndim));
+  if (!read_exact(t_shape.data(), t_shape.size())) return 2;
+  const int x_len = prod_shape(x_shape);
+  const int t_len = prod_shape(t_shape);
+
+  std::vector<std::vector<float>> xs(static_cast<std::size_t>(n_ticks));
+  std::vector<std::vector<float>> tgts(static_cast<std::size_t>(n_ticks));
+  for (int32_t t = 0; t < n_ticks; ++t) {
+    xs[static_cast<std::size_t>(t)].resize(static_cast<std::size_t>(x_len));
+    tgts[static_cast<std::size_t>(t)].resize(static_cast<std::size_t>(t_len));
+    if (!read_exact(xs[static_cast<std::size_t>(t)].data(),
+                    xs[static_cast<std::size_t>(t)].size()) ||
+        !read_exact(tgts[static_cast<std::size_t>(t)].data(),
+                    tgts[static_cast<std::size_t>(t)].size())) {
+      return 2;
+    }
+  }
+  (void)batch;
+
+  auto once = [&]() -> welvet::Status {
+    // Rebuild stack from current children (already mutated) — for bench, re-read not available.
+    // Bench path: run train on a clone of weights is heavy; skip re-init and just time train once.
+    welvet::runtime::line::State st;
+    double loss = 0.0;
+    for (int32_t t = 0; t < n_ticks; ++t) {
+      welvet::TensorF32 xin;
+      xin.shape.assign(x_shape.begin(), x_shape.end());
+      xin.data = xs[static_cast<std::size_t>(t)];
+      welvet::TensorF32 tgt;
+      tgt.shape.assign(t_shape.begin(), t_shape.end());
+      tgt.data = tgts[static_cast<std::size_t>(t)];
+      double tick_loss = 0.0;
+      if (auto s = welvet::runtime::line::train_mse(stack, &st, xin, tgt, lr, &tick_loss); !s) {
+        return s;
+      }
+      loss = tick_loss;
+    }
+    (void)loss;
+    return welvet::Status::Ok();
+  };
+
+  double loss = 0.0;
+  if (bench_iters > 0) {
+    // Warmup + timed (mutates stack; acceptable for speed smoke).
+    for (int i = 0; i < 2; ++i) {
+      auto st = once();
+      if (!st) {
+        std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message.c_str());
+        return 1;
+      }
+    }
+    const auto t0 = std::chrono::steady_clock::now();
+    for (int i = 0; i < bench_iters; ++i) {
+      auto st = once();
+      if (!st) {
+        std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message.c_str());
+        return 1;
+      }
+    }
+    const auto t1 = std::chrono::steady_clock::now();
+    const int64_t ns =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(t1 - t0).count();
+    const int32_t iters32 = static_cast<int32_t>(bench_iters);
+    if (!write_exact("WVB1", 4) || !write_exact(&ns, 1) || !write_exact(&iters32, 1)) return 2;
+  } else {
+    welvet::runtime::line::State st;
+    for (int32_t t = 0; t < n_ticks; ++t) {
+      welvet::TensorF32 xin;
+      xin.shape.assign(x_shape.begin(), x_shape.end());
+      xin.data = xs[static_cast<std::size_t>(t)];
+      welvet::TensorF32 tgt;
+      tgt.shape.assign(t_shape.begin(), t_shape.end());
+      tgt.data = tgts[static_cast<std::size_t>(t)];
+      double tick_loss = 0.0;
+      auto s = welvet::runtime::line::train_mse(stack, &st, xin, tgt, lr, &tick_loss);
+      if (!s) {
+        std::fprintf(stderr, "welvet_dense_fwd: %s\n", s.message.c_str());
+        return 1;
+      }
+      loss = tick_loss;
+    }
+  }
+
+  if (!write_magic("STBO") || !write_exact(&loss, 1) || !write_exact(&n_children, 1)) return 2;
+  for (int32_t i = 0; i < n_children; ++i) {
+    const auto& ch = stack.children[static_cast<std::size_t>(i)];
+    const int32_t nw = welvet::stack::child_grad_w_size(ch);
+    std::vector<float> Wa(static_cast<std::size_t>(nw));
+    if (nw > 0) {
+      auto est = welvet::stack::child_export_f32(ch, Wa.data());
+      if (!est) {
+        std::fprintf(stderr, "welvet_dense_fwd: %s\n", est.message.c_str());
+        return 1;
+      }
+    }
+    if (!write_exact(&nw, 1)) return 2;
+    if (nw > 0 && !write_exact(Wa.data(), Wa.size())) return 2;
+  }
+  return 0;
+}
 
 } // namespace
 
@@ -5695,6 +6156,9 @@ int main(int argc, char** argv) {
   if (std::memcmp(magic, "MBV1", 4) == 0) {
     return run_volume_mamba_normalbp(bench_iters);
   }
+  if (std::memcmp(magic, "STB1", 4) == 0) {
+    return run_stepbp(bench_iters);
+  }
   const bool v3 = std::memcmp(magic, "WVD3", 4) == 0;
   const bool v2 = std::memcmp(magic, "WVD2", 4) == 0;
   const bool v1 = std::memcmp(magic, "WVD1", 4) == 0;
@@ -5703,7 +6167,7 @@ int main(int argc, char** argv) {
                          "WVC1/2/3/WVT1/2/3/WRN1/WLS1/WEM1/WSM1/WKM1/WSQ1/WRE1/WMB1/WMC1/WGD1/WSX1/"
                          "WPL1/WDB1/WVN1/WRB1/WRV1/WLB1/WLV1/WSB1/WSV1/WXB1/WXV1/WEB1/WEV1/"
                          "WHB1/WHV1/C1B1/C1V1/C2B1/C2V1/C3B1/C3V1/T1B1/T1V1/T2B1/T2V1/T3B1/T3V1/"
-                         "RNB1/RNV1/LSB1/LSV1/SQB1/SQV1/REB1/REV1/MBB1/MBV1)\n");
+                         "RNB1/RNV1/LSB1/LSV1/SQB1/SQV1/REB1/REV1/MBB1/MBV1/STB1)\n");
     return 2;
   }
   return run_dense(v1, v2, v3, bench_iters);
