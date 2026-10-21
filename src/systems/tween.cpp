@@ -257,6 +257,29 @@ Status apply_projected(stack::Child& c, const TensorF32& grad_out, const TensorF
   }
 }
 
+Status apply_cell_projected(architecture::Cell& cell, const TensorF32& grad_out,
+                            const TensorF32& input, const TensorF32& pre, const TensorF32& post,
+                            double soft_lr) {
+  if (cell.meta.is_disabled || grad_out.data.empty() || input.data.empty()) {
+    return Status::Ok();
+  }
+  if (cell.op_kind == architecture::OpKind::Sequential) {
+    return apply_projected_seq(cell.sequential_op, grad_out, input, soft_lr);
+  }
+  if (cell.op_kind == architecture::OpKind::Residual) {
+    return apply_projected_res(cell.residual_op, grad_out, input, soft_lr);
+  }
+  TensorF32 proj = project_gap(grad_out, post.shape);
+  if (proj.data.empty()) {
+    return Status::Ok();
+  }
+  TensorF32 g_in, dW;
+  if (auto st = runtime::backward::cell(cell, proj, input, pre, &g_in, &dW); !st) {
+    return st;
+  }
+  return apply_one(&cell, dW, soft_lr);
+}
+
 Status train_volume_mse(architecture::Grid& g, const runtime::forward::Result& fwd,
                         const TensorF32& target, double lr, double* loss) {
   if (!loss) {
@@ -281,27 +304,8 @@ Status train_volume_mse(architecture::Grid& g, const runtime::forward::Result& f
     if (!cell || cell->meta.is_disabled) {
       continue;
     }
-    // Seq/Res: leaf-projected (no chain). Other kinds: project + cell Backward+SGD.
-    if (cell->op_kind == architecture::OpKind::Sequential) {
-      if (auto st = apply_projected_seq(cell->sequential_op, gy, step.input, soft_lr); !st) {
-        return st;
-      }
-    } else if (cell->op_kind == architecture::OpKind::Residual) {
-      if (auto st = apply_projected_res(cell->residual_op, gy, step.input, soft_lr); !st) {
-        return st;
-      }
-    } else {
-      TensorF32 proj = project_gap(gy, step.post.shape);
-      if (proj.data.empty()) {
-        continue;
-      }
-      TensorF32 g_in, dW;
-      if (auto st = runtime::backward::cell(*cell, proj, step.input, step.pre, &g_in, &dW); !st) {
-        return st;
-      }
-      if (auto st = apply_one(cell, dW, soft_lr); !st) {
-        return st;
-      }
+    if (auto st = apply_cell_projected(*cell, gy, step.input, step.pre, step.post, soft_lr); !st) {
+      return st;
     }
     // Go trainTweenLocal: pass gap forward only when lengths match input.
     TensorF32 next;

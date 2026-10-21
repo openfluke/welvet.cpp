@@ -15,7 +15,7 @@ Canonical enum: Go `layers/parallel/train_mode.go` (`TrainMode`).
 
 Tick `[x]` when done. Put the **release tag** in **Ver** when that row (or the whole mode table) is signed.
 
-**Current engine:** `0.1.39-m2-steptweenchain`
+**Current engine:** `0.1.40-m2-meshtween`
 
 ---
 
@@ -308,6 +308,26 @@ Each leaf ×34 kind prints **dtype / band / exact%W / goµs / cppµs / spd%Δ**.
 | 29–31 | Dense TweenChain volume 111/211/222 | [x] | TCV1 exact_bit + speed |
 | 32–48 | ModeTweenChain volume 2×2×2×1 all signed kinds | [x] | TRC1…MBTC / C1TC…; volume Step |
 
+## w2a Go↔C++ (MeshTween mesh-clock) — sign-off evidence
+
+Run: `./scripts/linux_build_w2a.sh --meshtween-train`  
+Wires: `MTW1`/`MTWO` (mesh-clock FamilyTween @ lr×0.5); 3D via ModeTween volume `TWV1`/`TRV1`…. Exact_bit vs Go.
+
+| # | Case | Status | Notes |
+|---|---|:---:|---|
+| 1–3 | Dense MeshTween mesh-clock 111/211/222 | [x] | MTW1 exact_bit + speed |
+| 4–23 | MeshTween volume 2×2×2×1 all signed kinds | [x] | = ModeTween volume wires |
+
+## w2a Go↔C++ (MeshTweenChain mesh-clock) — sign-off evidence
+
+Run: `./scripts/linux_build_w2a.sh --meshtweenchain-train`  
+Wires: `MTC1`/`MTCO` (mesh-clock FamilyBP ≡ MeshBP); 3D via ModeTweenChain volume `TCV1`/`TRC1`…. Exact_bit vs Go.
+
+| # | Case | Status | Notes |
+|---|---|:---:|---|
+| 1–3 | Dense MeshTweenChain mesh-clock 111/211/222 | [x] | MTC1 exact_bit + speed |
+| 4–23 | MeshTweenChain volume 2×2×2×1 all signed kinds | [x] | = ModeTweenChain volume wires |
+
 ## w2a Go↔C++ (StepTween ModeStepTween) — sign-off evidence
 
 Run: `./scripts/linux_build_w2a.sh --steptween-train`  
@@ -580,70 +600,72 @@ Go ModeMeshBP on grid also = volume Forward+Step (cameral_train) — signed 2×2
 ## 8 — MeshTween
 
 Needs Mesh + Tween.  
-Note: volume Tween credit already exact_bit via ModeTween / StepTween suites (`TWV1`…). Mesh-clock Inside (MBP1-style with Tween) still open.
+Ship: `runtime/step` `Credit::FamilyTween` — Forward×ticks → last-tick `apply_cell_projected` @ `lr×0.5` (`MTW1`/`MTWO`); w2a `--meshtween-train`.  
+**3D volumetric** = ModeTween volume credit (`TWV1`/`TRV1`…). CNN2/3 & ConvT2/3 share CNN1/ConvT1 path.
 
 | Layer | Inside node | 3D volumetric | Fully signed off | Ver |
 |---|:---:|:---:|:---:|---|
-| Dense | [ ] | [ ] | [ ] | |
-| RMSNorm | [ ] | [ ] | [ ] | |
-| LayerNorm | [ ] | [ ] | [ ] | |
-| SwiGLU | [ ] | [ ] | [ ] | |
-| Softmax | [ ] | [ ] | [ ] | |
-| Embedding | [ ] | [ ] | [ ] | |
-| MHA | [ ] | [ ] | [ ] | |
-| CNN1 | [ ] | [ ] | [ ] | |
-| CNN2 | [ ] | [ ] | [ ] | |
-| CNN3 | [ ] | [ ] | [ ] | |
-| ConvT1 | [ ] | [ ] | [ ] | |
-| ConvT2 | [ ] | [ ] | [ ] | |
-| ConvT3 | [ ] | [ ] | [ ] | |
-| RNN | [ ] | [ ] | [ ] | |
-| LSTM | [ ] | [ ] | [ ] | |
-| Sequential | [ ] | [ ] | [ ] | |
-| Residual | [ ] | [ ] | [ ] | |
+| Dense | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
+| RMSNorm | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
+| LayerNorm | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
+| SwiGLU | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
+| Softmax | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
+| Embedding | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
+| MHA | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
+| CNN1 | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
+| CNN2 | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
+| CNN3 | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
+| ConvT1 | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
+| ConvT2 | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
+| ConvT3 | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
+| RNN | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
+| LSTM | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
+| Sequential | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
+| Residual | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
 | KMeans | [ ] | [ ] | [ ] | |
-| Mamba | [ ] | [ ] | [ ] | |
+| Mamba | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
 | Metacognition | [ ] | [ ] | [ ] | |
 | GDN | [ ] | [ ] | [ ] | |
 | Parallel | [ ] | [ ] | [ ] | |
 | Stack | [ ] | [ ] | [ ] | |
 
-**Checkpoint:** bump version when this mode table advances.
+**Checkpoint:** `0.1.40-m2-meshtween` — Dense mesh-clock MTW1 111/211/222 + ModeTween volume for NormalBP-signed kinds.
 
 ---
 
 ## 9 — MeshTweenChain
 
 Needs Mesh + TweenChain.  
-Note: volume TweenChain credit already exact_bit via ModeTweenChain / StepTweenChain suites (`TCV1`…). Mesh-clock Inside still open.
+Ship: `runtime/step` `Credit::FamilyBP` under mesh clock (`MTC1`/`MTCO` ≡ MeshBP); w2a `--meshtweenchain-train`.  
+**3D volumetric** = ModeTweenChain volume credit (`TCV1`/`TRC1`…). CNN2/3 & ConvT2/3 share CNN1/ConvT1 path.
 
 | Layer | Inside node | 3D volumetric | Fully signed off | Ver |
 |---|:---:|:---:|:---:|---|
-| Dense | [ ] | [ ] | [ ] | |
-| RMSNorm | [ ] | [ ] | [ ] | |
-| LayerNorm | [ ] | [ ] | [ ] | |
-| SwiGLU | [ ] | [ ] | [ ] | |
-| Softmax | [ ] | [ ] | [ ] | |
-| Embedding | [ ] | [ ] | [ ] | |
-| MHA | [ ] | [ ] | [ ] | |
-| CNN1 | [ ] | [ ] | [ ] | |
-| CNN2 | [ ] | [ ] | [ ] | |
-| CNN3 | [ ] | [ ] | [ ] | |
-| ConvT1 | [ ] | [ ] | [ ] | |
-| ConvT2 | [ ] | [ ] | [ ] | |
-| ConvT3 | [ ] | [ ] | [ ] | |
-| RNN | [ ] | [ ] | [ ] | |
-| LSTM | [ ] | [ ] | [ ] | |
-| Sequential | [ ] | [ ] | [ ] | |
-| Residual | [ ] | [ ] | [ ] | |
+| Dense | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
+| RMSNorm | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
+| LayerNorm | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
+| SwiGLU | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
+| Softmax | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
+| Embedding | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
+| MHA | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
+| CNN1 | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
+| CNN2 | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
+| CNN3 | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
+| ConvT1 | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
+| ConvT2 | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
+| ConvT3 | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
+| RNN | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
+| LSTM | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
+| Sequential | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
+| Residual | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
 | KMeans | [ ] | [ ] | [ ] | |
-| Mamba | [ ] | [ ] | [ ] | |
+| Mamba | [x] | [x] | [x] | `0.1.40-m2-meshtween` |
 | Metacognition | [ ] | [ ] | [ ] | |
 | GDN | [ ] | [ ] | [ ] | |
 | Parallel | [ ] | [ ] | [ ] | |
 | Stack | [ ] | [ ] | [ ] | |
 
-**Checkpoint:** bump version when this mode table advances.
+**Checkpoint:** `0.1.40-m2-meshtween` — Dense mesh-clock MTC1 (= MeshBP) + TweenChain volume for NormalBP-signed kinds.
 
 ---
 
@@ -1466,3 +1488,4 @@ Fill as you tick rows / finish mode tables.
 | `0.1.37-m2-tweenchain` | ModeTweenChain × signed kinds | Leaf+vol FamilyBP @ full lr; TCB1/TCV1/TRC1… |
 | `0.1.38-m2-steptween` | StepTween × signed kinds | Line FamilyTween @ lr×0.5; STW1; 3D MeshTween vol (= ModeTween) |
 | `0.1.39-m2-steptweenchain` | StepTweenChain × signed kinds | Line FamilyBP @ full lr; STC1; 3D MeshTweenChain vol (= TweenChain) |
+| `0.1.40-m2-meshtween` | MeshTween + MeshTweenChain × signed kinds | MTW1 FamilyTween mesh-clock; MTC1 FamilyBP (= MeshBP); volume ModeTween/TweenChain |

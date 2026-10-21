@@ -34,8 +34,15 @@ Status backward(architecture::Grid& g, State* s, const TensorF32& grad_out, Tens
 // Apply per-cell dW via FamilyBP ApplyGradSGD.
 Status apply_sgd(architecture::Grid& g, const std::vector<TensorF32>& layer_dws, double lr);
 
-// MeshBP FamilyBP: ticks of Forward(capture) → MSE on last cell → Backward → SGD.
+// FamilyBP = MeshBP / MeshTweenChain (BPTT + SGD @ full lr).
+// FamilyTween = MeshTween (last-tick projected local @ lr*0.5; no BPTT chain).
+enum class Credit : int32_t {
+  FamilyBP = 0,
+  FamilyTween = 1,
+};
+
+// Mesh-clock train: Forward×ticks → MSE on last cell → credit update.
 Status train_mse(architecture::Grid& g, const TensorF32& input, const TensorF32& target, int ticks,
-                 double lr, double* loss);
+                 double lr, double* loss, Credit credit = Credit::FamilyBP);
 
 } // namespace welvet::runtime::step

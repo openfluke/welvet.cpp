@@ -3,6 +3,7 @@
 #include "welvet/runtime/backward.hpp"
 #include "welvet/runtime/forward.hpp"
 #include "welvet/runtime/training.hpp"
+#include "welvet/systems/tween.hpp"
 
 #include "welvet/cnn1.hpp"
 #include "welvet/cnn2.hpp"
@@ -299,7 +300,7 @@ Status apply_sgd(architecture::Grid& g, const std::vector<TensorF32>& layer_dws,
 }
 
 Status train_mse(architecture::Grid& g, const TensorF32& input, const TensorF32& target, int ticks,
-                 double lr, double* loss) {
+                 double lr, double* loss, Credit credit) {
   if (!loss) {
     return Status::Err(StatusCode::InvalidArgument, "step: nil loss");
   }
@@ -310,7 +311,7 @@ Status train_mse(architecture::Grid& g, const TensorF32& input, const TensorF32&
   ensure_size(&st, architecture::stack_layer_count(g));
   clear_history(&st);
   for (int t = 0; t < ticks; ++t) {
-    // Re-inject each tick so cell 0 keeps the sample (streaming mesh FamilyBP).
+    // Re-inject each tick so cell 0 keeps the sample (streaming mesh).
     set_input(&st, input);
     if (auto s = forward(g, &st, true); !s) {
       return s;
@@ -327,6 +328,45 @@ Status train_mse(architecture::Grid& g, const TensorF32& input, const TensorF32&
   if (auto s = training::mse_grad(pred, target, &gy); !s) {
     return s;
   }
+
+  if (credit == Credit::FamilyTween) {
+    // MeshTween: last-tick projected local @ soft_lr (no BPTT). Matches ModeTween credit
+    // family under mesh schedule (Go trainTweenLocal / applyProjectedTween).
+    if (st.history_in.empty() || st.history_pre.empty()) {
+      return Status::Err(StatusCode::InvalidArgument, "step: empty tween history");
+    }
+    const auto& step_in = st.history_in.back();
+    const auto& step_pre = st.history_pre.back();
+    const double soft_lr = lr * 0.5;
+    const int num_layers = static_cast<int>(g.cells.size());
+    TensorF32 gap = std::move(gy);
+    for (int idx = num_layers - 1; idx >= 0; --idx) {
+      architecture::Cell& cell = g.cells[static_cast<std::size_t>(idx)];
+      if (cell.meta.is_disabled) {
+        continue;
+      }
+      const TensorF32& cin = step_in[static_cast<std::size_t>(idx)];
+      const TensorF32& pre = step_pre[static_cast<std::size_t>(idx)];
+      const TensorF32& post = st.layer_data[static_cast<std::size_t>(idx)];
+      if (tensor_empty(cin) || tensor_empty(pre) || tensor_empty(post)) {
+        continue;
+      }
+      if (auto s = systems::tween::apply_cell_projected(cell, gap, cin, pre, post, soft_lr); !s) {
+        return Status::Err(s.code, std::string("step tween cell ") + std::to_string(idx) + ": " +
+                                       s.message);
+      }
+      TensorF32 next;
+      next.shape = cin.shape;
+      next.data.assign(cin.data.size(), 0.0f);
+      if (gap.data.size() == next.data.size()) {
+        next.data = gap.data;
+      }
+      gap = std::move(next);
+    }
+    return Status::Ok();
+  }
+
+  // MeshBP / MeshTweenChain: BPTT + SGD @ full lr.
   TensorF32 gin;
   std::vector<TensorF32> dws;
   if (auto s = backward(g, &st, gy, &gin, &dws); !s) {

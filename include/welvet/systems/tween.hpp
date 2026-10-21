@@ -19,6 +19,12 @@ TensorF32 project_gap(const TensorF32& src, const std::vector<int64_t>& dst_shap
 Status apply_projected(stack::Child& c, const TensorF32& grad_out, const TensorF32& input,
                        double soft_lr);
 
+// One cell: projected gap + local Backward+SGD (FamilyTween / trainTweenLocal).
+// Seq/Res use leaf-projected apply (no chain). Other kinds project onto post.
+Status apply_cell_projected(architecture::Cell& cell, const TensorF32& grad_out,
+                            const TensorF32& input, const TensorF32& pre, const TensorF32& post,
+                            double soft_lr);
+
 // ModeTween on a volume tape: reverse HopOrder, each cell gets projected gap +
 // local Backward+SGD at soft_lr = lr * 0.5 (Go trainStackMixed + trainTweenLocal).
 Status train_volume_mse(architecture::Grid& g, const runtime::forward::Result& fwd,

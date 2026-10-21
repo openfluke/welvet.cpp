@@ -52,6 +52,8 @@
 //   STW1 — Line StepTween (thin Stack + FamilyTween on pop @ lr*0.5)
 //   STC1 — Line StepTweenChain (thin Stack + FamilyBP on pop @ full lr)
 //   MBP1 — MeshBP FamilyBP (runtime/step Forward×ticks + Backward + SGD)
+//   MTW1 — MeshTween FamilyTween (mesh-clock projected local @ lr*0.5)
+//   MTC1 — MeshTweenChain FamilyBP (= MeshBP under mesh clock)
 //   TWB1 — ModeTween leaf (Stack projected local FamilyBP @ lr*0.5)
 //   TWV1 — ModeTween volume Dense (reverse-hop projected local @ lr*0.5)
 //   TRV1/TLV1/TSV1/TXV1/TEV1/THV1/C1TV…/MBTV — ModeTween volume per kind (stdin=NormalBP vol)
@@ -12060,12 +12062,14 @@ int run_tween_chain_volume(int bench_iters) {
   return 0;
 }
 
-int run_meshbp(int bench_iters) {
+// Dense mesh-clock train (MBP1/MTW1/MTC1 share stdin layout; out_magic differs).
+int run_mesh_dense_train(int bench_iters, welvet::runtime::step::Credit credit,
+                         const char* short_hdr, const char* out_magic) {
   int32_t depth = 0, rows = 0, cols = 0, lpc = 0, batch = 0, backend = 0, n_links = 0, ticks = 0;
   if (!read_exact(&depth, 1) || !read_exact(&rows, 1) || !read_exact(&cols, 1) ||
       !read_exact(&lpc, 1) || !read_exact(&batch, 1) || !read_exact(&backend, 1) ||
       !read_exact(&n_links, 1) || !read_exact(&ticks, 1)) {
-    std::fprintf(stderr, "welvet_dense_fwd: short MBP1 header\n");
+    std::fprintf(stderr, "welvet_dense_fwd: short %s header\n", short_hdr);
     return 2;
   }
   if (batch <= 0 || ticks <= 0) {
@@ -12165,7 +12169,7 @@ int run_meshbp(int bench_iters) {
                                             std::move(layer));
       if (!st) return st;
     }
-    return welvet::runtime::step::train_mse(g, input, target, ticks, lr, &loss);
+    return welvet::runtime::step::train_mse(g, input, target, ticks, lr, &loss, credit);
   };
 
   if (bench_iters > 0) {
@@ -12199,7 +12203,7 @@ int run_meshbp(int bench_iters) {
     }
   }
 
-  if (!write_magic("MBPO") || !write_exact(&loss, 1)) return 2;
+  if (!write_magic(out_magic) || !write_exact(&loss, 1)) return 2;
   int32_t n_cells = 0;
   for (const auto& c : cells) {
     if (c.enabled) ++n_cells;
@@ -12219,6 +12223,19 @@ int run_meshbp(int bench_iters) {
     if (!write_exact(&o, 1) || !write_exact(&i, 1) || !write_exact(Wa.data(), Wa.size())) return 2;
   }
   return 0;
+}
+
+int run_meshbp(int bench_iters) {
+  return run_mesh_dense_train(bench_iters, welvet::runtime::step::Credit::FamilyBP, "MBP1", "MBPO");
+}
+
+int run_meshtween(int bench_iters) {
+  return run_mesh_dense_train(bench_iters, welvet::runtime::step::Credit::FamilyTween, "MTW1",
+                              "MTWO");
+}
+
+int run_meshtweenchain(int bench_iters) {
+  return run_mesh_dense_train(bench_iters, welvet::runtime::step::Credit::FamilyBP, "MTC1", "MTCO");
 }
 
 int run_stepbp(int bench_iters) {
@@ -12821,6 +12838,12 @@ int main(int argc, char** argv) {
   if (std::memcmp(magic, "MBP1", 4) == 0) {
     return run_meshbp(bench_iters);
   }
+  if (std::memcmp(magic, "MTW1", 4) == 0) {
+    return run_meshtween(bench_iters);
+  }
+  if (std::memcmp(magic, "MTC1", 4) == 0) {
+    return run_meshtweenchain(bench_iters);
+  }
   if (std::memcmp(magic, "TWB1", 4) == 0) {
     return run_tween_leaf(bench_iters);
   }
@@ -12944,7 +12967,7 @@ int main(int argc, char** argv) {
                          "WVC1/2/3/WVT1/2/3/WRN1/WLS1/WEM1/WSM1/WKM1/WSQ1/WRE1/WMB1/WMC1/WGD1/WSX1/"
                          "WPL1/WDB1/WVN1/WRB1/WRV1/WLB1/WLV1/WSB1/WSV1/WXB1/WXV1/WEB1/WEV1/"
                          "WHB1/WHV1/C1B1/C1V1/C2B1/C2V1/C3B1/C3V1/T1B1/T1V1/T2B1/T2V1/T3B1/T3V1/"
-                         "RNB1/RNV1/LSB1/LSV1/SQB1/SQV1/REB1/REV1/MBB1/MBV1/STB1/MBP1/TWB1/TWV1/TRV1…MBTV/TCB1/TCV1/TRC1…MBTC/STW1/STC1)\n");
+                         "RNB1/RNV1/LSB1/LSV1/SQB1/SQV1/REB1/REV1/MBB1/MBV1/STB1/MBP1/MTW1/MTC1/TWB1/TWV1/TRV1…MBTV/TCB1/TCV1/TRC1…MBTC/STW1/STC1)\n");
     return 2;
   }
   return run_dense(v1, v2, v3, bench_iters);
