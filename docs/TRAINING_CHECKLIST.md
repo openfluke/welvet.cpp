@@ -15,7 +15,7 @@ Canonical enum: Go `layers/parallel/train_mode.go` (`TrainMode`).
 
 Tick `[x]` when done. Put the **release tag** in **Ver** when that row (or the whole mode table) is signed.
 
-**Current engine:** `0.1.70-m2-shadow`
+**Current engine:** `0.1.71-m2-adversarial`
 
 ---
 
@@ -1534,36 +1534,36 @@ CNN2/3 & ConvT2/3 share CNN1/ConvT1 path (volume).
 
 ## 32 — Adversarial
 
-Negated LR.
-Ship: `runtime/parallel_train` BranchMode Adversarial (negated LR) on Parallel Dense Add; wire `ADB1`; w2a `--adversarial-train`.
+Negated LR on **Parallel BranchMode**; top-level **Stack ModeAdversarial ≡ FamilyBP** (same credit as Meta cascade / ModeTweenChain — no neg-LR on stack alone).
+Ship: `runtime/parallel_train` BranchMode Adversarial (ADB1); Stack ModeAdversarial via `TrainStackMSE` + C++ **TCB1** / TweenChain volume `TRC1`…`MBTC`; w2a `--adversarial-train`.
 
 | Layer | Inside node | 3D volumetric | Fully signed off | Ver |
 |---|:---:|:---:|:---:|---|
-| Dense | [ ] | [ ] | [ ] | |
-| RMSNorm | [ ] | [ ] | [ ] | |
-| LayerNorm | [ ] | [ ] | [ ] | |
-| SwiGLU | [ ] | [ ] | [ ] | |
-| Softmax | [ ] | [ ] | [ ] | |
-| Embedding | [ ] | [ ] | [ ] | |
-| MHA | [ ] | [ ] | [ ] | |
-| CNN1 | [ ] | [ ] | [ ] | |
-| CNN2 | [ ] | [ ] | [ ] | |
-| CNN3 | [ ] | [ ] | [ ] | |
-| ConvT1 | [ ] | [ ] | [ ] | |
-| ConvT2 | [ ] | [ ] | [ ] | |
-| ConvT3 | [ ] | [ ] | [ ] | |
-| RNN | [ ] | [ ] | [ ] | |
-| LSTM | [ ] | [ ] | [ ] | |
-| Sequential | [ ] | [ ] | [ ] | |
-| Residual | [ ] | [ ] | [ ] | |
-| KMeans | [x] | [ ] | [x] | `0.1.69-m2-kmeans-cascade` |
-| Mamba | [ ] | [ ] | [ ] | |
-| Metacognition | [x] | [ ] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
-| GDN | [x] | [ ] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
+| Dense | [x] | [x] | [x] | `0.1.71-m2-adversarial` |
+| RMSNorm | [x] | [x] | [x] | `0.1.71-m2-adversarial` |
+| LayerNorm | [x] | [x] | [x] | `0.1.71-m2-adversarial` |
+| SwiGLU | [x] | [x] | [x] | `0.1.71-m2-adversarial` |
+| Softmax | [x] | [x] | [x] | `0.1.71-m2-adversarial` |
+| Embedding | [x] | [x] | [x] | `0.1.71-m2-adversarial` |
+| MHA | [x] | [x] | [x] | `0.1.71-m2-adversarial` |
+| CNN1 | [x] | [x] | [x] | `0.1.71-m2-adversarial` |
+| CNN2 | [x] | [x] | [x] | `0.1.71-m2-adversarial` |
+| CNN3 | [x] | [x] | [x] | `0.1.71-m2-adversarial` |
+| ConvT1 | [x] | [x] | [x] | `0.1.71-m2-adversarial` |
+| ConvT2 | [x] | [x] | [x] | `0.1.71-m2-adversarial` |
+| ConvT3 | [x] | [x] | [x] | `0.1.71-m2-adversarial` |
+| RNN | [x] | [x] | [x] | `0.1.71-m2-adversarial` |
+| LSTM | [x] | [x] | [x] | `0.1.71-m2-adversarial` |
+| Sequential | [x] | [x] | [x] | `0.1.71-m2-adversarial` |
+| Residual | [x] | [x] | [x] | `0.1.71-m2-adversarial` |
+| KMeans | [x] | [x] | [x] | `0.1.71-m2-adversarial` |
+| Mamba | [x] | [x] | [x] | `0.1.71-m2-adversarial` |
+| Metacognition | [x] | [x] | [x] | `0.1.71-m2-adversarial` |
+| GDN | [x] | [x] | [x] | `0.1.71-m2-adversarial` |
 | Parallel | [x] | [ ] | [x] | `0.1.60-m2-adversarial` |
-| Stack | [x] | [ ] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
+| Stack | [x] | [x] | [x] | `0.1.71-m2-adversarial` |
 
-**Checkpoint:** `0.1.60-m2-adversarial` — Parallel Dense Add BranchMode Adversarial Inside+×34 (3D Parallel gap).
+**Checkpoint:** `0.1.71-m2-adversarial` — ModeAdversarial Inside+×34 + volume 2×2×2×1 for Freeze/Shadow-signed kinds (Stack ≡ FamilyBP / TCB1); Parallel BranchMode neg-LR Inside+Fully (3D Parallel gap).
 
 ---
 
@@ -1608,6 +1608,7 @@ Fill as you tick rows / finish mode tables.
 
 | Ver | Mode / layers | Notes |
 |---|---|---|
+| `0.1.71-m2-adversarial` | Adversarial ModeAdversarial cascade | Clone TweenChain leaf+vol across all signed kinds (ModeAdversarial≡FamilyBP); Parallel BranchMode neg-LR kept; 3D Parallel gap |
 | `0.1.70-m2-shadow` | Shadow ModeShadow cascade | Clone Freeze leaf+vol across all signed kinds (ModeShadow≡Freeze); Parallel KD kept; 3D Parallel gap |
 | `0.1.69-m2-kmeans-cascade` | KMeans train-mode cascade | Clone Meta leaf+vol across Step/Tween/Mesh/Freeze/Shadow/Adv/Memory; Linear GradIn Backward; Parallel BranchMode KMeans gap |
 | `0.1.68-m2-kmeans-nbp` | NormalBP KMeans | Soft-assignment leaf+vol ×34; KMB1/KMV1 |

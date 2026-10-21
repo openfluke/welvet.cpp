@@ -1,6 +1,6 @@
 # welvet.cpp gap census
 
-**Version `0.1.70-m2-shadow`** — see main [README](README.md) scoreboard (**70 / 100** engine + **13 / 100** extensions = **83 / 200**).
+**Version `0.1.71-m2-adversarial`** — see main [README](README.md) scoreboard (**71 / 100** engine + **13 / 100** extensions = **84 / 200**).
 
 SIMD/GEMV code under `include/welvet/simd/` + `include/welvet/imported/` was **copied** from `welvet-to-rust_n_cpp/welvet_cpp` (kernels only — not that tree’s docs).
 
@@ -47,7 +47,7 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 ./build/welvet_dense_fwd --gaps
 ```
 
-## Done (through M2.43 Meta/GDN/Stack cascade + M2.42 Shadow + M2.41 Memory + M2.40 Adversarial + M2.39 Freeze + M2.38 StepTweenSplitSparse + StepTweenSplitHeadProxyAsync + StepTweenSplitLinearCache + StepTweenSplitFastProxy + StepTweenSplitLinear + StepTweenSplitHeadProxy + MeshTweenSplitSparse + MeshTweenSplit/Alt/SplitFastProxy + TweenSplitSparse + TweenSplitHeadProxyAsync + TweenSplitLinearCache + TweenSplitFastProxy + TweenSplitLinear + TweenSplitHeadProxy + StepTweenAlt + TweenAlt + StepTweenSplit + TweenSplit + MeshTween* + Step*/ModeTween* + MeshBP + StepBP Line + NormalBP credit)
+## Done (through M2.44 Adversarial cascade + M2.43 Meta/GDN/Stack cascade + M2.42 Shadow + M2.41 Memory + M2.40 Adversarial Parallel + M2.39 Freeze + M2.38 StepTweenSplitSparse + StepTweenSplitHeadProxyAsync + StepTweenSplitLinearCache + StepTweenSplitFastProxy + StepTweenSplitLinear + StepTweenSplitHeadProxy + MeshTweenSplitSparse + MeshTweenSplit/Alt/SplitFastProxy + TweenSplitSparse + TweenSplitHeadProxyAsync + TweenSplitLinearCache + TweenSplitFastProxy + TweenSplitLinear + TweenSplitHeadProxy + StepTweenAlt + TweenAlt + StepTweenSplit + TweenSplit + MeshTween* + Step*/ModeTween* + MeshBP + StepBP Line + NormalBP credit)
 
 | ID | Detail |
 |---|---|
@@ -100,7 +100,7 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 | **TweenSplitHeadProxyAsync** | Stale-proxy hidden first; head GradWOnly; store Wᵀgy; HAB1 leaf ×34; HAV1/ARPA… volume; w2a `--tweensplitheadproxyasync-train` |
 | **TweenSplitSparse** | Head GradWOnly; one hidden at sparse%(N−1) on P(Wᵀgy); SPB1 leaf ×34; SPV1/SRP1… volume; w2a `--tweensplitsparse-train` |
 | **Freeze** | Fwd+mse; no ApplyGrad; FRB1 leaf ×34; FRV1/FRR1… volume; w2a `--freeze-train` |
-| **Adversarial** | Parallel BranchMode neg-LR; ADB1 Dense Add ×34; w2a `--adversarial-train` |
+| **Adversarial** | Parallel BranchMode neg-LR (ADB1); top-level Stack ModeAdversarial ≡ FamilyBP (TCB1 leaf ×34 + TRC1…MBTC vol); w2a `--adversarial-train` |
 | **Memory** | Parallel BranchMode + CamKit SurpriseThresh; MMB1 Dense Add ×34; w2a `--memory-train` |
 | **Shadow** | Parallel BranchMode + CamKit KD; SHB1 Dense Add ×34; w2a `--shadow-train` |
 | Transformer / composition | Sequential+Residual NormalBP, seqmix Kind, **Parallel Dense×7 combines** |
