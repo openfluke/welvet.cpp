@@ -85,6 +85,9 @@
 //   FRB1 — ModeFreeze leaf (fwd + mse; no weight update)
 //   FRV1 — ModeFreeze volume Dense
 //   FRR1/FRL1/FRG1/FRX1…/MBFR — ModeFreeze volume per kind
+//   ADB1 — Parallel cameral Adversarial BranchModes (Dense Add)
+//   MMB1 — Parallel cameral Memory BranchModes + CamKit surprise
+//   SHB1 — Parallel cameral Shadow KD BranchModes + CamKit
 //   HAV1 — ModeTweenSplitHeadProxyAsync volume Dense
 //   ARPA/ALPA/AGPA/AXPA…/MBHA — ModeTweenSplitHeadProxyAsync volume per kind
 //   LCV1 — ModeTweenSplitLinearCache volume Dense
@@ -153,6 +156,9 @@
 #include "welvet/runtime/tween_split_head_proxy_async_train.hpp"
 #include "welvet/runtime/tween_split_sparse_train.hpp"
 #include "welvet/runtime/freeze_train.hpp"
+#include "welvet/runtime/parallel_train.hpp"
+#include "welvet/train_mode.hpp"
+#include "welvet/cam_kit.hpp"
 #include "welvet/runtime/tween_alt_train.hpp"
 #include "welvet/systems/tween_alt.hpp"
 #include "welvet/systems/tween_split.hpp"
@@ -1461,6 +1467,117 @@ int run_parallel(int bench_iters) {
   if (int rc = bench_or_once(bench_iters, once, pre, post); rc != 0) return rc;
   return write_pl_out(pre, post);
 }
+
+
+// Parallel cameral train (Adversarial / Memory / Shadow BranchModes on Dense Add).
+// stdin: batch,dim,out_feat,branches,dtype ; packed W ; x ; target ; lr ;
+//        modes[branches] int32 ; shadow_coef ; surprise_thresh
+// stdout: ADBO|MMBO|SHBO : loss ; n_branches ; per-branch W
+int run_parallel_cameral_train(int bench_iters, const char* out_magic) {
+  int32_t batch = 0, dim = 0, out_feat = 0, branches = 0, dtype = 1;
+  if (!read_exact(&batch, 1) || !read_exact(&dim, 1) || !read_exact(&out_feat, 1) ||
+      !read_exact(&branches, 1) || !read_exact(&dtype, 1)) {
+    std::fprintf(stderr, "welvet_dense_fwd: short cameral train header\n");
+    return 2;
+  }
+  if (batch <= 0 || dim <= 0 || out_feat <= 0 || branches <= 0) return 1;
+  const int wn = branches * out_feat * dim;
+  std::vector<float> packed(static_cast<std::size_t>(wn));
+  if (!read_exact(packed.data(), packed.size())) return 2;
+  std::vector<float> x(static_cast<std::size_t>(batch * dim));
+  std::vector<float> tgt(static_cast<std::size_t>(batch * out_feat));
+  if (!read_exact(x.data(), x.size()) || !read_exact(tgt.data(), tgt.size())) return 2;
+  double lr = 0.0;
+  if (!read_exact(&lr, 1)) return 2;
+  std::vector<int32_t> modes(static_cast<std::size_t>(branches));
+  if (!read_exact(modes.data(), modes.size())) return 2;
+  double shadow_coef = 0.0, surprise_thresh = 0.0;
+  if (!read_exact(&shadow_coef, 1) || !read_exact(&surprise_thresh, 1)) return 2;
+
+  welvet::parallel::Config cfg;
+  cfg.dim = dim;
+  cfg.out_feat = out_feat;
+  cfg.branches = branches;
+  cfg.combine = welvet::parallel::Combine::Add;
+
+  welvet::TensorF32 xin, target;
+  xin.shape = {batch, dim};
+  xin.data = x;
+  target.shape = {batch, out_feat};
+  target.data = tgt;
+
+  auto rebuild = [&](welvet::parallel::Layer* layer, welvet::CamKit* kit) -> welvet::Status {
+    if (auto st = welvet::parallel::new_configured(cfg, static_cast<welvet::DType>(dtype),
+                                                   packed.data(), layer);
+        !st) {
+      return st;
+    }
+    layer->branch_modes.resize(static_cast<std::size_t>(branches));
+    for (int i = 0; i < branches; ++i) {
+      layer->branch_modes[static_cast<std::size_t>(i)] =
+          static_cast<welvet::TrainMode>(modes[static_cast<std::size_t>(i)]);
+    }
+    kit->shadow_coef = shadow_coef;
+    kit->surprise_thresh = surprise_thresh;
+    kit->last_loss = 0.0;
+    layer->cam_kit = kit;
+    return welvet::Status::Ok();
+  };
+
+  double loss = 0.0;
+  welvet::parallel::Layer layer;
+  welvet::CamKit kit;
+
+  auto once = [&]() -> welvet::Status {
+    if (auto st = rebuild(&layer, &kit); !st) return st;
+    return welvet::runtime::parallel_train::train_mse(
+        layer, xin, target, welvet::TrainMode::NormalBP, lr, &loss);
+  };
+
+  if (bench_iters > 0) {
+    for (int i = 0; i < 2; ++i) {
+      auto st = once();
+      if (!st) {
+        std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message.c_str());
+        return 1;
+      }
+    }
+    const auto t0 = std::chrono::steady_clock::now();
+    for (int i = 0; i < bench_iters; ++i) {
+      auto st = once();
+      if (!st) {
+        std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message.c_str());
+        return 1;
+      }
+    }
+    const auto t1 = std::chrono::steady_clock::now();
+    const int64_t ns =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(t1 - t0).count();
+    const int32_t iters32 = static_cast<int32_t>(bench_iters);
+    if (!write_exact("WVB1", 4) || !write_exact(&ns, 1) || !write_exact(&iters32, 1)) return 2;
+  } else {
+    auto st = once();
+    if (!st) {
+      std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message.c_str());
+      return 1;
+    }
+  }
+
+  if (!write_magic(out_magic) || !write_exact(&loss, 1) || !write_exact(&branches, 1)) return 2;
+  for (int i = 0; i < branches; ++i) {
+    auto& br = layer.branches[static_cast<std::size_t>(i)];
+    const int32_t nw = out_feat * dim;
+    std::vector<float> Wa(static_cast<std::size_t>(nw));
+    auto est = br.weights.export_f32(Wa.data());
+    if (!est) {
+      std::fprintf(stderr, "welvet_dense_fwd: %s\n", est.message.c_str());
+      return 1;
+    }
+    if (!write_exact(&nw, 1) || !write_exact(Wa.data(), Wa.size())) return 2;
+  }
+  return 0;
+}
+
 
 // WDB1 — Dense NormalBP leaf
 // stdin: batch,in,out,act,dtype,backend ; W ; bias_len,bias ; x ; use_target ; grad_or_target ; lr
@@ -42391,6 +42508,15 @@ int main(int argc, char** argv) {
   if (std::memcmp(magic, "MBFR", 4) == 0) {
     return run_volume_mamba_freeze(bench_iters);
   }
+  if (std::memcmp(magic, "ADB1", 4) == 0) {
+    return run_parallel_cameral_train(bench_iters, "ADBO");
+  }
+  if (std::memcmp(magic, "MMB1", 4) == 0) {
+    return run_parallel_cameral_train(bench_iters, "MMBO");
+  }
+  if (std::memcmp(magic, "SHB1", 4) == 0) {
+    return run_parallel_cameral_train(bench_iters, "SHBO");
+  }
   if (std::memcmp(magic, "TAB1", 4) == 0) {
     return run_tween_alt_leaf(bench_iters);
   }
@@ -42565,7 +42691,7 @@ int main(int argc, char** argv) {
                          "WVC1/2/3/WVT1/2/3/WRN1/WLS1/WEM1/WSM1/WKM1/WSQ1/WRE1/WMB1/WMC1/WGD1/WSX1/"
                          "WPL1/WDB1/WVN1/WRB1/WRV1/WLB1/WLV1/WSB1/WSV1/WXB1/WXV1/WEB1/WEV1/"
                          "WHB1/WHV1/C1B1/C1V1/C2B1/C2V1/C3B1/C3V1/T1B1/T1V1/T2B1/T2V1/T3B1/T3V1/"
-                         "RNB1/RNV1/LSB1/LSV1/SQB1/SQV1/REB1/REV1/MBB1/MBV1/STB1/MBP1/MTW1/MTC1/MTS1/MTA1/MTF1/MSS1/TWB1/TWV1/TRV1…MBTV/TCB1/TCV1/TRC1…MBTC/STW1/STC1/STS1/STA1/STH1/STL1/STF1/SLC1/SHA1/SSP1/TSB1/TSP1/TAB1/TAV1/HPB1/HPV1/LLB1/LLV1/FPB1/FPV1/LCB1/LCV1/HAB1/HAV1/SPB1/SPV1/FRB1/FRV1)\n");
+                         "RNB1/RNV1/LSB1/LSV1/SQB1/SQV1/REB1/REV1/MBB1/MBV1/STB1/MBP1/MTW1/MTC1/MTS1/MTA1/MTF1/MSS1/TWB1/TWV1/TRV1…MBTV/TCB1/TCV1/TRC1…MBTC/STW1/STC1/STS1/STA1/STH1/STL1/STF1/SLC1/SHA1/SSP1/TSB1/TSP1/TAB1/TAV1/HPB1/HPV1/LLB1/LLV1/FPB1/FPV1/LCB1/LCV1/HAB1/HAV1/SPB1/SPV1/FRB1/FRV1/ADB1/MMB1/SHB1)\n");
     return 2;
   }
   return run_dense(v1, v2, v3, bench_iters);

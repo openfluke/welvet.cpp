@@ -420,4 +420,30 @@ Status forward(Layer& layer, const TensorF32& input, TensorF32* pre, TensorF32* 
   return Status::Ok();
 }
 
+TrainMode effective_branch_mode(const Layer& l, int i, TrainMode parent) {
+  if (i < 0 || i >= static_cast<int>(l.branches.size())) {
+    return resolve_train_mode(parent, TrainMode::NormalBP);
+  }
+  if (i < static_cast<int>(l.branch_modes.size())) {
+    return resolve_train_mode(l.branch_modes[static_cast<std::size_t>(i)], parent);
+  }
+  return resolve_train_mode(parent, TrainMode::NormalBP);
+}
+
+double effective_branch_lr(const Layer& l, int i, double parent_lr) {
+  if (i < 0 || i >= static_cast<int>(l.branch_lrs.size())) {
+    return parent_lr;
+  }
+  return parent_lr * l.branch_lrs[static_cast<std::size_t>(i)];
+}
+
+bool has_mixed_branch_modes(const Layer& l) {
+  if (l.branch_modes.empty()) return false;
+  for (TrainMode m : l.branch_modes) {
+    if (m != TrainMode::Inherit) return true;
+  }
+  return false;
+}
+
 } // namespace welvet::parallel
+

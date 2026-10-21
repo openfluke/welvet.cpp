@@ -1,11 +1,13 @@
 #pragma once
 
 #include "welvet/backend.hpp"
+#include "welvet/cam_kit.hpp"
 #include "welvet/dense.hpp"
 #include "welvet/dtype.hpp"
 #include "welvet/layer.hpp"
 #include "welvet/status.hpp"
 #include "welvet/tensor.hpp"
+#include "welvet/train_mode.hpp"
 
 #include <optional>
 #include <vector>
@@ -45,7 +47,16 @@ struct Layer {
   std::optional<dense::Layer> gate; // filter only
   Backend backend = Backend::CPUTiled;
   LayerMeta meta{};
+
+  // Cameral: per-hemisphere modes / LR scales (empty ⇒ inherit parent / 1.0).
+  std::vector<TrainMode> branch_modes;
+  std::vector<double> branch_lrs;
+  CamKit* cam_kit = nullptr; // optional; owned externally
 };
+
+TrainMode effective_branch_mode(const Layer& l, int i, TrainMode parent);
+double effective_branch_lr(const Layer& l, int i, double parent_lr);
+bool has_mixed_branch_modes(const Layer& l);
 
 // packed: Branches×[OutFeat×Dim] then optional Gate[Branches×Dim] if filter.
 Status new_configured(const Config& cfg, DType dt, const float* packed_or_null, Layer* out);

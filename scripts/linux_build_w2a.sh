@@ -63,6 +63,9 @@
 #   ./scripts/linux_build_w2a.sh --steptweensplitheadproxyasync-train # Line StepTweenSplitHeadProxyAsync + HeadProxyAsync vol
 #   ./scripts/linux_build_w2a.sh --steptweensplitsparse-train # Line StepTweenSplitSparse + Sparse vol
 #   ./scripts/linux_build_w2a.sh --freeze-train # ModeFreeze fwd+mse no apply + volume
+#   ./scripts/linux_build_w2a.sh --adversarial-train # Parallel BranchMode Adversarial
+#   ./scripts/linux_build_w2a.sh --memory-train # Parallel BranchMode Memory + CamKit
+#   ./scripts/linux_build_w2a.sh --shadow-train # Parallel BranchMode Shadow KD + CamKit
 #   ./scripts/linux_build_w2a.sh --go-v-cpp   # same as default
 #   ./scripts/linux_build_w2a.sh --all        # entire w2a go test ./...
 #   BUILD_DIR=/tmp/welvet-build ./scripts/linux_build_w2a.sh
@@ -139,6 +142,9 @@ for arg in "$@"; do
     --steptweensplitheadproxyasync-train) MODE="steptweensplitheadproxyasync_train" ;;
     --steptweensplitsparse-train) MODE="steptweensplitsparse_train" ;;
     --freeze-train) MODE="freeze_train" ;;
+    --adversarial-train) MODE="adversarial_train" ;;
+    --memory-train) MODE="memory_train" ;;
+    --shadow-train) MODE="shadow_train" ;;
     -h|--help)
       sed -n '2,60p' "$0"
       exit 0
@@ -415,6 +421,18 @@ case "$MODE" in
   freeze_train)
     echo "==> w2a go_v_cpp Freeze train (fwd+mse; no weight update + volume)"
     go test ./tests/go_v_cpp/ -run '^TestGoVCppFreezeTrain$' -v -count=1
+    ;;
+  adversarial_train)
+    echo "==> w2a go_v_cpp Adversarial train (Parallel BranchMode neg-LR)"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppAdversarialTrain$' -v -count=1
+    ;;
+  memory_train)
+    echo "==> w2a go_v_cpp Memory train (Parallel BranchMode surprise gate)"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppMemoryTrain$' -v -count=1
+    ;;
+  shadow_train)
+    echo "==> w2a go_v_cpp Shadow train (Parallel BranchMode KD teacher)"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppShadowTrain$' -v -count=1
     ;;
   all)
     echo "==> w2a full suite (go test ./...)"

@@ -44,7 +44,7 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 ./build/welvet_dense_fwd --gaps
 ```
 
-## Done (through M2.39 Freeze + M2.38 StepTweenSplitSparse + StepTweenSplitHeadProxyAsync + StepTweenSplitLinearCache + StepTweenSplitFastProxy + StepTweenSplitLinear + StepTweenSplitHeadProxy + MeshTweenSplitSparse + MeshTweenSplit/Alt/SplitFastProxy + TweenSplitSparse + TweenSplitHeadProxyAsync + TweenSplitLinearCache + TweenSplitFastProxy + TweenSplitLinear + TweenSplitHeadProxy + StepTweenAlt + TweenAlt + StepTweenSplit + TweenSplit + MeshTween* + Step*/ModeTween* + MeshBP + StepBP Line + NormalBP credit)
+## Done (through M2.42 Shadow + M2.41 Memory + M2.40 Adversarial + M2.39 Freeze + M2.38 StepTweenSplitSparse + StepTweenSplitHeadProxyAsync + StepTweenSplitLinearCache + StepTweenSplitFastProxy + StepTweenSplitLinear + StepTweenSplitHeadProxy + MeshTweenSplitSparse + MeshTweenSplit/Alt/SplitFastProxy + TweenSplitSparse + TweenSplitHeadProxyAsync + TweenSplitLinearCache + TweenSplitFastProxy + TweenSplitLinear + TweenSplitHeadProxy + StepTweenAlt + TweenAlt + StepTweenSplit + TweenSplit + MeshTween* + Step*/ModeTween* + MeshBP + StepBP Line + NormalBP credit)
 
 | ID | Detail |
 |---|---|
@@ -92,14 +92,17 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 | **TweenSplitHeadProxyAsync** | Stale-proxy hidden first; head GradWOnly; store Wᵀgy; HAB1 leaf ×34; HAV1/ARPA… volume; w2a `--tweensplitheadproxyasync-train` |
 | **TweenSplitSparse** | Head GradWOnly; one hidden at sparse%(N−1) on P(Wᵀgy); SPB1 leaf ×34; SPV1/SRP1… volume; w2a `--tweensplitsparse-train` |
 | **Freeze** | Fwd+mse; no ApplyGrad; FRB1 leaf ×34; FRV1/FRR1… volume; w2a `--freeze-train` |
+| **Adversarial** | Parallel BranchMode neg-LR; ADB1 Dense Add ×34; w2a `--adversarial-train` |
+| **Memory** | Parallel BranchMode + CamKit SurpriseThresh; MMB1 Dense Add ×34; w2a `--memory-train` |
+| **Shadow** | Parallel BranchMode + CamKit KD; SHB1 Dense Add ×34; w2a `--shadow-train` |
 | Transformer / composition | Sequential+Residual NormalBP, seqmix Kind, **Parallel Dense×7 combines** |
 | Extended | ConvT, KMeans, Mamba NormalBP, Metacognition, GDN |
 | CNN / RNN / LSTM | FormatNone×34 forwards |
-| ABI wires | … / MSS1 / STH1 / STL1 / STF1 / SLC1 / SHA1 / SSP1 / FRB1 |
+| ABI wires | … / FRB1 / ADB1 / MMB1 / SHB1 |
 
 ## gap? — remaining
 
-- Parallel poly/nested/cameral/train; full cameral Stack
+- Parallel poly/nested/CamSync/DNA/Dream; full cameral Stack; 3D Parallel train (BranchModes Dense Add Adv/Memory/Shadow + CamKit core done)
 - Other layers’ Backward; Dense quants; remaining TrainModes; systems (DNA/evolution/TANHI/telemetry); model/IO; vendor accel
 
 See `src/gaps/registry.cpp`.

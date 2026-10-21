@@ -1460,6 +1460,7 @@ CNN2/3 & ConvT2/3 share CNN1/ConvT1 path.
 ## 31 — Shadow
 
 Needs Freeze + CamKit (frozen teacher + KD).
+Ship: `runtime/parallel_train` BranchMode Shadow + CamKit ShadowCoef KD; wire `SHB1`; w2a `--shadow-train`.
 
 | Layer | Inside node | 3D volumetric | Fully signed off | Ver |
 |---|:---:|:---:|:---:|---|
@@ -1484,16 +1485,17 @@ Needs Freeze + CamKit (frozen teacher + KD).
 | Mamba | [ ] | [ ] | [ ] | |
 | Metacognition | [ ] | [ ] | [ ] | |
 | GDN | [ ] | [ ] | [ ] | |
-| Parallel | [ ] | [ ] | [ ] | |
+| Parallel | [x] | [ ] | [x] | `0.1.62-m2-shadow` |
 | Stack | [ ] | [ ] | [ ] | |
 
-**Checkpoint:** bump version when this mode table advances.
+**Checkpoint:** `0.1.62-m2-shadow` — Parallel Dense Add BranchMode Shadow KD Inside+×34 (3D Parallel gap).
 
 ---
 
 ## 32 — Adversarial
 
 Negated LR.
+Ship: `runtime/parallel_train` BranchMode Adversarial (negated LR) on Parallel Dense Add; wire `ADB1`; w2a `--adversarial-train`.
 
 | Layer | Inside node | 3D volumetric | Fully signed off | Ver |
 |---|:---:|:---:|:---:|---|
@@ -1518,16 +1520,17 @@ Negated LR.
 | Mamba | [ ] | [ ] | [ ] | |
 | Metacognition | [ ] | [ ] | [ ] | |
 | GDN | [ ] | [ ] | [ ] | |
-| Parallel | [ ] | [ ] | [ ] | |
+| Parallel | [x] | [ ] | [x] | `0.1.60-m2-adversarial` |
 | Stack | [ ] | [ ] | [ ] | |
 
-**Checkpoint:** bump version when this mode table advances.
+**Checkpoint:** `0.1.60-m2-adversarial` — Parallel Dense Add BranchMode Adversarial Inside+×34 (3D Parallel gap).
 
 ---
 
 ## 33 — Memory
 
 Needs CamKit (surprise gate).
+Ship: `runtime/parallel_train` BranchMode Memory + CamKit SurpriseThresh; wire `MMB1`; w2a `--memory-train`.
 
 | Layer | Inside node | 3D volumetric | Fully signed off | Ver |
 |---|:---:|:---:|:---:|---|
@@ -1552,10 +1555,10 @@ Needs CamKit (surprise gate).
 | Mamba | [ ] | [ ] | [ ] | |
 | Metacognition | [ ] | [ ] | [ ] | |
 | GDN | [ ] | [ ] | [ ] | |
-| Parallel | [ ] | [ ] | [ ] | |
+| Parallel | [x] | [ ] | [x] | `0.1.61-m2-memory` |
 | Stack | [ ] | [ ] | [ ] | |
 
-**Checkpoint:** bump version when this mode table advances.
+**Checkpoint:** `0.1.61-m2-memory` — Parallel Dense Add BranchMode Memory Inside+×34 (3D Parallel gap).
 
 ---
 

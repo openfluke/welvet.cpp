@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(welvet VERSION 0.1.59 LANGUAGES CXX)
+project(welvet VERSION 0.1.62 LANGUAGES CXX)
 
 # One tree → many OS: Linux, macOS, Windows, Android, iOS (toolchains under cmake/).
 set(CMAKE_CXX_STANDARD 20)
@@ -78,7 +78,9 @@ set(WELVET_CORE_SOURCES
   src/runtime/tween_split_head_proxy_async_train.cpp
   src/runtime/tween_split_sparse_train.cpp
   src/runtime/freeze_train.cpp
+  src/runtime/parallel_train.cpp
   src/runtime/tween_alt_train.cpp
+
   src/systems/tween.cpp
   src/systems/tween_chain.cpp
   src/systems/tween_split.cpp
