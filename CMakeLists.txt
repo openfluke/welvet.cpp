@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(welvet VERSION 0.1.35 LANGUAGES CXX)
+project(welvet VERSION 0.1.36 LANGUAGES CXX)
 
 # One tree → many OS: Linux, macOS, Windows, Android, iOS (toolchains under cmake/).
 set(CMAKE_CXX_STANDARD 20)
@@ -68,6 +68,8 @@ set(WELVET_CORE_SOURCES
   src/runtime/training.cpp
   src/runtime/line.cpp
   src/runtime/step.cpp
+  src/runtime/tween_train.cpp
+  src/systems/tween.cpp
   src/backends/registry.cpp
   src/backends/cpu.cpp
   src/backends/nvidia.cpp

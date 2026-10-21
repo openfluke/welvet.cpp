@@ -171,6 +171,7 @@ const std::vector<Entry>& build() {
       {"runtime.forward", "runtime", "gap? volume Forward all layer kinds (Dense done)", false},
       {"runtime.backward", "runtime", "volume Backward Dense+RMSNorm+LayerNorm+SwiGLU + training.Step (NormalBP)", true},
       {"runtime.training", "runtime", "NormalBP volume Step + Line StepBP; other TrainModes gap?", true},
+      {"runtime.tween_train", "runtime", "TrainStackMSE ModeTween (soft_lr=lr*0.5)", true},
       {"runtime.step_mesh", "runtime", "MeshBP FamilyBP: runtime/step Forward+Backward+SGD; MBP1/MBPO; ModeMeshBP volume Step", true},
       {"arch.branches", "architecture", "gap? ParallelBranches/SequentialLayers combine", false},
       {"tiling.cpu", "tiling", "gap? CPU tile partition helpers", false},
@@ -180,7 +181,7 @@ const std::vector<Entry>& build() {
       // --- Systems / model ---
       {"systems.dna", "systems", "gap? DNA", false},
       {"systems.evolution", "systems", "gap? evolution", false},
-      {"systems.tween", "systems", "gap? Tween", false},
+      {"systems.tween", "systems", "ModeTween projected local @ lr*0.5; TWB1/TWBO + TWV1/TWVO", true},
       {"systems.tanhi", "systems", "gap? TANHI", false},
       {"systems.telemetry", "systems", "gap? telemetry", false},
       {"model.tokenizer", "model", "gap? tokenizer", false},

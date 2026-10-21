@@ -1,0 +1,27 @@
+#pragma once
+
+#include "welvet/architecture.hpp"
+#include "welvet/runtime/forward.hpp"
+#include "welvet/stack.hpp"
+#include "welvet/status.hpp"
+#include "welvet/tensor.hpp"
+
+#include <cstdint>
+#include <vector>
+
+namespace welvet::systems::tween {
+
+// Resize global gap onto dst shape (Go parallel.projectGap — block average).
+TensorF32 project_gap(const TensorF32& src, const std::vector<int64_t>& dst_shape);
+
+// Go applyProjectedTween on one stack child: same global gap on every trainable
+// leaf (Sequential/Residual Dense children included) — no chain rule.
+Status apply_projected(stack::Child& c, const TensorF32& grad_out, const TensorF32& input,
+                       double soft_lr);
+
+// ModeTween on a volume tape: reverse HopOrder, each cell gets projected gap +
+// local Backward+SGD at soft_lr = lr * 0.5 (Go trainStackMixed + trainTweenLocal).
+Status train_volume_mse(architecture::Grid& g, const runtime::forward::Result& fwd,
+                        const TensorF32& target, double lr, double* loss);
+
+} // namespace welvet::systems::tween
