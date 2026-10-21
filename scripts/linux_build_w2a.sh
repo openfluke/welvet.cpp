@@ -24,6 +24,7 @@
 #   ./scripts/linux_build_w2a.sh --dense-train # Dense NormalBP leaf + volumetric
 #   ./scripts/linux_build_w2a.sh --rmsnorm-train # RMSNorm NormalBP leaf + volumetric
 #   ./scripts/linux_build_w2a.sh --layernorm-train # LayerNorm NormalBP leaf + volumetric
+#   ./scripts/linux_build_w2a.sh --swiglu-train # SwiGLU NormalBP leaf + volumetric
 #   ./scripts/linux_build_w2a.sh --go-v-cpp   # same as default
 #   ./scripts/linux_build_w2a.sh --all        # entire w2a go test ./...
 #   BUILD_DIR=/tmp/welvet-build ./scripts/linux_build_w2a.sh
@@ -61,8 +62,9 @@ for arg in "$@"; do
     --dense-train) MODE="dense_train" ;;
     --rmsnorm-train) MODE="rmsnorm_train" ;;
     --layernorm-train) MODE="layernorm_train" ;;
+    --swiglu-train) MODE="swiglu_train" ;;
     -h|--help)
-      sed -n '2,34p' "$0"
+      sed -n '2,35p' "$0"
       exit 0
       ;;
     *)
@@ -181,6 +183,10 @@ case "$MODE" in
   layernorm_train)
     echo "==> w2a go_v_cpp LayerNorm NormalBP (leaf + volumetric)"
     go test ./tests/go_v_cpp/ -run '^TestGoVCppLayerNormTrain$' -v -count=1
+    ;;
+  swiglu_train)
+    echo "==> w2a go_v_cpp SwiGLU NormalBP (leaf + volumetric)"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppSwiGLUTrain$' -v -count=1
     ;;
   all)
     echo "==> w2a full suite (go test ./...)"

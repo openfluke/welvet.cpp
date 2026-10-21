@@ -2,6 +2,7 @@
 
 #include "welvet/layernorm.hpp"
 #include "welvet/rmsnorm.hpp"
+#include "welvet/swiglu.hpp"
 
 #include <map>
 #include <utility>
@@ -75,6 +76,9 @@ Status sgd_dense(architecture::Grid& g, const forward::Result& fwd, const backwa
       break;
     case architecture::OpKind::LayerNorm:
       st_a = layernorm::apply_grad_sgd(&cell->layernorm_op, *it->second, lr);
+      break;
+    case architecture::OpKind::SwiGLU:
+      st_a = swiglu::apply_grad_sgd(&cell->swiglu_op, *it->second, lr);
       break;
     default:
       return Status::Err(StatusCode::InvalidArgument, "training: SGD unsupported cell Op");
