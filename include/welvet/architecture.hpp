@@ -14,6 +14,7 @@
 #include "welvet/mha.hpp"
 #include "welvet/rmsnorm.hpp"
 #include "welvet/rnn.hpp"
+#include "welvet/sequential.hpp"
 #include "welvet/softmax.hpp"
 #include "welvet/status.hpp"
 #include "welvet/swiglu.hpp"
@@ -49,6 +50,7 @@ enum class OpKind : int32_t {
   ConvT3 = 13,
   RNN = 14,
   LSTM = 15,
+  Sequential = 16,
   // gap? other layer ops
 };
 
@@ -71,6 +73,7 @@ struct Cell {
   convt3::Layer convt3_op;       // valid when op_kind == ConvT3
   rnn::Layer rnn_op;             // valid when op_kind == RNN
   lstm::Layer lstm_op;           // valid when op_kind == LSTM
+  sequential::Layer sequential_op; // valid when op_kind == Sequential
 
   bool is_remote_link = false;
   int target_z = 0, target_y = 0, target_x = 0, target_l = 0;
@@ -132,5 +135,6 @@ Status bind_convt2(Grid& g, int z, int y, int x, int l, convt2::Layer op);
 Status bind_convt3(Grid& g, int z, int y, int x, int l, convt3::Layer op);
 Status bind_rnn(Grid& g, int z, int y, int x, int l, rnn::Layer op);
 Status bind_lstm(Grid& g, int z, int y, int x, int l, lstm::Layer op);
+Status bind_sequential(Grid& g, int z, int y, int x, int l, sequential::Layer op);
 
 } // namespace welvet::architecture

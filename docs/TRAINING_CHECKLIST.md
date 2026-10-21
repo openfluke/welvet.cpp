@@ -15,7 +15,7 @@ Canonical enum: Go `layers/parallel/train_mode.go` (`TrainMode`).
 
 Tick `[x]` when done. Put the **release tag** in **Ver** when that row (or the whole mode table) is signed.
 
-**Current engine:** `0.1.30-m2-rnn-lstm-nbp`
+**Current engine:** `0.1.31-m2-sequential-nbp`
 
 ---
 
@@ -186,6 +186,19 @@ Timing: same `--bench=N` / spd%Δ convention. BPTT 4-gate Dense; loom `[i|f|g|o]
 | 3–5 | Volume 1×1×1×1 / chain / ×34 | [x] | in=hid chain |
 | 6–7 | Volume 2×2×2×1 / 2×1×1×1×34 | [x] | scaled init for 8-hop |
 
+## w2a Go↔C++ (Sequential NormalBP) — sign-off evidence
+
+Run: `./scripts/linux_build_w2a.sh --sequential-train`  
+Wire: `SQB1`/`SQBO` (leaf); `SQV1`/`SQVO` (volume). Exact_bit vs Go.  
+Timing: same `--bench=N` / spd%Δ convention. Reverse Dense Dim→Dim chain; loom Depth×[Dim×Dim].
+
+| # | Case | Status | Notes |
+|---|---|:---:|---|
+| 1 | Leaf Float32 | [x] | exact_bit + speed |
+| 2 | Leaf ×34 | [x] | exact_bit spectrum |
+| 3–5 | Volume 1×1×1×1 / chain / ×34 | [x] | shape-preserving Dim |
+| 6–7 | Volume 2×2×2×1 / 2×1×1×1×34 | [x] | scaled init for 8-hop |
+
 ---
 
 ## 1 — NormalBP
@@ -209,7 +222,7 @@ Chain-rule Backward + ApplyGradSGD. Start here. Dense first.
 | ConvT3 | [x] | [x] | [x] | `0.1.29-m2-convt-nbp` |
 | RNN | [x] | [x] | [x] | `0.1.30-m2-rnn-lstm-nbp` |
 | LSTM | [x] | [x] | [x] | `0.1.30-m2-rnn-lstm-nbp` |
-| Sequential | [ ] | [ ] | [ ] | |
+| Sequential | [x] | [x] | [x] | `0.1.31-m2-sequential-nbp` |
 | Residual | [ ] | [ ] | [ ] | |
 | KMeans | [ ] | [ ] | [ ] | |
 | Mamba | [ ] | [ ] | [ ] | |

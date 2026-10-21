@@ -23,15 +23,15 @@ Applications can choose **automatic placement** or **force an explicit backend**
 
 ## Support scorecard — so far
 
-**Version `0.1.30` — M2 Dense+norms+SwiGLU+Softmax+Embedding+MHA+CNN+ConvT+RNN+LSTM NormalBP + M1 forwards**. Engine board **58 / 100**, extensions **13 / 100**, combined **71 / 200**. Live inventory: `GAPS.md` / `welvet_dense_fwd --gaps` / `welvet_dense_fwd --version`.
+**Version `0.1.31` — M2 Dense+norms+SwiGLU+Softmax+Embedding+MHA+CNN+ConvT+RNN+LSTM+Sequential NormalBP + M1 forwards**. Engine board **58 / 100**, extensions **13 / 100**, combined **71 / 200**. Live inventory: `GAPS.md` / `welvet_dense_fwd --gaps` / `welvet_dense_fwd --version`.
 
-- [ ] **Layers:** Dense + MHA + SwiGLU + norms + Softmax + Sequential + Residual + Parallel + CNN1/2/3 + ConvT1/2/3 + RNN + LSTM + Embedding + KMeans + Mamba + Metacognition + GDN forward — **22 / 23** kinds have any forward; **Dense + RMSNorm + LayerNorm + SwiGLU + Softmax + Embedding + MHA + CNN1/2/3 + ConvT1/2/3 + RNN + LSTM NormalBP** signed; Stack remaining; seqmix Kind helper done.
+- [ ] **Layers:** Dense + MHA + SwiGLU + norms + Softmax + Sequential + Residual + Parallel + CNN1/2/3 + ConvT1/2/3 + RNN + LSTM + Embedding + KMeans + Mamba + Metacognition + GDN forward — **22 / 23** kinds have any forward; **Dense + RMSNorm + LayerNorm + SwiGLU + Softmax + Embedding + MHA + CNN1/2/3 + ConvT1/2/3 + RNN + LSTM + Sequential NormalBP** signed; Stack remaining; seqmix Kind helper done.
 - [x] **Dtypes:** FormatNone pack/decode + Dense MatVec for **all 34** storage types (quant formats still `gap?`).
 - [x] **Forward compute:** Dense FormatNone×34 CPU/SIMD validated via `w2a` `Go_v_Cpp` **exact_bit** spectrum (other 22 kinds pending).
-- [ ] **Backward compute:** **15 / 23** — Dense + norms + SwiGLU + Softmax + Embedding + MHA + CNN1/2/3 + ConvT1/2/3 + RNN + LSTM NormalBP (dX/dW·dγβ/SGD + volume; Softmax dX-only; Embedding dX=0; MHA ModeSelf; CNN im2col; ConvT scatter; RNN/LSTM BPTT) w2a exact_bit ×34; others pending.
+- [ ] **Backward compute:** **16 / 23** — Dense + norms + SwiGLU + Softmax + Embedding + MHA + CNN1/2/3 + ConvT1/2/3 + RNN + LSTM + Sequential NormalBP (dX/dW·dγβ/SGD + volume; Softmax dX-only; Embedding dX=0; MHA ModeSelf; CNN im2col; ConvT scatter; RNN/LSTM BPTT; Sequential reverse Dense) w2a exact_bit ×34; others pending.
 - [ ] **Compute targets:** CPU host path only; vendor accel loaders are `gap?` placeholders — see the hardware summary below.
 - [ ] **Platforms:** Linux host build path present; macOS / Windows / Android / iOS toolchains are placeholders — **1 / 5** OS families buildable (not yet multi-OS CI validated).
-- [x] **Runtime / architecture (partial):** volumetric Grid/Cell/HopOrder/remote links + Dense/RMSNorm/LayerNorm/SwiGLU/Softmax/Embedding/MHA/CNN/ConvT/RNN/LSTM volume Forward/**Backward**/NormalBP Step; Step-Mesh / other layer kinds pending.
+- [x] **Runtime / architecture (partial):** volumetric Grid/Cell/HopOrder/remote links + Dense/RMSNorm/LayerNorm/SwiGLU/Softmax/Embedding/MHA/CNN/ConvT/RNN/LSTM/Sequential volume Forward/**Backward**/NormalBP Step; Step-Mesh / other layer kinds pending.
 - [ ] **Systems:** DNA, evolution, Tween, TANHI and telemetry pending.
 - [ ] **Model / IO:** tokenizer, ENTITY, transformer, sampling and HF support pending.
 - [ ] **Post-v1 engine features:** Lucy/LPD, Lean, CamSync and train/action scheduling pending.
@@ -43,7 +43,7 @@ Applications can choose **automatic placement** or **force an explicit backend**
 
 | Compute target | Forward | Backward | Weight updates | Supported cards / devices so far |
 |---|:---:|:---:|:---:|---|
-| Native CPU — x86-64 / Arm64 | 🚧 | 🚧 | 🚧 | Dense+norms+SwiGLU+Softmax+Embedding+MHA+CNN+ConvT+RNN+LSTM FormatNone×34 fwd + NormalBP + volume Step (v0.1.30); other layers pending |
+| Native CPU — x86-64 / Arm64 | 🚧 | 🚧 | 🚧 | Dense+norms+SwiGLU+Softmax+Embedding+MHA+CNN+ConvT+RNN+LSTM+Sequential FormatNone×34 fwd + NormalBP + volume Step (v0.1.31); other layers pending |
 | NVIDIA GPU | ⬜ | ⬜ | ⬜ | None validated |
 | AMD GPU | ⬜ | ⬜ | ⬜ | None validated |
 | Intel GPU | ⬜ | ⬜ | ⬜ | None validated |
@@ -62,14 +62,14 @@ The long-term destination is a standalone C++ Welvet engine that discovers avail
 
 | Project state | Readout |
 |---|---|
-| **Version** | **`0.1.30-m2-rnn-lstm-nbp`** (`welvet_dense_fwd --version` / CMake `0.1.30`) |
+| **Version** | **`0.1.31-m2-sequential-nbp`** (`welvet_dense_fwd --version` / CMake `0.1.31`) |
 | **Runway** | **58 / 100 engine + 13 / 100 extensions = 71 / 200** |
-| **Milestone** | **M2.10** — RNN+LSTM NormalBP leaf + volumetric (FormatNone×34, w2a `RNB1`/`RNV1`/`LSB1`/`LSV1`); ConvT/CNN/MHA/… retained |
+| **Milestone** | **M2.11** — Sequential NormalBP leaf + volumetric (FormatNone×34, w2a `SQB1`/`SQV1`); RNN/LSTM/ConvT/… retained |
 | **Scope** | Full Welvet engine rebuild: architecture, runtime, layers, numerical types, training, systems, model/IO; extended hardware, integration and distribution |
 | **Platforms** | Linux (host build) · macOS / Windows / Android / iOS (toolchain placeholders) |
 | **Hardware families** | Native CPU · NVIDIA · AMD · Intel GPU/NPU · Apple GPU/Neural Engine · Qualcomm GPU/NPU · Google TPU |
 | **Baseline inspected** | Welvet source identifying itself as v1.1.3; 18 October 2026 |
-| **What exists here today** | Buildable `libwelvet` + C ABI + `welvet_dense_fwd` (…/T*B/T*V/RNB/RNV/LSB/LSV); Dense+norms+SwiGLU+Softmax+Embedding+MHA+CNN+ConvT+RNN+LSTM FormatNone×34 fwd+**NormalBP** + volume F/B/SGD + Sequential/Residual/Parallel/seqmix + CNN + ConvT + RNN + LSTM + KMeans + Mamba + Metacognition + GDN; `GAPS.md` census; research notes under [`docs/`](docs/README.md) |
+| **What exists here today** | Buildable `libwelvet` + C ABI + `welvet_dense_fwd` (…/T*B/T*V/RNB/RNV/LSB/LSV/SQB/SQV); Dense+norms+SwiGLU+Softmax+Embedding+MHA+CNN+ConvT+RNN+LSTM+**Sequential** FormatNone×34 fwd+**NormalBP** + volume F/B/SGD + Residual/Parallel/seqmix + CNN + ConvT + RNN + LSTM + KMeans + Mamba + Metacognition + GDN; `GAPS.md` census; research notes under [`docs/`](docs/README.md) |
 
 This README is the **runway**: the implementation contract and scorecard for where welvet.cpp is going. Every unchecked cell is planned work. Welvet's Go engine score does not transfer to the C++ rebuild, and historical benchmark reports do not count as a shipped native backend.
 
@@ -184,7 +184,7 @@ This mirrors the **ten categories and exact weights** of Go Welvet's main versio
 | 10 | **Peak fused / no host ALU** | 14 | Validated native/SIMD/device kernels, attention/RoPE, norms, activations, conv/recurrence, embedding and decoder fusion | ⬜ | 0 |
 | | **Engine rebuild total** | **100** | | **🚧** | **58 / 100** |
 
-Partial credit notes (v0.1.30): Foundation **9/15**, Dense **12/15**, Runtime+architecture **6/8**, Training credit **5/8** (NormalBP Dense+norms+SwiGLU+Softmax+Embedding+MHA+CNN+ConvT+RNN+LSTM), Transformer **13/14**; CNN/RNN/LSTM **6/6**; Extended **7/7**.
+Partial credit notes (v0.1.31): Foundation **9/15**, Dense **12/15**, Runtime+architecture **6/8**, Training credit **5/8** (NormalBP Dense+norms+SwiGLU+Softmax+Embedding+MHA+CNN+ConvT+RNN+LSTM+Sequential), Transformer **13/14**; CNN/RNN/LSTM **6/6**; Extended **7/7**.
 
 Post-v1 Go features are included in the relevant categories: Lucy/LPD and Lean in model construction, CamSync in training credit, and train/action FlightRole in runtime scheduling. The original Go board excludes applications and unfinished stubs; those stay separately visible below rather than receiving inherited engine credit.
 
@@ -204,7 +204,7 @@ Post-v1 Go features are included in the relevant categories: Lucy/LPD and Lean i
 | 10 | Hardware validation + performance | 8 | Real-device matrices, provenance, transfer-inclusive timings and released-artifact checks | 🚧 | 3 |
 | | **Extension total** | **100** | | **🚧** | **13 / 100** |
 
-**Combined runway: 71 / 200.** Partial notes (v0.1.30): Dense/RMSNorm/LayerNorm/SwiGLU/Softmax/Embedding/MHA/CNN/ConvT/RNN/LSTM NormalBP leaf+volume exact_bit×34 (`WDB`/`WRB`/`WLB`/`WSB`/`WXB`/`WEB`/`WHB`/`C*B`/`T*B`/`RNB`/`LSB` + vol); Parallel (`WPL1`) still forward-only. Stack/poly Parallel / other TrainModes still gap.
+**Combined runway: 71 / 200.** Partial notes (v0.1.31): Dense/RMSNorm/LayerNorm/SwiGLU/Softmax/Embedding/MHA/CNN/ConvT/RNN/LSTM/Sequential NormalBP leaf+volume exact_bit×34 (`WDB`/`WRB`/`WLB`/`WSB`/`WXB`/`WEB`/`WHB`/`C*B`/`T*B`/`RNB`/`LSB`/`SQB` + vol); Parallel (`WPL1`) still forward-only. Stack/poly Parallel / other TrainModes still gap.
 
 “All GPUs/NPUs/TPUs” is the expansion ambition. Each supported device model, numerical type, layer, shape and pass must have an explicit tested capability profile. A working inference partition cannot earn training credit. Additional vendors and device generations can extend the coverage inventory without quietly changing these fixed weights.
 
@@ -319,7 +319,7 @@ Dense FormatNone×34 forward is implemented (v0.1.1); remaining rows are unimple
 | 14 | **KMeans** | Welvet soft assignment and centroid computation | Welvet-defined differentiable paths and updates | 🚧 | ⬜ | ⬜ |
 | 15 | **Softmax** | Standard/grid/temperature and supported variants | Welvet-defined Jacobian-vector products (NormalBP) | 🚧 | 🚧 | ⬜ |
 | 16 | **Parallel** | Branches, routing, combine, cameral modes | Branch credit, combine/routing gradients | 🚧 | ⬜ | ⬜ |
-| 17 | **Sequential** | Ordered child operation chain | Reverse chain over arbitrary supported children | 🚧 | ⬜ | ⬜ |
+| 17 | **Sequential** | Ordered child operation chain | Reverse Dense Dim→Dim chain (NormalBP; NewFromOps mix still gap) | 🚧 | 🚧 | ⬜ |
 | 18 | **Residual** | F(x) + skip with shape checks | Branch derivative + skip gradient | 🚧 | ⬜ | ⬜ |
 | 19 | **Metacognition** | Observed computation and rule application | Welvet-defined trainable paths and state | 🚧 | ⬜ | ⬜ |
 | 20 | **Mamba** | Selective state-space scan and projections | Scan/state/projection gradients | 🚧 | ⬜ | ⬜ |

@@ -32,6 +32,7 @@
 #   ./scripts/linux_build_w2a.sh --convt-train # ConvT1/2/3 NormalBP leaf + volumetric
 #   ./scripts/linux_build_w2a.sh --rnn-train  # RNN NormalBP leaf + volumetric
 #   ./scripts/linux_build_w2a.sh --lstm-train # LSTM NormalBP leaf + volumetric
+#   ./scripts/linux_build_w2a.sh --sequential-train # Sequential NormalBP leaf + volumetric
 #   ./scripts/linux_build_w2a.sh --go-v-cpp   # same as default
 #   ./scripts/linux_build_w2a.sh --all        # entire w2a go test ./...
 #   BUILD_DIR=/tmp/welvet-build ./scripts/linux_build_w2a.sh
@@ -77,8 +78,9 @@ for arg in "$@"; do
     --convt-train) MODE="convt_train" ;;
     --rnn-train) MODE="rnn_train" ;;
     --lstm-train) MODE="lstm_train" ;;
+    --sequential-train) MODE="sequential_train" ;;
     -h|--help)
-      sed -n '2,42p' "$0"
+      sed -n '2,43p' "$0"
       exit 0
       ;;
     *)
@@ -229,6 +231,10 @@ case "$MODE" in
   lstm_train)
     echo "==> w2a go_v_cpp LSTM NormalBP (leaf + volumetric)"
     go test ./tests/go_v_cpp/ -run '^TestGoVCppLSTMTrain$' -v -count=1
+    ;;
+  sequential_train)
+    echo "==> w2a go_v_cpp Sequential NormalBP (leaf + volumetric)"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppSequentialTrain$' -v -count=1
     ;;
   all)
     echo "==> w2a full suite (go test ./...)"
