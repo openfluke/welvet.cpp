@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(welvet VERSION 0.1.54 LANGUAGES CXX)
+project(welvet VERSION 0.1.55 LANGUAGES CXX)
 
 # One tree → many OS: Linux, macOS, Windows, Android, iOS (toolchains under cmake/).
 set(CMAKE_CXX_STANDARD 20)
