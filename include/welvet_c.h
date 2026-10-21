@@ -89,6 +89,16 @@ WELVET_API welvet_status welvet_rmsnorm_forward_f32(
     int32_t batch, int32_t seq, int32_t dim, double eps, int32_t dtype, int32_t backend,
     const float* gamma, const float* x, float* pre, float* post);
 
+/* RMSNorm NormalBP leaf: forward → (MSEGrad from target | use grad_out) → backward → optional SGD.
+ * use_target: 0 = grad_or_target is gradOut; 1 = target (MSE).
+ * lr == 0 skips ApplyGradSGD (gamma_after == gamma decoded).
+ * Outputs: pre/post/dX [batch*seq*dim], dW/gamma_after [dim], *loss (0 if !use_target).
+ */
+WELVET_API welvet_status welvet_rmsnorm_normalbp_f32(
+    int32_t batch, int32_t seq, int32_t dim, double eps, int32_t dtype, int32_t backend,
+    const float* gamma_init, const float* x, const float* grad_or_target, int32_t use_target,
+    double lr, float* pre, float* post, float* dX, float* dW, float* gamma_after, double* loss);
+
 /* LayerNorm baseline. gamma/beta: [dim], x: [batch*seq*dim]
  * pre (x̂): [batch*seq*dim], post (γ⊙x̂+β): [batch*seq*dim]
  * eps<=0 → 1e-5

@@ -1,5 +1,7 @@
 #include "welvet/runtime/training.hpp"
 
+#include "welvet/rmsnorm.hpp"
+
 #include <map>
 #include <utility>
 
@@ -59,10 +61,21 @@ Status sgd_dense(architecture::Grid& g, const forward::Result& fwd, const backwa
       continue;
     }
     architecture::Cell* cell = architecture::at(g, st.coord.z, st.coord.y, st.coord.x, st.coord.l);
-    if (!cell || cell->op_kind != architecture::OpKind::Dense) {
-      return Status::Err(StatusCode::InvalidArgument, "training: SGD expected Dense cell");
+    if (!cell) {
+      return Status::Err(StatusCode::InvalidArgument, "training: SGD missing cell");
     }
-    if (auto st_a = dense::apply_grad_sgd(&cell->dense_op, *it->second, lr); !st_a) {
+    Status st_a = Status::Ok();
+    switch (cell->op_kind) {
+    case architecture::OpKind::Dense:
+      st_a = dense::apply_grad_sgd(&cell->dense_op, *it->second, lr);
+      break;
+    case architecture::OpKind::RMSNorm:
+      st_a = rmsnorm::apply_grad_sgd(&cell->rmsnorm_op, *it->second, lr);
+      break;
+    default:
+      return Status::Err(StatusCode::InvalidArgument, "training: SGD unsupported cell Op");
+    }
+    if (!st_a) {
       return st_a;
     }
   }

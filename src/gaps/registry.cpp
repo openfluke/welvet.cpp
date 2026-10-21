@@ -21,6 +21,7 @@ const std::vector<Entry>& build() {
       {"abi.mha_forward_f32", "interop", "C ABI welvet_mha_forward_f32 + WVM1 tool", true},
       {"abi.swiglu_forward_f32", "interop", "C ABI welvet_swiglu_forward_f32 + WVS1 tool", true},
       {"abi.rmsnorm_forward_f32", "interop", "C ABI welvet_rmsnorm_forward_f32 + WVR1 tool", true},
+      {"abi.rmsnorm_normalbp_f32", "interop", "C ABI welvet_rmsnorm_normalbp_f32 + WRB1/WRV1 tool", true},
       {"abi.layernorm_forward_f32", "interop", "C ABI welvet_layernorm_forward_f32 + WVL1 tool", true},
       {"abi.cnn_forward_f32", "interop", "C ABI welvet_cnn{1,2,3}_forward_f32 + WVC1/2/3 tool", true},
       {"abi.convt_forward_f32", "interop", "C ABI welvet_convt{1,2,3}_forward_f32 + WVT1/2/3 tool", true},
@@ -75,7 +76,7 @@ const std::vector<Entry>& build() {
       {"layer.swiglu", "layers", "SwiGLU forward Gate/Up/Down + SiLU⊙ FormatNone×34", true},
       {"layer.swiglu.backward", "layers", "gap? SwiGLU backward + SiLU⊙ grads", false},
       {"layer.rmsnorm", "layers", "RMSNorm forward x̂ + γ⊙ FormatNone×34", true},
-      {"layer.rmsnorm.backward", "layers", "gap? RMSNorm backward dγ/dx", false},
+      {"layer.rmsnorm.backward", "layers", "RMSNorm NormalBP dγ/dx + ApplyGradSGD FormatNone×34", true},
       {"layer.layernorm", "layers", "LayerNorm forward x̂ + γ⊙+β FormatNone×34", true},
       {"layer.layernorm.backward", "layers", "gap? LayerNorm backward dγ/dβ/dx", false},
       {"layer.cnn1", "layers", "CNN1 im2col+Dense forward FormatNone×34", true},
@@ -134,7 +135,7 @@ const std::vector<Entry>& build() {
 
       // --- Architecture / runtime remaining ---
       {"runtime.forward", "runtime", "gap? volume Forward all layer kinds (Dense done)", false},
-      {"runtime.backward", "runtime", "volume Backward Dense-only + training.Step (NormalBP)", true},
+      {"runtime.backward", "runtime", "volume Backward Dense+RMSNorm + training.Step (NormalBP)", true},
       {"runtime.training", "runtime", "gap? training modes / credit", false},
       {"runtime.step_mesh", "runtime", "gap? Step / Mesh scheduling", false},
       {"arch.branches", "architecture", "gap? ParallelBranches/SequentialLayers combine", false},

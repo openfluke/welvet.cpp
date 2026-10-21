@@ -15,7 +15,7 @@ Canonical enum: Go `layers/parallel/train_mode.go` (`TrainMode`).
 
 Tick `[x]` when done. Put the **release tag** in **Ver** when that row (or the whole mode table) is signed.
 
-**Current engine:** `0.1.21-m2-dense-nbp`
+**Current engine:** `0.1.22-m2-rmsnorm-nbp`
 
 ---
 
@@ -35,6 +35,22 @@ Timing: warm-up + `--bench=N` (in-process; no spawn) → **goµs / cppµs / spd%
 | 6 | Volume 2×2×2×1 Float32 | [x] | 3D volumetric + speed |
 | 7 | Volume 2×1×1×1 × all 34 dtypes | [x] | multi-cell ×34 + speed table |
 
+## w2a Go↔C++ (RMSNorm NormalBP) — sign-off evidence
+
+Run: `./scripts/linux_build_w2a.sh --rmsnorm-train`  
+Wire: `WRB1`/`WRBO` (leaf), `WRV1`/`WRVO` (volume). Exact_bit vs Go.  
+Timing: same `--bench=N` / spd%Δ convention as Dense.
+
+| # | Case | Status | Notes |
+|---|---|:---:|---|
+| 1 | Leaf Float32 (dX/dγ/γ/loss) | [x] | exact_bit + speed |
+| 2 | Leaf × all 34 dtypes | [x] | exact_bit + speed table |
+| 3 | Volume 1×1×1×1 Float32 | [x] | inside-node + speed |
+| 4 | Volume 1×1×1×2 chain Float32 | [x] | multi-layer cell + speed |
+| 5 | Volume 1×1×1×1 × all 34 dtypes | [x] | + speed table |
+| 6 | Volume 2×2×2×1 Float32 | [x] | 3D volumetric + speed |
+| 7 | Volume 2×1×1×1 × all 34 dtypes | [x] | multi-cell ×34 + speed table |
+
 ---
 
 ## 1 — NormalBP
@@ -44,7 +60,7 @@ Chain-rule Backward + ApplyGradSGD. Start here. Dense first.
 | Layer | Inside node | 3D volumetric | Fully signed off | Ver |
 |---|:---:|:---:|:---:|---|
 | Dense | [x] | [x] | [x] | `0.1.21-m2-dense-nbp` |
-| RMSNorm | [ ] | [ ] | [ ] | |
+| RMSNorm | [x] | [x] | [x] | `0.1.22-m2-rmsnorm-nbp` |
 | LayerNorm | [ ] | [ ] | [ ] | |
 | SwiGLU | [ ] | [ ] | [ ] | |
 | Softmax | [ ] | [ ] | [ ] | |
@@ -1147,4 +1163,5 @@ Fill as you tick rows / finish mode tables.
 |---|---|---|
 | `0.1.20-m1-par` | — | Forward Parallel; train not started |
 | `0.1.21-m2-dense-nbp` | NormalBP Dense | Leaf+vol w2a exact_bit ×34; MatVecT + ApplySGD FormatNone |
+| `0.1.22-m2-rmsnorm-nbp` | NormalBP RMSNorm | Leaf+vol w2a exact_bit ×34; dγ/dx + ApplySGD FormatNone |
 | | | |

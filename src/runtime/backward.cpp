@@ -24,15 +24,30 @@ Status volume_dense(architecture::Grid& g, const forward::Result& fwd, const Ten
   for (int i = static_cast<int>(fwd.steps.size()) - 1; i >= 0; --i) {
     const auto& st = fwd.steps[static_cast<std::size_t>(i)];
     architecture::Cell* cell = architecture::at(g, st.coord.z, st.coord.y, st.coord.x, st.coord.l);
-    if (!cell || cell->op_kind != architecture::OpKind::Dense) {
+    if (!cell) {
       std::ostringstream oss;
-      oss << "runtime.backward: expected Dense at z=" << st.coord.z << " y=" << st.coord.y
+      oss << "runtime.backward: missing cell at z=" << st.coord.z << " y=" << st.coord.y
           << " x=" << st.coord.x << " l=" << st.coord.l;
       return Status::Err(StatusCode::InvalidArgument, oss.str());
     }
 
     TensorF32 gx, dw;
-    if (auto st_b = dense::backward_f32(cell->dense_op, gy, st.input, st.pre, &gx, &dw); !st_b) {
+    Status st_b = Status::Ok();
+    switch (cell->op_kind) {
+    case architecture::OpKind::Dense:
+      st_b = dense::backward_f32(cell->dense_op, gy, st.input, st.pre, &gx, &dw);
+      break;
+    case architecture::OpKind::RMSNorm:
+      st_b = rmsnorm::backward_f32(cell->rmsnorm_op, gy, st.input, st.pre, &gx, &dw);
+      break;
+    default: {
+      std::ostringstream oss;
+      oss << "runtime.backward: unsupported Op at z=" << st.coord.z << " y=" << st.coord.y
+          << " x=" << st.coord.x << " l=" << st.coord.l;
+      return Status::Err(StatusCode::InvalidArgument, oss.str());
+    }
+    }
+    if (!st_b) {
       return st_b;
     }
     result.grad_ws.push_back(GradW{st.coord, std::move(dw)});

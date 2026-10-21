@@ -16,17 +16,16 @@ struct CoordLess {
   }
 };
 
-Status dispatch_dense(architecture::Cell& cell, const TensorF32& in, TensorF32* pre,
-                      TensorF32* post) {
-  if (cell.op_kind != architecture::OpKind::Dense) {
-    return Status::Gap("runtime.forward: cell Op is not Dense");
+Status dispatch_cell(architecture::Cell& cell, const TensorF32& in, TensorF32* pre,
+                     TensorF32* post) {
+  switch (cell.op_kind) {
+  case architecture::OpKind::Dense:
+    return dense::forward(cell.dense_op, in, pre, post);
+  case architecture::OpKind::RMSNorm:
+    return rmsnorm::forward(cell.rmsnorm_op, in, pre, post);
+  default:
+    return Status::Gap("runtime.forward: unsupported cell Op");
   }
-  if (cell.meta.type != LayerType::Dense) {
-    std::ostringstream oss;
-    oss << "runtime.forward: unsupported layer type " << static_cast<int>(cell.meta.type);
-    return Status::Err(StatusCode::Unsupported, oss.str());
-  }
-  return dense::forward(cell.dense_op, in, pre, post);
 }
 
 } // namespace
@@ -71,7 +70,7 @@ Status volume_dense(architecture::Grid& g, const TensorF32& input, Result* out) 
     }
 
     TensorF32 pre, post;
-    Status st = dispatch_dense(*cell, *in, &pre, &post);
+    Status st = dispatch_cell(*cell, *in, &pre, &post);
     if (!st) {
       return st;
     }
