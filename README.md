@@ -64,7 +64,7 @@ The long-term destination is a standalone C++ Welvet engine that discovers avail
 |---|---|
 | **Version** | **`0.1.36-m2-tween`** (`welvet_dense_fwd --version` / CMake `0.1.36`) |
 | **Runway** | **63 / 100 engine + 13 / 100 extensions = 76 / 200** |
-| **Milestone** | **M2.16** — ModeTween (`systems/tween` + TWB1/TWV1) leaf ×34 + Dense volume; prior MeshBP + StepBP Line |
+| **Milestone** | **M2.16** — ModeTween (`systems/tween` + TWB1/TWV1/TRV1…) leaf ×34 + volume 2×2×2×1 all signed kinds; prior MeshBP + StepBP Line |
 | **Scope** | Full Welvet engine rebuild: architecture, runtime, layers, numerical types, training, systems, model/IO; extended hardware, integration and distribution |
 | **Platforms** | Linux (host build) · macOS / Windows / Android / iOS (toolchain placeholders) |
 | **Hardware families** | Native CPU · NVIDIA · AMD · Intel GPU/NPU · Apple GPU/Neural Engine · Qualcomm GPU/NPU · Google TPU |
@@ -204,7 +204,7 @@ Post-v1 Go features are included in the relevant categories: Lucy/LPD and Lean i
 | 10 | Hardware validation + performance | 8 | Real-device matrices, provenance, transfer-inclusive timings and released-artifact checks | 🚧 | 3 |
 | | **Extension total** | **100** | | **🚧** | **13 / 100** |
 
-**Combined runway: 76 / 200.** Partial notes (v0.1.36): NormalBP leaf+volume ×34 retained; **StepBP Line** + **MeshBP** 3D; **ModeTween** leaf ×34 + Dense volume (`TWB1`/`TWV1`, `--tween-train`); full cameral Stack / poly Parallel / TweenChain+ still gap. Parallel (`WPL1`) still forward-only.
+**Combined runway: 76 / 200.** Partial notes (v0.1.36): NormalBP leaf+volume ×34 retained; **StepBP Line** + **MeshBP** 3D; **ModeTween** leaf ×34 + volume 2×2×2×1 all signed kinds (`TWB1`/`TWV1`/`TRV1`…, `--tween-train`); full cameral Stack / poly Parallel / TweenChain+ still gap. Parallel (`WPL1`) still forward-only.
 
 “All GPUs/NPUs/TPUs” is the expansion ambition. Each supported device model, numerical type, layer, shape and pass must have an explicit tested capability profile. A working inference partition cannot earn training credit. Additional vendors and device generations can extend the coverage inventory without quietly changing these fixed weights.
 

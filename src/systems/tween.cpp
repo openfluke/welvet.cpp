@@ -99,16 +99,32 @@ Status apply_dense_projected(dense::Layer& d, const TensorF32& grad_out, const T
   return Status::Ok();
 }
 
+// Flatten [B,D] or [B,S,D] → [B*S,D] for Dense children (matches sequential::forward).
+TensorF32 flatten_seq_like(const TensorF32& t) {
+  if (t.shape.size() == 3) {
+    TensorF32 out;
+    const int b = static_cast<int>(t.shape[0]);
+    const int s = static_cast<int>(t.shape[1]);
+    const int d = static_cast<int>(t.shape[2]);
+    out.shape = {static_cast<int64_t>(b) * s, d};
+    out.data = t.data;
+    return out;
+  }
+  return t;
+}
+
 // Go collectTweenLeaves + applyProjectedTween on Sequential Dense children.
 Status apply_projected_seq(sequential::Layer& layer, const TensorF32& grad_out,
                            const TensorF32& input, double soft_lr) {
   if (layer.children.empty()) {
     return Status::Ok();
   }
+  TensorF32 flat_in = flatten_seq_like(input);
+  TensorF32 flat_gy = flatten_seq_like(grad_out);
   std::vector<TensorF32> ins(layer.children.size());
   std::vector<TensorF32> pres(layer.children.size());
   std::vector<TensorF32> posts(layer.children.size());
-  TensorF32 current = input;
+  TensorF32 current = flat_in;
   for (std::size_t i = 0; i < layer.children.size(); ++i) {
     auto& ch = layer.children[i];
     ch.backend = layer.backend;
@@ -123,7 +139,7 @@ Status apply_projected_seq(sequential::Layer& layer, const TensorF32& grad_out,
     current = std::move(o);
   }
   for (std::size_t i = 0; i < layer.children.size(); ++i) {
-    if (auto st = apply_dense_projected(layer.children[i], grad_out, ins[i], pres[i], posts[i],
+    if (auto st = apply_dense_projected(layer.children[i], flat_gy, ins[i], pres[i], posts[i],
                                         soft_lr);
         !st) {
       return st;
@@ -138,10 +154,12 @@ Status apply_projected_res(residual::Layer& layer, const TensorF32& grad_out,
   if (layer.children.empty()) {
     return Status::Ok();
   }
+  TensorF32 flat_in = flatten_seq_like(input);
+  TensorF32 flat_gy = flatten_seq_like(grad_out);
   std::vector<TensorF32> ins(layer.children.size());
   std::vector<TensorF32> pres(layer.children.size());
   std::vector<TensorF32> posts(layer.children.size());
-  TensorF32 current = input;
+  TensorF32 current = flat_in;
   for (std::size_t i = 0; i < layer.children.size(); ++i) {
     auto& ch = layer.children[i];
     ch.backend = layer.backend;
@@ -156,7 +174,7 @@ Status apply_projected_res(residual::Layer& layer, const TensorF32& grad_out,
     current = std::move(o);
   }
   for (std::size_t i = 0; i < layer.children.size(); ++i) {
-    if (auto st = apply_dense_projected(layer.children[i], grad_out, ins[i], pres[i], posts[i],
+    if (auto st = apply_dense_projected(layer.children[i], flat_gy, ins[i], pres[i], posts[i],
                                         soft_lr);
         !st) {
       return st;
