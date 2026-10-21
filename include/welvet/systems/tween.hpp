@@ -19,6 +19,10 @@ TensorF32 project_gap(const TensorF32& src, const std::vector<int64_t>& dst_shap
 Status apply_projected(stack::Child& c, const TensorF32& grad_out, const TensorF32& input,
                        double soft_lr);
 
+// Whole Stack: same global gap on every flattened child (Go applyProjectedTween(Stack)).
+Status apply_projected_ops(stack::Layer& ops, const TensorF32& grad_out, const TensorF32& input,
+                           double soft_lr);
+
 // One cell: projected gap + local Backward+SGD (FamilyTween / trainTweenLocal).
 // Seq/Res use leaf-projected apply (no chain). Other kinds project onto post.
 Status apply_cell_projected(architecture::Cell& cell, const TensorF32& grad_out,

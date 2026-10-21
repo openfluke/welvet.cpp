@@ -222,6 +222,25 @@ TensorF32 project_gap(const TensorF32& src, const std::vector<int64_t>& dst_shap
   return dst;
 }
 
+Status apply_projected_ops(stack::Layer& ops, const TensorF32& grad_out, const TensorF32& input,
+                           double soft_lr) {
+  std::vector<stack::Child*> flat;
+  stack::flatten_ops(ops, &flat);
+  TensorF32 current = input;
+  for (stack::Child* ch : flat) {
+    if (!ch) continue;
+    TensorF32 p, o;
+    if (auto st = stack::child_forward(*ch, current, &p, &o); !st) {
+      return st;
+    }
+    if (auto st = apply_projected(*ch, grad_out, current, soft_lr); !st) {
+      return st;
+    }
+    current = std::move(o);
+  }
+  return Status::Ok();
+}
+
 Status apply_projected(stack::Child& c, const TensorF32& grad_out, const TensorF32& input,
                        double soft_lr) {
   if (grad_out.data.empty() || input.data.empty()) {

@@ -15,7 +15,7 @@ Canonical enum: Go `layers/parallel/train_mode.go` (`TrainMode`).
 
 Tick `[x]` when done. Put the **release tag** in **Ver** when that row (or the whole mode table) is signed.
 
-**Current engine:** `0.1.42-m2-steptweensplit`
+**Current engine:** `0.1.43-m2-tweenalt`
 
 ---
 
@@ -327,6 +327,16 @@ Wires: `STS1`/`STSO` (Line FamilyTweenSplit 1/N @ full lr on pop); 3D via TweenS
 |---|---|:---:|---|
 | 1–28 | Line leaf kinds ×34 | [x] | FamilyTweenSplit per hop |
 | 29–48 | MeshTweenSplit volume 2×2×2×1 | [x] | = ModeTweenSplit volume wires |
+
+## w2a Go↔C++ (TweenAlt ModeTweenAlt) — sign-off evidence
+
+Run: `./scripts/linux_build_w2a.sh --tweenalt-train`  
+Wires: `TAB1`/`TABO` (Split→Tween AltTimes=1); `TAV1`/`TRA1`…`MBTA` volume. Exact_bit vs Go.
+
+| # | Case | Status | Notes |
+|---|---|:---:|---|
+| 1–28 | Leaf kinds ×34 | [x] | Split @ full lr then Tween @ lr×0.5 |
+| 29–48 | Volume 2×2×2×1 all signed kinds | [x] | re-forward between phases |
 
 ## w2a Go↔C++ (MeshTween mesh-clock) — sign-off evidence
 
@@ -762,33 +772,36 @@ Ship: `runtime/line` Credit::FamilyTweenSplit on pop (`apply_split_child` 1/N @ 
 
 ## 12 — TweenAlt
 
+Ship: `systems::tween_alt` + `runtime/tween_alt_train` — AltTimes × (fwd→Split @ full lr → fwd→Tween @ lr×0.5); wire `TAB1`/`TAV1`/`TRA1`…; w2a `--tweenalt-train`.  
+CNN2/3 & ConvT2/3 share CNN1/ConvT1 path. Default AltTimes=1.
+
 | Layer | Inside node | 3D volumetric | Fully signed off | Ver |
 |---|:---:|:---:|:---:|---|
-| Dense | [ ] | [ ] | [ ] | |
-| RMSNorm | [ ] | [ ] | [ ] | |
-| LayerNorm | [ ] | [ ] | [ ] | |
-| SwiGLU | [ ] | [ ] | [ ] | |
-| Softmax | [ ] | [ ] | [ ] | |
-| Embedding | [ ] | [ ] | [ ] | |
-| MHA | [ ] | [ ] | [ ] | |
-| CNN1 | [ ] | [ ] | [ ] | |
-| CNN2 | [ ] | [ ] | [ ] | |
-| CNN3 | [ ] | [ ] | [ ] | |
-| ConvT1 | [ ] | [ ] | [ ] | |
-| ConvT2 | [ ] | [ ] | [ ] | |
-| ConvT3 | [ ] | [ ] | [ ] | |
-| RNN | [ ] | [ ] | [ ] | |
-| LSTM | [ ] | [ ] | [ ] | |
-| Sequential | [ ] | [ ] | [ ] | |
-| Residual | [ ] | [ ] | [ ] | |
+| Dense | [x] | [x] | [x] | `0.1.43-m2-tweenalt` |
+| RMSNorm | [x] | [x] | [x] | `0.1.43-m2-tweenalt` |
+| LayerNorm | [x] | [x] | [x] | `0.1.43-m2-tweenalt` |
+| SwiGLU | [x] | [x] | [x] | `0.1.43-m2-tweenalt` |
+| Softmax | [x] | [x] | [x] | `0.1.43-m2-tweenalt` |
+| Embedding | [x] | [x] | [x] | `0.1.43-m2-tweenalt` |
+| MHA | [x] | [x] | [x] | `0.1.43-m2-tweenalt` |
+| CNN1 | [x] | [x] | [x] | `0.1.43-m2-tweenalt` |
+| CNN2 | [x] | [x] | [x] | `0.1.43-m2-tweenalt` |
+| CNN3 | [x] | [x] | [x] | `0.1.43-m2-tweenalt` |
+| ConvT1 | [x] | [x] | [x] | `0.1.43-m2-tweenalt` |
+| ConvT2 | [x] | [x] | [x] | `0.1.43-m2-tweenalt` |
+| ConvT3 | [x] | [x] | [x] | `0.1.43-m2-tweenalt` |
+| RNN | [x] | [x] | [x] | `0.1.43-m2-tweenalt` |
+| LSTM | [x] | [x] | [x] | `0.1.43-m2-tweenalt` |
+| Sequential | [x] | [x] | [x] | `0.1.43-m2-tweenalt` |
+| Residual | [x] | [x] | [x] | `0.1.43-m2-tweenalt` |
 | KMeans | [ ] | [ ] | [ ] | |
-| Mamba | [ ] | [ ] | [ ] | |
+| Mamba | [x] | [x] | [x] | `0.1.43-m2-tweenalt` |
 | Metacognition | [ ] | [ ] | [ ] | |
 | GDN | [ ] | [ ] | [ ] | |
 | Parallel | [ ] | [ ] | [ ] | |
 | Stack | [ ] | [ ] | [ ] | |
 
-**Checkpoint:** bump version when this mode table advances.
+**Checkpoint:** `0.1.43-m2-tweenalt` — ModeTweenAlt Inside+×34 + volume 2×2×2×1 for NormalBP-signed kinds.
 
 ---
 
@@ -1516,3 +1529,4 @@ Fill as you tick rows / finish mode tables.
 | `0.1.40-m2-meshtween` | MeshTween + MeshTweenChain × signed kinds | MTW1 FamilyTween mesh-clock; MTC1 FamilyBP (= MeshBP); volume ModeTween/TweenChain |
 | `0.1.41-m2-tweensplit` | TweenSplit × signed kinds | 1/N projected gap @ full lr; TSB1/TSP1/TRP1…; leaf ×34 + volume |
 | `0.1.42-m2-steptweensplit` | StepTweenSplit × signed kinds | Line FamilyTweenSplit 1/N @ full lr; STS1; 3D MeshTweenSplit vol (= TweenSplit) |
+| `0.1.43-m2-tweenalt` | TweenAlt × signed kinds | Split→Tween AltTimes=1; TAB1/TAV1/TRA1…; leaf ×34 + volume |
