@@ -51,6 +51,7 @@
 #   ./scripts/linux_build_w2a.sh --tweensplitfastproxy-train  # FastProxy head GradWOnly + volume
 #   ./scripts/linux_build_w2a.sh --tweensplitlinearcache-train # LinearCache refresh/hit + volume
 #   ./scripts/linux_build_w2a.sh --tweensplitheadproxyasync-train # HeadProxyAsync stale proxy + volume
+#   ./scripts/linux_build_w2a.sh --tweensplitsparse-train # Sparse head+one-hidden + volume
 #   ./scripts/linux_build_w2a.sh --go-v-cpp   # same as default
 #   ./scripts/linux_build_w2a.sh --all        # entire w2a go test ./...
 #   BUILD_DIR=/tmp/welvet-build ./scripts/linux_build_w2a.sh
@@ -115,8 +116,9 @@ for arg in "$@"; do
     --tweensplitfastproxy-train) MODE="tweensplitfastproxy_train" ;;
     --tweensplitlinearcache-train) MODE="tweensplitlinearcache_train" ;;
     --tweensplitheadproxyasync-train) MODE="tweensplitheadproxyasync_train" ;;
+    --tweensplitsparse-train) MODE="tweensplitsparse_train" ;;
     -h|--help)
-      sed -n '2,56p' "$0"
+      sed -n '2,57p' "$0"
       exit 0
       ;;
     *)
@@ -343,6 +345,10 @@ case "$MODE" in
   tweensplitheadproxyasync_train)
     echo "==> w2a go_v_cpp TweenSplitHeadProxyAsync train (stale proxy hidden + volume)"
     go test ./tests/go_v_cpp/ -run '^TestGoVCppTweenSplitHeadProxyAsyncTrain$' -v -count=1
+    ;;
+  tweensplitsparse_train)
+    echo "==> w2a go_v_cpp TweenSplitSparse train (head GradWOnly + one hidden + volume)"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppTweenSplitSparseTrain$' -v -count=1
     ;;
   all)
     echo "==> w2a full suite (go test ./...)"

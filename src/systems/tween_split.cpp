@@ -625,6 +625,42 @@ Status apply_fast_proxy_leaves(std::vector<Leaf>& leaves, const TensorF32& grad_
   return apply_hidden_dw_only(leaves, 0, n - 1, src, scale, lr);
 }
 
+// Go trainTweenSplitSparseLeaves.
+Status apply_sparse_leaves(std::vector<Leaf>& leaves, const TensorF32& grad_out, double lr,
+                           stack::SplitAccel* acc) {
+  const int n = static_cast<int>(leaves.size());
+  if (n == 0) {
+    return Status::Ok();
+  }
+  Leaf& head = leaves[static_cast<std::size_t>(n - 1)];
+  // Proxy before head SGD (Go linearGradInAny(head, gy, in, nil)).
+  TensorF32 proxy;
+  if (auto st = linear_grad_in_leaf_nopre(head, grad_out, &proxy); !st) {
+    return Status::Err(st.code, std::string("tween_split sparse proxy: ") + st.message);
+  }
+  if (!head.post.data.empty()) {
+    TensorF32 g_head = systems::tween::project_gap(grad_out, head.post.shape);
+    if (auto st = apply_leaf_dw_linear(head, g_head, lr); !st) {
+      return Status::Err(st.code, std::string("tween_split sparse head: ") + st.message);
+    }
+  }
+  if (n == 1) {
+    return Status::Ok();
+  }
+  int idx = 0;
+  if (acc) {
+    idx = acc->sparse % (n - 1);
+    acc->sparse++;
+  }
+  Leaf& leaf = leaves[static_cast<std::size_t>(idx)];
+  if (leaf.post.data.empty()) {
+    return Status::Ok();
+  }
+  const TensorF32& src = proxy.data.empty() ? grad_out : proxy;
+  TensorF32 gi = systems::tween::project_gap(src, leaf.post.shape);
+  return apply_leaf_dw_linear(leaf, gi, lr);
+}
+
 // Go trainTweenSplitHeadProxyAsyncLeaves.
 Status apply_head_proxy_async_leaves(std::vector<Leaf>& leaves, const TensorF32& grad_out, double lr,
                                      stack::SplitAccel* acc) {
@@ -907,6 +943,45 @@ Status train_volume_mse_head_proxy_async(architecture::Grid& g, const runtime::f
     return st;
   }
   return apply_head_proxy_async_leaves(leaves, gy, lr, &g.accel);
+}
+
+Status apply_sparse(stack::Layer& ops, const TensorF32& grad_out, const TensorF32& input, double lr) {
+  std::vector<Leaf> leaves;
+  if (auto st = collect_stack_leaves(ops, input, &leaves); !st) {
+    return st;
+  }
+  return apply_sparse_leaves(leaves, grad_out, lr, &ops.accel);
+}
+
+Status apply_sparse_child(stack::Child& c, const TensorF32& grad_out, const TensorF32& input,
+                          double lr, stack::SplitAccel* accel) {
+  std::vector<Leaf> leaves;
+  if (auto st = collect_child(c, input, &leaves); !st) {
+    return st;
+  }
+  return apply_sparse_leaves(leaves, grad_out, lr, accel);
+}
+
+Status train_volume_mse_sparse(architecture::Grid& g, const runtime::forward::Result& fwd,
+                               const TensorF32& target, double lr, double* loss) {
+  if (!loss) {
+    return Status::Err(StatusCode::InvalidArgument, "tween_split sparse: nil loss");
+  }
+  if (fwd.steps.empty()) {
+    return Status::Err(StatusCode::InvalidArgument, "tween_split sparse: empty forward tape");
+  }
+  if (auto st = runtime::training::mse(fwd.output, target, loss); !st) {
+    return st;
+  }
+  TensorF32 gy;
+  if (auto st = runtime::training::mse_grad(fwd.output, target, &gy); !st) {
+    return st;
+  }
+  std::vector<Leaf> leaves;
+  if (auto st = collect_volume_leaves(g, fwd, &leaves); !st) {
+    return st;
+  }
+  return apply_sparse_leaves(leaves, gy, lr, &g.accel);
 }
 
 } // namespace welvet::systems::tween_split

@@ -1028,33 +1028,36 @@ CNN2/3 & ConvT2/3 share CNN1/ConvT1 path.
 
 ## 19 — TweenSplitSparse
 
+Ship: `systems::tween_split::apply_sparse` + `runtime/tween_split_sparse_train` — proxy=Wᵀgy (nil pre); head GradWOnly on P(gy); one hidden at sparse%(N−1) GradWOnly on P(proxy) (no 1/(N−1)); wire `SPB1`/`SPV1`/`SRP1`…; w2a `--tweensplitsparse-train`.  
+CNN2/3 & ConvT2/3 share CNN1/ConvT1 path.
+
 | Layer | Inside node | 3D volumetric | Fully signed off | Ver |
 |---|:---:|:---:|:---:|---|
-| Dense | [ ] | [ ] | [ ] | |
-| RMSNorm | [ ] | [ ] | [ ] | |
-| LayerNorm | [ ] | [ ] | [ ] | |
-| SwiGLU | [ ] | [ ] | [ ] | |
-| Softmax | [ ] | [ ] | [ ] | |
-| Embedding | [ ] | [ ] | [ ] | |
-| MHA | [ ] | [ ] | [ ] | |
-| CNN1 | [ ] | [ ] | [ ] | |
-| CNN2 | [ ] | [ ] | [ ] | |
-| CNN3 | [ ] | [ ] | [ ] | |
-| ConvT1 | [ ] | [ ] | [ ] | |
-| ConvT2 | [ ] | [ ] | [ ] | |
-| ConvT3 | [ ] | [ ] | [ ] | |
-| RNN | [ ] | [ ] | [ ] | |
-| LSTM | [ ] | [ ] | [ ] | |
-| Sequential | [ ] | [ ] | [ ] | |
-| Residual | [ ] | [ ] | [ ] | |
+| Dense | [x] | [x] | [x] | `0.1.50-m2-tweensplitsparse` |
+| RMSNorm | [x] | [x] | [x] | `0.1.50-m2-tweensplitsparse` |
+| LayerNorm | [x] | [x] | [x] | `0.1.50-m2-tweensplitsparse` |
+| SwiGLU | [x] | [x] | [x] | `0.1.50-m2-tweensplitsparse` |
+| Softmax | [x] | [x] | [x] | `0.1.50-m2-tweensplitsparse` |
+| Embedding | [x] | [x] | [x] | `0.1.50-m2-tweensplitsparse` |
+| MHA | [x] | [x] | [x] | `0.1.50-m2-tweensplitsparse` |
+| CNN1 | [x] | [x] | [x] | `0.1.50-m2-tweensplitsparse` |
+| CNN2 | [x] | [x] | [x] | `0.1.50-m2-tweensplitsparse` |
+| CNN3 | [x] | [x] | [x] | `0.1.50-m2-tweensplitsparse` |
+| ConvT1 | [x] | [x] | [x] | `0.1.50-m2-tweensplitsparse` |
+| ConvT2 | [x] | [x] | [x] | `0.1.50-m2-tweensplitsparse` |
+| ConvT3 | [x] | [x] | [x] | `0.1.50-m2-tweensplitsparse` |
+| RNN | [x] | [x] | [x] | `0.1.50-m2-tweensplitsparse` |
+| LSTM | [x] | [x] | [x] | `0.1.50-m2-tweensplitsparse` |
+| Sequential | [x] | [x] | [x] | `0.1.50-m2-tweensplitsparse` |
+| Residual | [x] | [x] | [x] | `0.1.50-m2-tweensplitsparse` |
 | KMeans | [ ] | [ ] | [ ] | |
-| Mamba | [ ] | [ ] | [ ] | |
+| Mamba | [x] | [x] | [x] | `0.1.50-m2-tweensplitsparse` |
 | Metacognition | [ ] | [ ] | [ ] | |
 | GDN | [ ] | [ ] | [ ] | |
 | Parallel | [ ] | [ ] | [ ] | |
 | Stack | [ ] | [ ] | [ ] | |
 
-**Checkpoint:** bump version when this mode table advances.
+**Checkpoint:** `0.1.50-m2-tweensplitsparse` — ModeTweenSplitSparse Inside+×34 + volume 2×2×2×1 for NormalBP-signed kinds.
 
 ---
 
@@ -1563,3 +1566,4 @@ Fill as you tick rows / finish mode tables.
 | `0.1.47-m2-tweensplitfastproxy` | TweenSplitFastProxy × signed kinds | Head GradWOnly + hidden 1/(N−1) P(Wᵀgy); FPB1/FPV1/FRP1…; leaf ×34 + volume |
 | `0.1.48-m2-tweensplitlinearcache` | TweenSplitLinearCache × signed kinds | Cached linear walk; refresh every 20; LCB1/LCV1/CRP1…; leaf ×34 + volume |
 | `0.1.49-m2-tweensplitheadproxyasync` | TweenSplitHeadProxyAsync × signed kinds | Stale-proxy hidden; head GradWOnly; store Wᵀgy; HAB1/HAV1/ARPA…; leaf ×34 + volume |
+| `0.1.50-m2-tweensplitsparse` | TweenSplitSparse × signed kinds | Head GradWOnly + one hidden P(Wᵀgy); SPB1/SPV1/SRP1…; leaf ×34 + volume |
