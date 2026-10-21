@@ -82,6 +82,9 @@ Status volume_dense(architecture::Grid& g, const forward::Result& fwd, const Ten
     case architecture::OpKind::Sequential:
       st_b = sequential::backward_f32(cell->sequential_op, gy, st.input, st.pre, &gx, &dw);
       break;
+    case architecture::OpKind::Residual:
+      st_b = residual::backward_f32(cell->residual_op, gy, st.input, st.pre, &gx, &dw);
+      break;
     default: {
       std::ostringstream oss;
       oss << "runtime.backward: unsupported Op at z=" << st.coord.z << " y=" << st.coord.y
