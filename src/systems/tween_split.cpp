@@ -246,6 +246,19 @@ Status collect_cell(architecture::Cell& cell, const TensorF32& input, const Tens
   return Status::Ok();
 }
 
+Status apply_one_leaf(Leaf& leaf, const TensorF32& gy, double lr) {
+  if (leaf.dense) {
+    return apply_dense_leaf(*leaf.dense, gy, leaf.input, leaf.pre, lr);
+  }
+  if (leaf.child) {
+    return apply_child_leaf(*leaf.child, gy, leaf.input, leaf.pre, lr);
+  }
+  if (leaf.cell) {
+    return apply_cell_leaf(*leaf.cell, gy, leaf.input, leaf.pre, lr);
+  }
+  return Status::Ok();
+}
+
 Status apply_leaves(std::vector<Leaf>& leaves, const TensorF32& grad_out, double lr) {
   const int n = static_cast<int>(leaves.size());
   if (n == 0) {
@@ -259,18 +272,108 @@ Status apply_leaves(std::vector<Leaf>& leaves, const TensorF32& grad_out, double
     }
     TensorF32 gy = systems::tween::project_gap(grad_out, leaf.post.shape);
     scale_gap(&gy, scale);
-    if (leaf.dense) {
-      if (auto st = apply_dense_leaf(*leaf.dense, gy, leaf.input, leaf.pre, lr); !st) {
-        return Status::Err(st.code, std::string("tween_split dense leaf: ") + st.message);
-      }
-    } else if (leaf.child) {
-      if (auto st = apply_child_leaf(*leaf.child, gy, leaf.input, leaf.pre, lr); !st) {
-        return Status::Err(st.code, std::string("tween_split child leaf: ") + st.message);
-      }
-    } else if (leaf.cell) {
-      if (auto st = apply_cell_leaf(*leaf.cell, gy, leaf.input, leaf.pre, lr); !st) {
-        return Status::Err(st.code, std::string("tween_split cell leaf: ") + st.message);
-      }
+    if (auto st = apply_one_leaf(leaf, gy, lr); !st) {
+      return Status::Err(st.code, std::string("tween_split leaf: ") + st.message);
+    }
+  }
+  return Status::Ok();
+}
+
+Status apply_leaf_gx(Leaf& leaf, const TensorF32& gy, double lr, TensorF32* gx_out) {
+  if (!gx_out) {
+    return Status::Err(StatusCode::InvalidArgument, "tween_split: nil gx");
+  }
+  *gx_out = TensorF32{};
+  if (gy.data.empty() || leaf.input.data.empty()) {
+    return Status::Ok();
+  }
+  if (leaf.dense) {
+    TensorF32 dW;
+    if (auto st = dense::backward_f32(*leaf.dense, gy, leaf.input, leaf.pre, gx_out, &dW); !st) {
+      return st;
+    }
+    if (lr != 0.0 && !dW.data.empty()) {
+      return dense::apply_grad_sgd(leaf.dense, dW, lr);
+    }
+    return Status::Ok();
+  }
+  if (leaf.child) {
+    return stack::child_family_bp(*leaf.child, gy, leaf.input, leaf.pre, lr, gx_out);
+  }
+  if (leaf.cell) {
+    TensorF32 dW;
+    if (auto st = runtime::backward::cell(*leaf.cell, gy, leaf.input, leaf.pre, gx_out, &dW); !st) {
+      return st;
+    }
+    return apply_cell_dw(*leaf.cell, dW, lr);
+  }
+  return Status::Ok();
+}
+
+Status apply_hidden_dw(std::vector<Leaf>& leaves, int begin, int end, const TensorF32& src,
+                       double scale, double lr) {
+  for (int i = begin; i < end; ++i) {
+    Leaf& leaf = leaves[static_cast<std::size_t>(i)];
+    if (leaf.post.data.empty()) {
+      continue;
+    }
+    TensorF32 gi = systems::tween::project_gap(src, leaf.post.shape);
+    scale_gap(&gi, scale);
+    if (auto st = apply_one_leaf(leaf, gi, lr); !st) {
+      return Status::Err(st.code, std::string("tween_split hidden: ") + st.message);
+    }
+  }
+  return Status::Ok();
+}
+
+Status apply_head_proxy_leaves(std::vector<Leaf>& leaves, const TensorF32& grad_out, double lr) {
+  const int n = static_cast<int>(leaves.size());
+  if (n == 0) {
+    return Status::Ok();
+  }
+  Leaf& head = leaves[static_cast<std::size_t>(n - 1)];
+  if (head.post.data.empty()) {
+    return apply_leaves(leaves, grad_out, lr);
+  }
+  TensorF32 g_head = systems::tween::project_gap(grad_out, head.post.shape);
+  TensorF32 gx;
+  if (auto st = apply_leaf_gx(head, g_head, lr, &gx); !st) {
+    return Status::Err(st.code, std::string("tween_split head: ") + st.message);
+  }
+  if (n == 1) {
+    return Status::Ok();
+  }
+  const TensorF32& src = gx.data.empty() ? grad_out : gx;
+  const double scale = 1.0 / static_cast<double>(n - 1);
+  return apply_hidden_dw(leaves, 0, n - 1, src, scale, lr);
+}
+
+Status collect_stack_leaves(stack::Layer& ops, const TensorF32& input, std::vector<Leaf>* leaves) {
+  std::vector<stack::Child*> flat;
+  stack::flatten_ops(ops, &flat);
+  TensorF32 current = input;
+  for (stack::Child* ch : flat) {
+    if (!ch) continue;
+    TensorF32 p, o;
+    if (auto st = stack::child_forward(*ch, current, &p, &o); !st) {
+      return st;
+    }
+    if (auto st = collect_child(*ch, current, leaves); !st) {
+      return st;
+    }
+    current = std::move(o);
+  }
+  return Status::Ok();
+}
+
+Status collect_volume_leaves(architecture::Grid& g, const runtime::forward::Result& fwd,
+                             std::vector<Leaf>* leaves) {
+  for (const auto& step : fwd.steps) {
+    architecture::Cell* cell =
+        architecture::at(g, step.coord.z, step.coord.y, step.coord.x, step.coord.l);
+    if (!cell) continue;
+    if (auto st = collect_cell(*cell, step.input, step.pre, step.post, leaves); !st) {
+      return st;
     }
   }
   return Status::Ok();
@@ -279,20 +382,9 @@ Status apply_leaves(std::vector<Leaf>& leaves, const TensorF32& grad_out, double
 } // namespace
 
 Status apply_split(stack::Layer& ops, const TensorF32& grad_out, const TensorF32& input, double lr) {
-  std::vector<stack::Child*> flat;
-  stack::flatten_ops(ops, &flat);
   std::vector<Leaf> leaves;
-  TensorF32 current = input;
-  for (stack::Child* ch : flat) {
-    if (!ch) continue;
-    TensorF32 p, o;
-    if (auto st = stack::child_forward(*ch, current, &p, &o); !st) {
-      return st;
-    }
-    if (auto st = collect_child(*ch, current, &leaves); !st) {
-      return st;
-    }
-    current = std::move(o);
+  if (auto st = collect_stack_leaves(ops, input, &leaves); !st) {
+    return st;
   }
   return apply_leaves(leaves, grad_out, lr);
 }
@@ -322,15 +414,50 @@ Status train_volume_mse(architecture::Grid& g, const runtime::forward::Result& f
     return st;
   }
   std::vector<Leaf> leaves;
-  for (const auto& step : fwd.steps) {
-    architecture::Cell* cell =
-        architecture::at(g, step.coord.z, step.coord.y, step.coord.x, step.coord.l);
-    if (!cell) continue;
-    if (auto st = collect_cell(*cell, step.input, step.pre, step.post, &leaves); !st) {
-      return st;
-    }
+  if (auto st = collect_volume_leaves(g, fwd, &leaves); !st) {
+    return st;
   }
   return apply_leaves(leaves, gy, lr);
+}
+
+Status apply_head_proxy(stack::Layer& ops, const TensorF32& grad_out, const TensorF32& input,
+                        double lr) {
+  std::vector<Leaf> leaves;
+  if (auto st = collect_stack_leaves(ops, input, &leaves); !st) {
+    return st;
+  }
+  return apply_head_proxy_leaves(leaves, grad_out, lr);
+}
+
+Status apply_head_proxy_child(stack::Child& c, const TensorF32& grad_out, const TensorF32& input,
+                              double lr) {
+  std::vector<Leaf> leaves;
+  if (auto st = collect_child(c, input, &leaves); !st) {
+    return st;
+  }
+  return apply_head_proxy_leaves(leaves, grad_out, lr);
+}
+
+Status train_volume_mse_head_proxy(architecture::Grid& g, const runtime::forward::Result& fwd,
+                                   const TensorF32& target, double lr, double* loss) {
+  if (!loss) {
+    return Status::Err(StatusCode::InvalidArgument, "tween_split head_proxy: nil loss");
+  }
+  if (fwd.steps.empty()) {
+    return Status::Err(StatusCode::InvalidArgument, "tween_split head_proxy: empty forward tape");
+  }
+  if (auto st = runtime::training::mse(fwd.output, target, loss); !st) {
+    return st;
+  }
+  TensorF32 gy;
+  if (auto st = runtime::training::mse_grad(fwd.output, target, &gy); !st) {
+    return st;
+  }
+  std::vector<Leaf> leaves;
+  if (auto st = collect_volume_leaves(g, fwd, &leaves); !st) {
+    return st;
+  }
+  return apply_head_proxy_leaves(leaves, gy, lr);
 }
 
 } // namespace welvet::systems::tween_split

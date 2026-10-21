@@ -46,6 +46,7 @@
 #   ./scripts/linux_build_w2a.sh --steptweensplit-train  # Line StepTweenSplit FamilyTweenSplit + MeshTweenSplit vol
 #   ./scripts/linux_build_w2a.sh --tweenalt-train  # ModeTweenAlt Split→Tween + volume
 #   ./scripts/linux_build_w2a.sh --steptweenalt-train  # Line StepTweenAlt + MeshTweenAlt vol
+#   ./scripts/linux_build_w2a.sh --tweensplitheadproxy-train  # HeadProxy head Jᵀgy + volume
 #   ./scripts/linux_build_w2a.sh --go-v-cpp   # same as default
 #   ./scripts/linux_build_w2a.sh --all        # entire w2a go test ./...
 #   BUILD_DIR=/tmp/welvet-build ./scripts/linux_build_w2a.sh
@@ -105,8 +106,9 @@ for arg in "$@"; do
     --steptweensplit-train) MODE="steptweensplit_train" ;;
     --tweenalt-train) MODE="tweenalt_train" ;;
     --steptweenalt-train) MODE="steptweenalt_train" ;;
+    --tweensplitheadproxy-train) MODE="tweensplitheadproxy_train" ;;
     -h|--help)
-      sed -n '2,50p' "$0"
+      sed -n '2,51p' "$0"
       exit 0
       ;;
     *)
@@ -313,6 +315,10 @@ case "$MODE" in
   steptweenalt_train)
     echo "==> w2a go_v_cpp StepTweenAlt train (Line FamilyTweenAlt + MeshTweenAlt volume)"
     go test ./tests/go_v_cpp/ -run '^TestGoVCppStepTweenAltTrain$' -v -count=1
+    ;;
+  tweensplitheadproxy_train)
+    echo "==> w2a go_v_cpp TweenSplitHeadProxy train (head Jᵀgy + volume)"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppTweenSplitHeadProxyTrain$' -v -count=1
     ;;
   all)
     echo "==> w2a full suite (go test ./...)"

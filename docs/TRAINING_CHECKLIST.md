@@ -15,7 +15,7 @@ Canonical enum: Go `layers/parallel/train_mode.go` (`TrainMode`).
 
 Tick `[x]` when done. Put the **release tag** in **Ver** when that row (or the whole mode table) is signed.
 
-**Current engine:** `0.1.44-m2-steptweenalt`
+**Current engine:** `0.1.45-m2-tweensplitheadproxy`
 
 ---
 
@@ -853,33 +853,36 @@ Ship: `runtime/line` Credit::FamilyTweenAlt on pop (`apply_alt_child` Split→Tw
 
 ## 14 — TweenSplitHeadProxy
 
+Ship: `systems::tween_split::apply_head_proxy` + `runtime/tween_split_head_proxy_train` — head full Jᵀg_y (+ gx); hidden 1/(N−1) P(gx_head) @ full lr; wire `HPB1`/`HPV1`/`HRP1`…; w2a `--tweensplitheadproxy-train`.  
+CNN2/3 & ConvT2/3 share CNN1/ConvT1 path.
+
 | Layer | Inside node | 3D volumetric | Fully signed off | Ver |
 |---|:---:|:---:|:---:|---|
-| Dense | [ ] | [ ] | [ ] | |
-| RMSNorm | [ ] | [ ] | [ ] | |
-| LayerNorm | [ ] | [ ] | [ ] | |
-| SwiGLU | [ ] | [ ] | [ ] | |
-| Softmax | [ ] | [ ] | [ ] | |
-| Embedding | [ ] | [ ] | [ ] | |
-| MHA | [ ] | [ ] | [ ] | |
-| CNN1 | [ ] | [ ] | [ ] | |
-| CNN2 | [ ] | [ ] | [ ] | |
-| CNN3 | [ ] | [ ] | [ ] | |
-| ConvT1 | [ ] | [ ] | [ ] | |
-| ConvT2 | [ ] | [ ] | [ ] | |
-| ConvT3 | [ ] | [ ] | [ ] | |
-| RNN | [ ] | [ ] | [ ] | |
-| LSTM | [ ] | [ ] | [ ] | |
-| Sequential | [ ] | [ ] | [ ] | |
-| Residual | [ ] | [ ] | [ ] | |
+| Dense | [x] | [x] | [x] | `0.1.45-m2-tweensplitheadproxy` |
+| RMSNorm | [x] | [x] | [x] | `0.1.45-m2-tweensplitheadproxy` |
+| LayerNorm | [x] | [x] | [x] | `0.1.45-m2-tweensplitheadproxy` |
+| SwiGLU | [x] | [x] | [x] | `0.1.45-m2-tweensplitheadproxy` |
+| Softmax | [x] | [x] | [x] | `0.1.45-m2-tweensplitheadproxy` |
+| Embedding | [x] | [x] | [x] | `0.1.45-m2-tweensplitheadproxy` |
+| MHA | [x] | [x] | [x] | `0.1.45-m2-tweensplitheadproxy` |
+| CNN1 | [x] | [x] | [x] | `0.1.45-m2-tweensplitheadproxy` |
+| CNN2 | [x] | [x] | [x] | `0.1.45-m2-tweensplitheadproxy` |
+| CNN3 | [x] | [x] | [x] | `0.1.45-m2-tweensplitheadproxy` |
+| ConvT1 | [x] | [x] | [x] | `0.1.45-m2-tweensplitheadproxy` |
+| ConvT2 | [x] | [x] | [x] | `0.1.45-m2-tweensplitheadproxy` |
+| ConvT3 | [x] | [x] | [x] | `0.1.45-m2-tweensplitheadproxy` |
+| RNN | [x] | [x] | [x] | `0.1.45-m2-tweensplitheadproxy` |
+| LSTM | [x] | [x] | [x] | `0.1.45-m2-tweensplitheadproxy` |
+| Sequential | [x] | [x] | [x] | `0.1.45-m2-tweensplitheadproxy` |
+| Residual | [x] | [x] | [x] | `0.1.45-m2-tweensplitheadproxy` |
 | KMeans | [ ] | [ ] | [ ] | |
-| Mamba | [ ] | [ ] | [ ] | |
+| Mamba | [x] | [x] | [x] | `0.1.45-m2-tweensplitheadproxy` |
 | Metacognition | [ ] | [ ] | [ ] | |
 | GDN | [ ] | [ ] | [ ] | |
 | Parallel | [ ] | [ ] | [ ] | |
 | Stack | [ ] | [ ] | [ ] | |
 
-**Checkpoint:** bump version when this mode table advances.
+**Checkpoint:** `0.1.45-m2-tweensplitheadproxy` — ModeTweenSplitHeadProxy Inside+×34 + volume 2×2×2×1 for NormalBP-signed kinds.
 
 ---
 
@@ -1543,3 +1546,4 @@ Fill as you tick rows / finish mode tables.
 | `0.1.42-m2-steptweensplit` | StepTweenSplit × signed kinds | Line FamilyTweenSplit 1/N @ full lr; STS1; 3D MeshTweenSplit vol (= TweenSplit) |
 | `0.1.43-m2-tweenalt` | TweenAlt × signed kinds | Split→Tween AltTimes=1; TAB1/TAV1/TRA1…; leaf ×34 + volume |
 | `0.1.44-m2-steptweenalt` | StepTweenAlt × signed kinds | Line FamilyTweenAlt Split→Tween; STA1; 3D MeshTweenAlt vol (= TweenAlt) |
+| `0.1.45-m2-tweensplitheadproxy` | TweenSplitHeadProxy × signed kinds | Head Jᵀgy + hidden 1/(N−1) P(gx); HPB1/HPV1/HRP1…; leaf ×34 + volume |

@@ -22,4 +22,12 @@ Status apply_split_child(stack::Child& c, const TensorF32& grad_out, const Tenso
 Status train_volume_mse(architecture::Grid& g, const runtime::forward::Result& fwd,
                         const TensorF32& target, double lr, double* loss);
 
+// ModeTweenSplitHeadProxy: head full Jᵀg_y (+ gx); hidden 1/(N-1) P(gx_head).
+Status apply_head_proxy(stack::Layer& ops, const TensorF32& grad_out, const TensorF32& input,
+                        double lr);
+Status apply_head_proxy_child(stack::Child& c, const TensorF32& grad_out, const TensorF32& input,
+                              double lr);
+Status train_volume_mse_head_proxy(architecture::Grid& g, const runtime::forward::Result& fwd,
+                                   const TensorF32& target, double lr, double* loss);
+
 } // namespace welvet::systems::tween_split
