@@ -15,7 +15,7 @@ Canonical enum: Go `layers/parallel/train_mode.go` (`TrainMode`).
 
 Tick `[x]` when done. Put the **release tag** in **Ver** when that row (or the whole mode table) is signed.
 
-**Current engine:** `0.1.69-m2-kmeans-cascade`
+**Current engine:** `0.1.70-m2-shadow`
 
 ---
 
@@ -1499,35 +1499,36 @@ CNN2/3 & ConvT2/3 share CNN1/ConvT1 path.
 ## 31 — Shadow
 
 Needs Freeze + CamKit (frozen teacher + KD).
-Ship: `runtime/parallel_train` BranchMode Shadow + CamKit ShadowCoef KD; wire `SHB1`; w2a `--shadow-train`.
+Ship: `runtime/parallel_train` BranchMode Shadow + CamKit ShadowCoef KD; top-level Stack ModeShadow ≡ Freeze (`FRB1`/`FR*` wire); w2a `--shadow-train`.
+CNN2/3 & ConvT2/3 share CNN1/ConvT1 path (volume).
 
 | Layer | Inside node | 3D volumetric | Fully signed off | Ver |
 |---|:---:|:---:|:---:|---|
-| Dense | [ ] | [ ] | [ ] | |
-| RMSNorm | [ ] | [ ] | [ ] | |
-| LayerNorm | [ ] | [ ] | [ ] | |
-| SwiGLU | [ ] | [ ] | [ ] | |
-| Softmax | [ ] | [ ] | [ ] | |
-| Embedding | [ ] | [ ] | [ ] | |
-| MHA | [ ] | [ ] | [ ] | |
-| CNN1 | [ ] | [ ] | [ ] | |
-| CNN2 | [ ] | [ ] | [ ] | |
-| CNN3 | [ ] | [ ] | [ ] | |
-| ConvT1 | [ ] | [ ] | [ ] | |
-| ConvT2 | [ ] | [ ] | [ ] | |
-| ConvT3 | [ ] | [ ] | [ ] | |
-| RNN | [ ] | [ ] | [ ] | |
-| LSTM | [ ] | [ ] | [ ] | |
-| Sequential | [ ] | [ ] | [ ] | |
-| Residual | [ ] | [ ] | [ ] | |
-| KMeans | [x] | [ ] | [x] | `0.1.69-m2-kmeans-cascade` |
-| Mamba | [ ] | [ ] | [ ] | |
-| Metacognition | [x] | [ ] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
-| GDN | [x] | [ ] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
+| Dense | [x] | [x] | [x] | `0.1.70-m2-shadow` |
+| RMSNorm | [x] | [x] | [x] | `0.1.70-m2-shadow` |
+| LayerNorm | [x] | [x] | [x] | `0.1.70-m2-shadow` |
+| SwiGLU | [x] | [x] | [x] | `0.1.70-m2-shadow` |
+| Softmax | [x] | [x] | [x] | `0.1.70-m2-shadow` |
+| Embedding | [x] | [x] | [x] | `0.1.70-m2-shadow` |
+| MHA | [x] | [x] | [x] | `0.1.70-m2-shadow` |
+| CNN1 | [x] | [x] | [x] | `0.1.70-m2-shadow` |
+| CNN2 | [x] | [x] | [x] | `0.1.70-m2-shadow` |
+| CNN3 | [x] | [x] | [x] | `0.1.70-m2-shadow` |
+| ConvT1 | [x] | [x] | [x] | `0.1.70-m2-shadow` |
+| ConvT2 | [x] | [x] | [x] | `0.1.70-m2-shadow` |
+| ConvT3 | [x] | [x] | [x] | `0.1.70-m2-shadow` |
+| RNN | [x] | [x] | [x] | `0.1.70-m2-shadow` |
+| LSTM | [x] | [x] | [x] | `0.1.70-m2-shadow` |
+| Sequential | [x] | [x] | [x] | `0.1.70-m2-shadow` |
+| Residual | [x] | [x] | [x] | `0.1.70-m2-shadow` |
+| KMeans | [x] | [x] | [x] | `0.1.70-m2-shadow` |
+| Mamba | [x] | [x] | [x] | `0.1.70-m2-shadow` |
+| Metacognition | [x] | [x] | [x] | `0.1.70-m2-shadow` |
+| GDN | [x] | [x] | [x] | `0.1.70-m2-shadow` |
 | Parallel | [x] | [ ] | [x] | `0.1.62-m2-shadow` |
-| Stack | [x] | [ ] | [x] | `0.1.67-m2-meta-gdn-stack-cascade` |
+| Stack | [x] | [x] | [x] | `0.1.70-m2-shadow` |
 
-**Checkpoint:** `0.1.62-m2-shadow` — Parallel Dense Add BranchMode Shadow KD Inside+×34 (3D Parallel gap).
+**Checkpoint:** `0.1.70-m2-shadow` — ModeShadow Inside+×34 + volume 2×2×2×1 for Freeze-signed kinds; Parallel KD Inside+Fully (3D Parallel gap).
 
 ---
 
@@ -1607,6 +1608,7 @@ Fill as you tick rows / finish mode tables.
 
 | Ver | Mode / layers | Notes |
 |---|---|---|
+| `0.1.70-m2-shadow` | Shadow ModeShadow cascade | Clone Freeze leaf+vol across all signed kinds (ModeShadow≡Freeze); Parallel KD kept; 3D Parallel gap |
 | `0.1.69-m2-kmeans-cascade` | KMeans train-mode cascade | Clone Meta leaf+vol across Step/Tween/Mesh/Freeze/Shadow/Adv/Memory; Linear GradIn Backward; Parallel BranchMode KMeans gap |
 | `0.1.68-m2-kmeans-nbp` | NormalBP KMeans | Soft-assignment leaf+vol ×34; KMB1/KMV1 |
 | `0.1.67-m2-meta-gdn-stack-cascade` | Meta/GDN/Stack cascade close | Linear-family Meta+Stack 3D exact_bit; TweenAlt Meta ×34 Fully; Parallel Meta/GDN Adv/Memory/Shadow 3D still gap |
