@@ -1,6 +1,6 @@
 # welvet.cpp gap census
 
-**Version `0.1.32-m2-residual-nbp`** — see main [README](README.md) scoreboard (**58 / 100** engine + **13 / 100** extensions = **71 / 200**).
+**Version `0.1.33-m2-mamba-nbp`** — see main [README](README.md) scoreboard (**58 / 100** engine + **13 / 100** extensions = **71 / 200**).
 
 SIMD/GEMV code under `include/welvet/simd/` + `include/welvet/imported/` was **copied** from `welvet-to-rust_n_cpp/welvet_cpp` (kernels only — not that tree’s docs).
 
@@ -21,6 +21,7 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 ./scripts/linux_build_w2a.sh --lstm-train
 ./scripts/linux_build_w2a.sh --sequential-train
 ./scripts/linux_build_w2a.sh --residual-train
+./scripts/linux_build_w2a.sh --mamba-train
 ./scripts/linux_build_w2a.sh --parallel
 ./scripts/linux_build_w2a.sh --seqmix
 ./scripts/linux_build_w2a.sh --all
@@ -29,7 +30,7 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 ./build/welvet_dense_fwd --gaps
 ```
 
-## Done (through M2.12 Residual NormalBP)
+## Done (through M2.13 Mamba NormalBP)
 
 | ID | Detail |
 |---|---|
@@ -47,10 +48,11 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 | **LSTM NormalBP** | BPTT 4-gate Dense + bias SGD FormatNone×34; volume Step; w2a `LSB1`/`LSV1` |
 | **Sequential NormalBP** | Reverse Dense Dim→Dim chain + ApplySGD FormatNone×34; volume Step; w2a `SQB1`/`SQV1` |
 | **Residual NormalBP** | F reverse Dense + skip grad + ApplySGD FormatNone×34; volume Step; w2a `REB1`/`REV1` |
+| **Mamba NormalBP** | Scan BPTT + In/Out Dense + ALog/DSkip SGD FormatNone×34; volume Step; w2a `MBB1`/`MBV1` |
 | Transformer / composition | Sequential+Residual NormalBP, seqmix Kind, **Parallel Dense×7 combines** |
-| Extended | ConvT, KMeans, Mamba, Metacognition, GDN |
+| Extended | ConvT, KMeans, Mamba NormalBP, Metacognition, GDN |
 | CNN / RNN / LSTM | FormatNone×34 forwards |
-| ABI wires | … / SQB1 / SQV1 / REB1 / REV1 |
+| ABI wires | … / REB1 / REV1 / MBB1 / MBV1 |
 
 ## gap? — remaining
 

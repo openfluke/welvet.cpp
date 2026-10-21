@@ -11,6 +11,7 @@
 #include "welvet/lstm.hpp"
 #include "welvet/mha.hpp"
 #include "welvet/rmsnorm.hpp"
+#include "welvet/mamba.hpp"
 #include "welvet/residual.hpp"
 #include "welvet/rnn.hpp"
 #include "welvet/sequential.hpp"
@@ -131,6 +132,9 @@ Status sgd_dense(architecture::Grid& g, const forward::Result& fwd, const backwa
       break;
     case architecture::OpKind::Residual:
       st_a = residual::apply_grad_sgd(&cell->residual_op, *it->second, lr);
+      break;
+    case architecture::OpKind::Mamba:
+      st_a = mamba::apply_grad_sgd(&cell->mamba_op, *it->second, lr);
       break;
     default:
       return Status::Err(StatusCode::InvalidArgument, "training: SGD unsupported cell Op");

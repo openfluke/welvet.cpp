@@ -11,6 +11,7 @@
 #include "welvet/layer.hpp"
 #include "welvet/layernorm.hpp"
 #include "welvet/lstm.hpp"
+#include "welvet/mamba.hpp"
 #include "welvet/mha.hpp"
 #include "welvet/rmsnorm.hpp"
 #include "welvet/residual.hpp"
@@ -53,6 +54,7 @@ enum class OpKind : int32_t {
   LSTM = 15,
   Sequential = 16,
   Residual = 17,
+  Mamba = 18,
   // gap? other layer ops
 };
 
@@ -77,6 +79,7 @@ struct Cell {
   lstm::Layer lstm_op;           // valid when op_kind == LSTM
   sequential::Layer sequential_op; // valid when op_kind == Sequential
   residual::Layer residual_op;     // valid when op_kind == Residual
+  mamba::Layer mamba_op;           // valid when op_kind == Mamba
 
   bool is_remote_link = false;
   int target_z = 0, target_y = 0, target_x = 0, target_l = 0;
@@ -140,5 +143,6 @@ Status bind_rnn(Grid& g, int z, int y, int x, int l, rnn::Layer op);
 Status bind_lstm(Grid& g, int z, int y, int x, int l, lstm::Layer op);
 Status bind_sequential(Grid& g, int z, int y, int x, int l, sequential::Layer op);
 Status bind_residual(Grid& g, int z, int y, int x, int l, residual::Layer op);
+Status bind_mamba(Grid& g, int z, int y, int x, int l, mamba::Layer op);
 
 } // namespace welvet::architecture

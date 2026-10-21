@@ -15,7 +15,7 @@ Canonical enum: Go `layers/parallel/train_mode.go` (`TrainMode`).
 
 Tick `[x]` when done. Put the **release tag** in **Ver** when that row (or the whole mode table) is signed.
 
-**Current engine:** `0.1.32-m2-residual-nbp`
+**Current engine:** `0.1.33-m2-mamba-nbp`
 
 ---
 
@@ -212,6 +212,19 @@ Timing: same `--bench=N` / spd%Δ convention. F reverse Dense + skip grad; loom 
 | 3–5 | Volume 1×1×1×1 / chain / ×34 | [x] | y=F(x)+x |
 | 6–7 | Volume 2×2×2×1 / 2×1×1×1×34 | [x] | scaled init for 8-hop |
 
+## w2a Go↔C++ (Mamba NormalBP) — sign-off evidence
+
+Run: `./scripts/linux_build_w2a.sh --mamba-train`  
+Wire: `MBB1`/`MBBO` (leaf); `MBV1`/`MBVO` (volume). Exact_bit vs Go.  
+Timing: same `--bench=N` / spd%Δ convention. Scan BPTT + In/Out Dense; loom In|Out|ALog|DSkip.
+
+| # | Case | Status | Notes |
+|---|---|:---:|---|
+| 1 | Leaf Float32 | [x] | exact_bit + speed |
+| 2 | Leaf ×34 | [x] | exact_bit spectrum |
+| 3–5 | Volume 1×1×1×1 / chain / ×34 | [x] | shape-preserving D |
+| 6–7 | Volume 2×2×2×1 / 2×1×1×1×34 | [x] | scaled init for 8-hop |
+
 ---
 
 ## 1 — NormalBP
@@ -238,7 +251,7 @@ Chain-rule Backward + ApplyGradSGD. Start here. Dense first.
 | Sequential | [x] | [x] | [x] | `0.1.31-m2-sequential-nbp` |
 | Residual | [x] | [x] | [x] | `0.1.32-m2-residual-nbp` |
 | KMeans | [ ] | [ ] | [ ] | |
-| Mamba | [ ] | [ ] | [ ] | |
+| Mamba | [x] | [x] | [x] | `0.1.33-m2-mamba-nbp` |
 | Metacognition | [ ] | [ ] | [ ] | |
 | GDN | [ ] | [ ] | [ ] | |
 | Parallel | [ ] | [ ] | [ ] | |

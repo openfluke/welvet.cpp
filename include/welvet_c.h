@@ -341,6 +341,15 @@ WELVET_API welvet_status welvet_mamba_forward_f32(
     int32_t batch, int32_t seq, int32_t d_model, int32_t d_state, int32_t expand, int32_t dtype,
     int32_t backend, const float* packed, const float* x, float* pre, float* post);
 
+/* Mamba NormalBP leaf. use_target: 0=gradOut on post, 1=MSE target. lr==0 skips SGD.
+ * packed/dW/W_after: InProj|OutProj|ALog|DSkip.
+ */
+WELVET_API welvet_status welvet_mamba_normalbp_f32(
+    int32_t batch, int32_t seq, int32_t d_model, int32_t d_state, int32_t expand, int32_t dtype,
+    int32_t backend, const float* packed, const float* x, const float* grad_or_target,
+    int32_t use_target, double lr, float* pre, float* post, float* dX, float* dW, float* W_after,
+    double* loss);
+
 /* Metacognition Observed Dense Dim→Dim + default stability rules (first fwd = Dense while cool).
  * packed: [Dim×Dim]; x: [batch*seq*dim] (seq=1 → [batch*dim]); pre/post same layout.
  */

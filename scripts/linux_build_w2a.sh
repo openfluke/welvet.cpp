@@ -34,6 +34,7 @@
 #   ./scripts/linux_build_w2a.sh --lstm-train # LSTM NormalBP leaf + volumetric
 #   ./scripts/linux_build_w2a.sh --sequential-train # Sequential NormalBP leaf + volumetric
 #   ./scripts/linux_build_w2a.sh --residual-train # Residual NormalBP leaf + volumetric
+#   ./scripts/linux_build_w2a.sh --mamba-train # Mamba NormalBP leaf + volumetric
 #   ./scripts/linux_build_w2a.sh --go-v-cpp   # same as default
 #   ./scripts/linux_build_w2a.sh --all        # entire w2a go test ./...
 #   BUILD_DIR=/tmp/welvet-build ./scripts/linux_build_w2a.sh
@@ -81,8 +82,9 @@ for arg in "$@"; do
     --lstm-train) MODE="lstm_train" ;;
     --sequential-train) MODE="sequential_train" ;;
     --residual-train) MODE="residual_train" ;;
+    --mamba-train) MODE="mamba_train" ;;
     -h|--help)
-      sed -n '2,44p' "$0"
+      sed -n '2,45p' "$0"
       exit 0
       ;;
     *)
@@ -241,6 +243,10 @@ case "$MODE" in
   residual_train)
     echo "==> w2a go_v_cpp Residual NormalBP (leaf + volumetric)"
     go test ./tests/go_v_cpp/ -run '^TestGoVCppResidualTrain$' -v -count=1
+    ;;
+  mamba_train)
+    echo "==> w2a go_v_cpp Mamba NormalBP (leaf + volumetric)"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppMambaTrain$' -v -count=1
     ;;
   all)
     echo "==> w2a full suite (go test ./...)"
