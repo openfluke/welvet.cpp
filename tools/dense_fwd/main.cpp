@@ -56,6 +56,7 @@
 //   STH1 — Line StepTweenSplitHeadProxy (thin Stack + HeadProxy on pop)
 //   STL1 — Line StepTweenSplitLinear (thin Stack + Linear on pop)
 //   STF1 — Line StepTweenSplitFastProxy (thin Stack + FastProxy on pop)
+//   SLC1 — Line StepTweenSplitLinearCache (thin Stack + LinearCache on pop)
 //   MBP1 — MeshBP FamilyBP (runtime/step Forward×ticks + Backward + SGD)
 //   MTW1 — MeshTween FamilyTween (mesh-clock projected local @ lr*0.5)
 //   MTC1 — MeshTweenChain FamilyBP (= MeshBP under mesh clock)
@@ -38035,6 +38036,135 @@ int run_steptweensplitfastproxy(int bench_iters) {
   return 0;
 }
 
+int run_steptweensplitlinearcache(int bench_iters) {
+  int32_t n_children = 0, n_ticks = 0, batch = 0;
+  double lr = 0.0;
+  if (!read_exact(&n_children, 1) || !read_exact(&n_ticks, 1) || !read_exact(&batch, 1) ||
+      !read_exact(&lr, 1)) {
+    std::fprintf(stderr, "welvet_dense_fwd: short SLC1 header\n");
+    return 2;
+  }
+  if (n_children <= 0 || n_ticks <= 0 || batch <= 0) return 1;
+
+  welvet::stack::Layer stack;
+  stack.meta.type = welvet::LayerType::Stack;
+  stack.backend = welvet::Backend::CPUTiled;
+  stack.children.resize(static_cast<std::size_t>(n_children));
+  for (int32_t i = 0; i < n_children; ++i) {
+    if (!read_child(&stack.children[static_cast<std::size_t>(i)])) {
+      std::fprintf(stderr, "welvet_dense_fwd: bad SLC1 child %d\n", i);
+      return 2;
+    }
+  }
+
+  int32_t x_ndim = 0, t_ndim = 0;
+  if (!read_exact(&x_ndim, 1) || x_ndim <= 0 || x_ndim > 4) return 2;
+  std::vector<int32_t> x_shape(static_cast<std::size_t>(x_ndim));
+  if (!read_exact(x_shape.data(), x_shape.size())) return 2;
+  if (!read_exact(&t_ndim, 1) || t_ndim <= 0 || t_ndim > 4) return 2;
+  std::vector<int32_t> t_shape(static_cast<std::size_t>(t_ndim));
+  if (!read_exact(t_shape.data(), t_shape.size())) return 2;
+  const int x_len = prod_shape(x_shape);
+  const int t_len = prod_shape(t_shape);
+
+  std::vector<std::vector<float>> xs(static_cast<std::size_t>(n_ticks));
+  std::vector<std::vector<float>> tgts(static_cast<std::size_t>(n_ticks));
+  for (int32_t t = 0; t < n_ticks; ++t) {
+    xs[static_cast<std::size_t>(t)].resize(static_cast<std::size_t>(x_len));
+    tgts[static_cast<std::size_t>(t)].resize(static_cast<std::size_t>(t_len));
+    if (!read_exact(xs[static_cast<std::size_t>(t)].data(),
+                    xs[static_cast<std::size_t>(t)].size()) ||
+        !read_exact(tgts[static_cast<std::size_t>(t)].data(),
+                    tgts[static_cast<std::size_t>(t)].size())) {
+      return 2;
+    }
+  }
+  (void)batch;
+
+  auto once = [&]() -> welvet::Status {
+    // Rebuild stack from current children (already mutated) — for bench, re-read not available.
+    // Bench path: run train on a clone of weights is heavy; skip re-init and just time train once.
+    welvet::runtime::line::State st;
+    double loss = 0.0;
+    for (int32_t t = 0; t < n_ticks; ++t) {
+      welvet::TensorF32 xin;
+      xin.shape.assign(x_shape.begin(), x_shape.end());
+      xin.data = xs[static_cast<std::size_t>(t)];
+      welvet::TensorF32 tgt;
+      tgt.shape.assign(t_shape.begin(), t_shape.end());
+      tgt.data = tgts[static_cast<std::size_t>(t)];
+      double tick_loss = 0.0;
+      if (auto s = welvet::runtime::line::train_mse(stack, &st, xin, tgt, lr, &tick_loss,
+                                         welvet::runtime::line::Credit::FamilyTweenSplitLinearCache); !s) {
+        return s;
+      }
+      loss = tick_loss;
+    }
+    (void)loss;
+    return welvet::Status::Ok();
+  };
+
+  double loss = 0.0;
+  if (bench_iters > 0) {
+    // Warmup + timed (mutates stack; acceptable for speed smoke).
+    for (int i = 0; i < 2; ++i) {
+      auto st = once();
+      if (!st) {
+        std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message.c_str());
+        return 1;
+      }
+    }
+    const auto t0 = std::chrono::steady_clock::now();
+    for (int i = 0; i < bench_iters; ++i) {
+      auto st = once();
+      if (!st) {
+        std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message.c_str());
+        return 1;
+      }
+    }
+    const auto t1 = std::chrono::steady_clock::now();
+    const int64_t ns =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(t1 - t0).count();
+    const int32_t iters32 = static_cast<int32_t>(bench_iters);
+    if (!write_exact("WVB1", 4) || !write_exact(&ns, 1) || !write_exact(&iters32, 1)) return 2;
+  } else {
+    welvet::runtime::line::State st;
+    for (int32_t t = 0; t < n_ticks; ++t) {
+      welvet::TensorF32 xin;
+      xin.shape.assign(x_shape.begin(), x_shape.end());
+      xin.data = xs[static_cast<std::size_t>(t)];
+      welvet::TensorF32 tgt;
+      tgt.shape.assign(t_shape.begin(), t_shape.end());
+      tgt.data = tgts[static_cast<std::size_t>(t)];
+      double tick_loss = 0.0;
+      auto s = welvet::runtime::line::train_mse(stack, &st, xin, tgt, lr, &tick_loss,
+                                         welvet::runtime::line::Credit::FamilyTweenSplitLinearCache);
+      if (!s) {
+        std::fprintf(stderr, "welvet_dense_fwd: %s\n", s.message.c_str());
+        return 1;
+      }
+      loss = tick_loss;
+    }
+  }
+
+  if (!write_magic("SLCO") || !write_exact(&loss, 1) || !write_exact(&n_children, 1)) return 2;
+  for (int32_t i = 0; i < n_children; ++i) {
+    const auto& ch = stack.children[static_cast<std::size_t>(i)];
+    const int32_t nw = welvet::stack::child_grad_w_size(ch);
+    std::vector<float> Wa(static_cast<std::size_t>(nw));
+    if (nw > 0) {
+      auto est = welvet::stack::child_export_f32(ch, Wa.data());
+      if (!est) {
+        std::fprintf(stderr, "welvet_dense_fwd: %s\n", est.message.c_str());
+        return 1;
+      }
+    }
+    if (!write_exact(&nw, 1)) return 2;
+    if (nw > 0 && !write_exact(Wa.data(), Wa.size())) return 2;
+  }
+  return 0;
+}
+
 int run_steptweenalt(int bench_iters) {
   int32_t n_children = 0, n_ticks = 0, batch = 0;
   double lr = 0.0;
@@ -38390,6 +38520,9 @@ int main(int argc, char** argv) {
   }
   if (std::memcmp(magic, "STF1", 4) == 0) {
     return run_steptweensplitfastproxy(bench_iters);
+  }
+  if (std::memcmp(magic, "SLC1", 4) == 0) {
+    return run_steptweensplitlinearcache(bench_iters);
   }
   if (std::memcmp(magic, "MBP1", 4) == 0) {
     return run_meshbp(bench_iters);
@@ -38991,7 +39124,7 @@ int main(int argc, char** argv) {
                          "WVC1/2/3/WVT1/2/3/WRN1/WLS1/WEM1/WSM1/WKM1/WSQ1/WRE1/WMB1/WMC1/WGD1/WSX1/"
                          "WPL1/WDB1/WVN1/WRB1/WRV1/WLB1/WLV1/WSB1/WSV1/WXB1/WXV1/WEB1/WEV1/"
                          "WHB1/WHV1/C1B1/C1V1/C2B1/C2V1/C3B1/C3V1/T1B1/T1V1/T2B1/T2V1/T3B1/T3V1/"
-                         "RNB1/RNV1/LSB1/LSV1/SQB1/SQV1/REB1/REV1/MBB1/MBV1/STB1/MBP1/MTW1/MTC1/MTS1/MTA1/MTF1/MSS1/TWB1/TWV1/TRV1…MBTV/TCB1/TCV1/TRC1…MBTC/STW1/STC1/STS1/STA1/STH1/STL1/STF1/TSB1/TSP1/TAB1/TAV1/HPB1/HPV1/LLB1/LLV1/FPB1/FPV1/LCB1/LCV1/HAB1/HAV1/SPB1/SPV1)\n");
+                         "RNB1/RNV1/LSB1/LSV1/SQB1/SQV1/REB1/REV1/MBB1/MBV1/STB1/MBP1/MTW1/MTC1/MTS1/MTA1/MTF1/MSS1/TWB1/TWV1/TRV1…MBTV/TCB1/TCV1/TRC1…MBTC/STW1/STC1/STS1/STA1/STH1/STL1/STF1/SLC1/TSB1/TSP1/TAB1/TAV1/HPB1/HPV1/LLB1/LLV1/FPB1/FPV1/LCB1/LCV1/HAB1/HAV1/SPB1/SPV1)\n");
     return 2;
   }
   return run_dense(v1, v2, v3, bench_iters);

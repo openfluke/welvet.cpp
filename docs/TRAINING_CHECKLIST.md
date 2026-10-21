@@ -1315,35 +1315,37 @@ Ship: `runtime/line` `Credit::FamilyTweenSplitFastProxy` on pop (`apply_fast_pro
 
 ## 27 — StepTweenSplitLinearCache
 
-Needs Line + TweenSplitLinearCache.
+Needs Line + TweenSplitLinearCache.  
+Ship: `runtime/line` `Credit::FamilyTweenSplitLinearCache` on pop (`apply_linear_cache_child`, Dense hops accel=nil); wire `SLC1`/`SLCO`; w2a `--steptweensplitlinearcache-train`.  
+**3D volumetric** = ModeTweenSplitLinearCache / TweenSplitLinearCache volume credit (`LCV1`/`CRP1`…). CNN2/3 & ConvT2/3 share CNN1/ConvT1 path.
 
 | Layer | Inside node | 3D volumetric | Fully signed off | Ver |
 |---|:---:|:---:|:---:|---|
-| Dense | [ ] | [ ] | [ ] | |
-| RMSNorm | [ ] | [ ] | [ ] | |
-| LayerNorm | [ ] | [ ] | [ ] | |
-| SwiGLU | [ ] | [ ] | [ ] | |
-| Softmax | [ ] | [ ] | [ ] | |
-| Embedding | [ ] | [ ] | [ ] | |
-| MHA | [ ] | [ ] | [ ] | |
-| CNN1 | [ ] | [ ] | [ ] | |
-| CNN2 | [ ] | [ ] | [ ] | |
-| CNN3 | [ ] | [ ] | [ ] | |
-| ConvT1 | [ ] | [ ] | [ ] | |
-| ConvT2 | [ ] | [ ] | [ ] | |
-| ConvT3 | [ ] | [ ] | [ ] | |
-| RNN | [ ] | [ ] | [ ] | |
-| LSTM | [ ] | [ ] | [ ] | |
-| Sequential | [ ] | [ ] | [ ] | |
-| Residual | [ ] | [ ] | [ ] | |
+| Dense | [x] | [x] | [x] | `0.1.56-m2-steptweensplitlinearcache` |
+| RMSNorm | [x] | [x] | [x] | `0.1.56-m2-steptweensplitlinearcache` |
+| LayerNorm | [x] | [x] | [x] | `0.1.56-m2-steptweensplitlinearcache` |
+| SwiGLU | [x] | [x] | [x] | `0.1.56-m2-steptweensplitlinearcache` |
+| Softmax | [x] | [x] | [x] | `0.1.56-m2-steptweensplitlinearcache` |
+| Embedding | [x] | [x] | [x] | `0.1.56-m2-steptweensplitlinearcache` |
+| MHA | [x] | [x] | [x] | `0.1.56-m2-steptweensplitlinearcache` |
+| CNN1 | [x] | [x] | [x] | `0.1.56-m2-steptweensplitlinearcache` |
+| CNN2 | [x] | [x] | [x] | `0.1.56-m2-steptweensplitlinearcache` |
+| CNN3 | [x] | [x] | [x] | `0.1.56-m2-steptweensplitlinearcache` |
+| ConvT1 | [x] | [x] | [x] | `0.1.56-m2-steptweensplitlinearcache` |
+| ConvT2 | [x] | [x] | [x] | `0.1.56-m2-steptweensplitlinearcache` |
+| ConvT3 | [x] | [x] | [x] | `0.1.56-m2-steptweensplitlinearcache` |
+| RNN | [x] | [x] | [x] | `0.1.56-m2-steptweensplitlinearcache` |
+| LSTM | [x] | [x] | [x] | `0.1.56-m2-steptweensplitlinearcache` |
+| Sequential | [x] | [x] | [x] | `0.1.56-m2-steptweensplitlinearcache` |
+| Residual | [x] | [x] | [x] | `0.1.56-m2-steptweensplitlinearcache` |
 | KMeans | [ ] | [ ] | [ ] | |
-| Mamba | [ ] | [ ] | [ ] | |
+| Mamba | [x] | [x] | [x] | `0.1.56-m2-steptweensplitlinearcache` |
 | Metacognition | [ ] | [ ] | [ ] | |
 | GDN | [ ] | [ ] | [ ] | |
 | Parallel | [ ] | [ ] | [ ] | |
 | Stack | [ ] | [ ] | [ ] | |
 
-**Checkpoint:** bump version when this mode table advances.
+**Checkpoint:** `0.1.56-m2-steptweensplitlinearcache` — Line StepTweenSplitLinearCache Inside+×34 + LinearCache volume 2×2×2×1.
 
 ---
 
@@ -1586,3 +1588,4 @@ Fill as you tick rows / finish mode tables.
 | `0.1.53-m2-steptweensplitheadproxy` | StepTweenSplitHeadProxy × signed kinds | Line HeadProxy on pop; STH1; 3D HeadProxy vol |
 | `0.1.54-m2-steptweensplitlinear` | StepTweenSplitLinear × signed kinds | Line Linear on pop; STL1; 3D Linear vol |
 | `0.1.55-m2-steptweensplitfastproxy` | StepTweenSplitFastProxy × signed kinds | Line FastProxy on pop; STF1; 3D FastProxy vol |
+| `0.1.56-m2-steptweensplitlinearcache` | StepTweenSplitLinearCache × signed kinds | Line LinearCache on pop; SLC1; 3D LinearCache vol |
