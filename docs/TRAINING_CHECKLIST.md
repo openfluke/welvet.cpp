@@ -15,7 +15,7 @@ Canonical enum: Go `layers/parallel/train_mode.go` (`TrainMode`).
 
 Tick `[x]` when done. Put the **release tag** in **Ver** when that row (or the whole mode table) is signed.
 
-**Current engine:** `0.1.38-m2-steptween`
+**Current engine:** `0.1.39-m2-steptweenchain`
 
 ---
 
@@ -321,6 +321,16 @@ Each leaf ×34 kind prints **dtype / band / exact%W / goµs / cppµs / spd%Δ**.
 | 3–28 | Other signed kinds f32 + ×34 | [x] | Seq/Res leaf-projected |
 | 29–48 | MeshTween volume 2×2×2×1 all signed kinds | [x] | = ModeTween volume wires |
 
+## w2a Go↔C++ (StepTweenChain ModeStepTweenChain) — sign-off evidence
+
+Run: `./scripts/linux_build_w2a.sh --steptweenchain-train`  
+Wires: `STC1`/`STCO` (Line FamilyBP on pop @ full lr); 3D via ModeTweenChain volume wires `TCV1`/`TRC1`…. Exact_bit vs Go.
+
+| # | Case | Status | Notes |
+|---|---|:---:|---|
+| 1–28 | Line StepTweenChain leaf kinds ×34 | [x] | FamilyTweenChain ≡ FamilyBP |
+| 29–48 | MeshTweenChain volume 2×2×2×1 | [x] | = ModeTweenChain volume wires |
+
 ## 1 — NormalBP
 
 Chain-rule Backward + ApplyGradSGD. Start here. Dense first.
@@ -501,35 +511,37 @@ Ship: `runtime/line` Credit::FamilyTween on pop (`apply_projected` @ `lr×0.5`);
 
 ## 6 — StepTweenChain
 
-Needs Line + TweenChain.
+Needs Line + TweenChain.  
+Ship: `runtime/line` Credit::FamilyBP on pop (same credit as StepBP / TweenChain); wire `STC1`/`STCO`; w2a `--steptweenchain-train`.  
+**3D volumetric** = MeshTweenChain volume (= ModeTweenChain volume Step wires `TCV1`/`TRC1`…).
 
 | Layer | Inside node | 3D volumetric | Fully signed off | Ver |
 |---|:---:|:---:|:---:|---|
-| Dense | [ ] | [ ] | [ ] | |
-| RMSNorm | [ ] | [ ] | [ ] | |
-| LayerNorm | [ ] | [ ] | [ ] | |
-| SwiGLU | [ ] | [ ] | [ ] | |
-| Softmax | [ ] | [ ] | [ ] | |
-| Embedding | [ ] | [ ] | [ ] | |
-| MHA | [ ] | [ ] | [ ] | |
-| CNN1 | [ ] | [ ] | [ ] | |
-| CNN2 | [ ] | [ ] | [ ] | |
-| CNN3 | [ ] | [ ] | [ ] | |
-| ConvT1 | [ ] | [ ] | [ ] | |
-| ConvT2 | [ ] | [ ] | [ ] | |
-| ConvT3 | [ ] | [ ] | [ ] | |
-| RNN | [ ] | [ ] | [ ] | |
-| LSTM | [ ] | [ ] | [ ] | |
-| Sequential | [ ] | [ ] | [ ] | |
-| Residual | [ ] | [ ] | [ ] | |
+| Dense | [x] | [x] | [x] | `0.1.39-m2-steptweenchain` |
+| RMSNorm | [x] | [x] | [x] | `0.1.39-m2-steptweenchain` |
+| LayerNorm | [x] | [x] | [x] | `0.1.39-m2-steptweenchain` |
+| SwiGLU | [x] | [x] | [x] | `0.1.39-m2-steptweenchain` |
+| Softmax | [x] | [x] | [x] | `0.1.39-m2-steptweenchain` |
+| Embedding | [x] | [x] | [x] | `0.1.39-m2-steptweenchain` |
+| MHA | [x] | [x] | [x] | `0.1.39-m2-steptweenchain` |
+| CNN1 | [x] | [x] | [x] | `0.1.39-m2-steptweenchain` |
+| CNN2 | [x] | [x] | [x] | `0.1.39-m2-steptweenchain` |
+| CNN3 | [x] | [x] | [x] | `0.1.39-m2-steptweenchain` |
+| ConvT1 | [x] | [x] | [x] | `0.1.39-m2-steptweenchain` |
+| ConvT2 | [x] | [x] | [x] | `0.1.39-m2-steptweenchain` |
+| ConvT3 | [x] | [x] | [x] | `0.1.39-m2-steptweenchain` |
+| RNN | [x] | [x] | [x] | `0.1.39-m2-steptweenchain` |
+| LSTM | [x] | [x] | [x] | `0.1.39-m2-steptweenchain` |
+| Sequential | [x] | [x] | [x] | `0.1.39-m2-steptweenchain` |
+| Residual | [x] | [x] | [x] | `0.1.39-m2-steptweenchain` |
 | KMeans | [ ] | [ ] | [ ] | |
-| Mamba | [ ] | [ ] | [ ] | |
+| Mamba | [x] | [x] | [x] | `0.1.39-m2-steptweenchain` |
 | Metacognition | [ ] | [ ] | [ ] | |
 | GDN | [ ] | [ ] | [ ] | |
 | Parallel | [ ] | [ ] | [ ] | |
 | Stack | [ ] | [ ] | [ ] | |
 
-**Checkpoint:** bump version when this mode table advances.
+**Checkpoint:** `0.1.39-m2-steptweenchain` — Line StepTweenChain Inside+×34 + MeshTweenChain volume 2×2×2×1.
 
 ---
 
@@ -602,7 +614,8 @@ Note: volume Tween credit already exact_bit via ModeTween / StepTween suites (`T
 
 ## 9 — MeshTweenChain
 
-Needs Mesh + TweenChain.
+Needs Mesh + TweenChain.  
+Note: volume TweenChain credit already exact_bit via ModeTweenChain / StepTweenChain suites (`TCV1`…). Mesh-clock Inside still open.
 
 | Layer | Inside node | 3D volumetric | Fully signed off | Ver |
 |---|:---:|:---:|:---:|---|
@@ -1452,3 +1465,4 @@ Fill as you tick rows / finish mode tables.
 | `0.1.36-m2-tween` | ModeTween × signed kinds | Leaf+vol projected local @ lr×0.5; TWB1/TWV1/TRV1… |
 | `0.1.37-m2-tweenchain` | ModeTweenChain × signed kinds | Leaf+vol FamilyBP @ full lr; TCB1/TCV1/TRC1… |
 | `0.1.38-m2-steptween` | StepTween × signed kinds | Line FamilyTween @ lr×0.5; STW1; 3D MeshTween vol (= ModeTween) |
+| `0.1.39-m2-steptweenchain` | StepTweenChain × signed kinds | Line FamilyBP @ full lr; STC1; 3D MeshTweenChain vol (= TweenChain) |

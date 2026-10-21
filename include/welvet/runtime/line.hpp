@@ -16,7 +16,8 @@ enum class FlightRole : uint8_t {
 };
 
 // Credit applied when a RoleTrain sample pops the last child.
-// FamilyBP = StepBP (chain rule @ full lr); FamilyTween = StepTween (projected @ lr*0.5).
+// FamilyBP = StepBP / StepTweenChain (chain rule @ full lr);
+// FamilyTween = StepTween (projected @ lr*0.5).
 enum class Credit : uint8_t {
   FamilyBP = 0,
   FamilyTween = 1,

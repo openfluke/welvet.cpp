@@ -39,6 +39,7 @@
 #   ./scripts/linux_build_w2a.sh --tween-train  # ModeTween projected local + volume
 #   ./scripts/linux_build_w2a.sh --tweenchain-train  # ModeTweenChain FamilyBP @ full lr + volume
 #   ./scripts/linux_build_w2a.sh --steptween-train  # Line StepTween FamilyTween @ lr*0.5 + MeshTween vol
+#   ./scripts/linux_build_w2a.sh --steptweenchain-train  # Line StepTweenChain FamilyBP + MeshTweenChain vol
 #   ./scripts/linux_build_w2a.sh --go-v-cpp   # same as default
 #   ./scripts/linux_build_w2a.sh --all        # entire w2a go test ./...
 #   BUILD_DIR=/tmp/welvet-build ./scripts/linux_build_w2a.sh
@@ -91,6 +92,7 @@ for arg in "$@"; do
     --tween-train) MODE="tween_train" ;;
     --tweenchain-train) MODE="tweenchain_train" ;;
     --steptween-train) MODE="steptween_train" ;;
+    --steptweenchain-train) MODE="steptweenchain_train" ;;
     -h|--help)
       sed -n '2,45p' "$0"
       exit 0
@@ -271,6 +273,10 @@ case "$MODE" in
   steptween_train)
     echo "==> w2a go_v_cpp StepTween train (Line FamilyTween + MeshTween volume)"
     go test ./tests/go_v_cpp/ -run '^TestGoVCppStepTweenTrain$' -v -count=1
+    ;;
+  steptweenchain_train)
+    echo "==> w2a go_v_cpp StepTweenChain train (Line FamilyBP + MeshTweenChain volume)"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppStepTweenChainTrain$' -v -count=1
     ;;
   all)
     echo "==> w2a full suite (go test ./...)"

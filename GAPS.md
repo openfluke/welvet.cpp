@@ -26,6 +26,7 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 ./scripts/linux_build_w2a.sh --tween-train
 ./scripts/linux_build_w2a.sh --tweenchain-train
 ./scripts/linux_build_w2a.sh --steptween-train
+./scripts/linux_build_w2a.sh --steptweenchain-train
 ./scripts/linux_build_w2a.sh --parallel
 ./scripts/linux_build_w2a.sh --seqmix
 ./scripts/linux_build_w2a.sh --all
@@ -34,7 +35,7 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 ./build/welvet_dense_fwd --gaps
 ```
 
-## Done (through M2.18 StepTween + ModeTweenChain + ModeTween + MeshBP + StepBP Line + NormalBP credit)
+## Done (through M2.19 StepTweenChain + StepTween + ModeTweenChain + ModeTween + MeshBP + StepBP Line + NormalBP credit)
 
 | ID | Detail |
 |---|---|
@@ -58,14 +59,15 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 | **ModeTween** | `systems/tween` + `runtime/tween_train` projected local @ lr×0.5; TWB1 leaf ×34; TWV1 + TRV1…MBTV volume 2×2×2×1 all signed kinds; w2a `--tween-train` |
 | **ModeTweenChain** | `systems/tween_chain` + `runtime/tween_chain_train` FamilyBP @ full lr; TCB1 leaf ×34; TCV1 + TRC1…MBTC volume Step 2×2×2×1; w2a `--tweenchain-train` |
 | **StepTween** | Line FamilyTween on pop @ lr×0.5; STW1 leaf ×34; 3D = MeshTween volume (= ModeTween volume wires); w2a `--steptween-train` |
+| **StepTweenChain** | Line FamilyBP on pop @ full lr; STC1 leaf ×34; 3D = MeshTweenChain volume (= ModeTweenChain wires); w2a `--steptweenchain-train` |
 | Transformer / composition | Sequential+Residual NormalBP, seqmix Kind, **Parallel Dense×7 combines** |
 | Extended | ConvT, KMeans, Mamba NormalBP, Metacognition, GDN |
 | CNN / RNN / LSTM | FormatNone×34 forwards |
-| ABI wires | … / TWB1 / TWV1 / TCB1 / TCV1 / STW1 |
+| ABI wires | … / STW1 / STC1 |
 
 ## gap? — remaining
 
-- Parallel poly/nested/cameral/train; full cameral Stack; MeshTween mesh-clock / other TrainModes
+- Parallel poly/nested/cameral/train; full cameral Stack; MeshTween/MeshTweenChain mesh-clock / other TrainModes
 - Other layers’ Backward; Dense quants; remaining TrainModes; systems (DNA/evolution/TANHI/telemetry); model/IO; vendor accel
 
 See `src/gaps/registry.cpp`.
