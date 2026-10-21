@@ -41,6 +41,17 @@ WELVET_API welvet_status welvet_dense_forward_f32_weights(
     const float* W, const double* bias, size_t bias_len,
     const float* x, float* pre, float* post);
 
+/* Dense NormalBP leaf: forward → (MSEGrad from target | use grad_out) → backward → optional SGD.
+ * use_target: 0 = grad_or_target is gradOut; 1 = target (MSE).
+ * lr == 0 skips ApplyGradSGD (W_after == W decoded).
+ * Outputs: pre/post [batch*out], dX [batch*in], dW [out*in], W_after [out*in], *loss (0 if !use_target).
+ */
+WELVET_API welvet_status welvet_dense_normalbp_f32(
+    int32_t batch, int32_t in, int32_t out, int32_t act, int32_t dtype, int32_t backend,
+    const float* W_init, const double* bias, size_t bias_len, const float* x,
+    const float* grad_or_target, int32_t use_target, double lr, float* pre, float* post, float* dX,
+    float* dW, float* W_after, double* loss);
+
 /* Architecture baseline: Depth×Rows×Cols×LayersPerCell + remote links.
  * links: n_links × 8 i32 = src z,y,x,l + tgt z,y,x,l
  * out_coords:  n_cells × 4 i32 (z,y,x,l) hop order

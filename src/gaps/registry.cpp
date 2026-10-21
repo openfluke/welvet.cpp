@@ -54,12 +54,12 @@ const std::vector<Entry>& build() {
 
       // --- Weights / quant ---
       {"weights.quant.all_formats", "weights", "gap? all quant.Format MatVec/MatVecT", false},
-      {"weights.sgd.native", "weights", "gap? ApplySGD storage-preserving updates", false},
-      {"weights.matvect.f32", "weights", "gap? MatVecT dX path", false},
+      {"weights.sgd.native", "weights", "ApplySGD FormatNone native (Go parity)", true},
+      {"weights.matvect.f32", "weights", "MatVecT dX path (FormatNone)", true},
       {"weights.bias.train", "weights", "gap? bias gradient + update", false},
 
       // --- Dense remaining ---
-      {"dense.backward", "layers", "gap? Dense dX/dW/db + act deriv", false},
+      {"dense.backward", "layers", "Dense NormalBP dX/dW + act deriv + ApplyGradSGD", true},
       {"dense.forward.mc", "layers", "gap? Dense multicore tiled forward", false},
       {"dense.forward.simd", "layers", "imported DotTile/DotI8 gemvSIMD (welvet-to-rust_n_cpp)", true},
       {"simd.dot_tile", "simd", "imported AVX2/NEON f32AccF64 + rowsF32/F64", true},
@@ -134,7 +134,7 @@ const std::vector<Entry>& build() {
 
       // --- Architecture / runtime remaining ---
       {"runtime.forward", "runtime", "gap? volume Forward all layer kinds (Dense done)", false},
-      {"runtime.backward", "runtime", "gap? volume Backward dispatcher", false},
+      {"runtime.backward", "runtime", "volume Backward Dense-only + training.Step (NormalBP)", true},
       {"runtime.training", "runtime", "gap? training modes / credit", false},
       {"runtime.step_mesh", "runtime", "gap? Step / Mesh scheduling", false},
       {"arch.branches", "architecture", "gap? ParallelBranches/SequentialLayers combine", false},

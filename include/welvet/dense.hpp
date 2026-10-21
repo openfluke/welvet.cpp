@@ -32,5 +32,13 @@ Status forward_f32_simd(const Layer& layer, const TensorF32& input, TensorF32* p
 // Dispatch by layer.backend.
 Status forward(const Layer& layer, const TensorF32& input, TensorF32* pre, TensorF32* post);
 
+// NormalBP leaf: dPre = gradOut ⊙ act'(pre); dX = Wᵀ·dPre; dW = outer(dPre, x).
+// pre must be post-bias / pre-activation (same tape as forward).
+Status backward_f32(const Layer& layer, const TensorF32& grad_out, const TensorF32& input,
+                    const TensorF32& pre, TensorF32* grad_in, TensorF32* grad_w);
+
+// Apply dW via weights.ApplySGD (FormatNone native).
+Status apply_grad_sgd(Layer* layer, const TensorF32& dW, double lr);
+
 } // namespace welvet::dense
 

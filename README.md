@@ -23,15 +23,15 @@ Applications can choose **automatic placement** or **force an explicit backend**
 
 ## Support scorecard — so far
 
-**Version `0.1.20` — M1 Dense + architecture + transformer (+ Sequential + Residual + Parallel + seqmix) + CNN + ConvT + RNN + LSTM + Embedding + Softmax + KMeans + Mamba + Metacognition + GDN forward**. Engine board **47 / 100**, extensions **13 / 100**, combined **60 / 200**. Live inventory: `GAPS.md` / `welvet_dense_fwd --gaps` / `welvet_dense_fwd --version`.
+**Version `0.1.21` — M2 Dense NormalBP + M1 forwards**. Engine board **52 / 100**, extensions **13 / 100**, combined **65 / 200**. Live inventory: `GAPS.md` / `welvet_dense_fwd --gaps` / `welvet_dense_fwd --version`.
 
-- [ ] **Layers:** Dense + MHA + SwiGLU + norms + Softmax + Sequential + Residual + Parallel + CNN1/2/3 + ConvT1/2/3 + RNN + LSTM + Embedding + KMeans + Mamba + Metacognition + GDN forward — **22 / 23** kinds have any forward; backward still 0; Stack remaining; seqmix Kind helper done.
+- [ ] **Layers:** Dense + MHA + SwiGLU + norms + Softmax + Sequential + Residual + Parallel + CNN1/2/3 + ConvT1/2/3 + RNN + LSTM + Embedding + KMeans + Mamba + Metacognition + GDN forward — **22 / 23** kinds have any forward; **Dense NormalBP** signed; Stack remaining; seqmix Kind helper done.
 - [x] **Dtypes:** FormatNone pack/decode + Dense MatVec for **all 34** storage types (quant formats still `gap?`).
 - [x] **Forward compute:** Dense FormatNone×34 CPU/SIMD validated via `w2a` `Go_v_Cpp` **exact_bit** spectrum (other 22 kinds pending).
-- [ ] **Backward compute:** 0 / 23 registered layer kinds have their applicable gradient contracts validated.
+- [ ] **Backward compute:** **1 / 23** — Dense NormalBP (dX/dW/SGD + volume) w2a exact_bit ×34; others pending.
 - [ ] **Compute targets:** CPU host path only; vendor accel loaders are `gap?` placeholders — see the hardware summary below.
 - [ ] **Platforms:** Linux host build path present; macOS / Windows / Android / iOS toolchains are placeholders — **1 / 5** OS families buildable (not yet multi-OS CI validated).
-- [x] **Runtime / architecture (partial):** volumetric Grid/Cell/HopOrder/remote links + Dense-only volume Forward; backward / training / Step-Mesh / other layer kinds pending.
+- [x] **Runtime / architecture (partial):** volumetric Grid/Cell/HopOrder/remote links + Dense volume Forward/**Backward**/NormalBP Step; Step-Mesh / other layer kinds pending.
 - [ ] **Systems:** DNA, evolution, Tween, TANHI and telemetry pending.
 - [ ] **Model / IO:** tokenizer, ENTITY, transformer, sampling and HF support pending.
 - [ ] **Post-v1 engine features:** Lucy/LPD, Lean, CamSync and train/action scheduling pending.
@@ -43,7 +43,7 @@ Applications can choose **automatic placement** or **force an explicit backend**
 
 | Compute target | Forward | Backward | Weight updates | Supported cards / devices so far |
 |---|:---:|:---:|:---:|---|
-| Native CPU — x86-64 / Arm64 | 🚧 | ⬜ | ⬜ | Dense FormatNone×34 serial + imported SIMD + volume Dense fwd (v0.1.3); dX/dW/update pending |
+| Native CPU — x86-64 / Arm64 | 🚧 | 🚧 | 🚧 | Dense FormatNone×34 fwd + NormalBP dX/dW/ApplySGD + volume Step (v0.1.21); other layers pending |
 | NVIDIA GPU | ⬜ | ⬜ | ⬜ | None validated |
 | AMD GPU | ⬜ | ⬜ | ⬜ | None validated |
 | Intel GPU | ⬜ | ⬜ | ⬜ | None validated |
@@ -62,14 +62,14 @@ The long-term destination is a standalone C++ Welvet engine that discovers avail
 
 | Project state | Readout |
 |---|---|
-| **Version** | **`0.1.20-m1-par`** (`welvet_dense_fwd --version` / CMake `0.1.20`) |
-| **Runway** | **47 / 100 engine + 13 / 100 extensions = 60 / 200** |
-| **Milestone** | **M1.18** — + Parallel Dense × 7 combine modes (FormatNone×34); Stack remaining |
+| **Version** | **`0.1.21-m2-dense-nbp`** (`welvet_dense_fwd --version` / CMake `0.1.21`) |
+| **Runway** | **52 / 100 engine + 13 / 100 extensions = 65 / 200** |
+| **Milestone** | **M2.01** — Dense NormalBP leaf + volumetric (FormatNone×34, w2a `WDB1`/`WVN1`) |
 | **Scope** | Full Welvet engine rebuild: architecture, runtime, layers, numerical types, training, systems, model/IO; extended hardware, integration and distribution |
 | **Platforms** | Linux (host build) · macOS / Windows / Android / iOS (toolchain placeholders) |
 | **Hardware families** | Native CPU · NVIDIA · AMD · Intel GPU/NPU · Apple GPU/Neural Engine · Qualcomm GPU/NPU · Google TPU |
 | **Baseline inspected** | Welvet source identifying itself as v1.1.3; 18 October 2026 |
-| **What exists here today** | Buildable `libwelvet` + C ABI + `welvet_dense_fwd` (…/WSX/WPL); Dense FormatNone×34 + architecture Grid + Dense volume Forward + MHA/SwiGLU/norms/Softmax/Sequential/Residual/Parallel/seqmix + CNN + ConvT + RNN + LSTM + Embedding + KMeans + Mamba + Metacognition + GDN; `GAPS.md` census; research notes under [`docs/`](docs/README.md) |
+| **What exists here today** | Buildable `libwelvet` + C ABI + `welvet_dense_fwd` (…/WPL/WDB/WVN); Dense FormatNone×34 fwd+**NormalBP** + volume F/B/SGD + MHA/SwiGLU/norms/Softmax/Sequential/Residual/Parallel/seqmix + CNN + ConvT + RNN + LSTM + Embedding + KMeans + Mamba + Metacognition + GDN; `GAPS.md` census; research notes under [`docs/`](docs/README.md) |
 
 This README is the **runway**: the implementation contract and scorecard for where welvet.cpp is going. Every unchecked cell is planned work. Welvet's Go engine score does not transfer to the C++ rebuild, and historical benchmark reports do not count as a shipped native backend.
 
@@ -173,18 +173,18 @@ This mirrors the **ten categories and exact weights** of Go Welvet's main versio
 | # | Go Welvet scoreboard category | Weight | C++ acceptance target | Status | Earned |
 |---:|---|---:|---|:---:|---:|
 | 1 | **Foundation** | 15 | Core tensors, 34 numerical dtypes, weights, activations, layout, tiling, CPU/SIMD/device abstraction and ownership | 🚧 | 9 |
-| 2 | **Dense MatVec microkernel** | 15 | Shared Dense compute across numerical dtypes; forward, dX, dW/db, updates; SC/MC/SIMD and declared device paths | 🚧 | 10 |
+| 2 | **Dense MatVec microkernel** | 15 | Shared Dense compute across numerical dtypes; forward, dX, dW/db, updates; SC/MC/SIMD and declared device paths | 🚧 | 12 |
 | 3 | **Transformer stack** | 14 | MHA, SwiGLU, RMSNorm, LayerNorm, Softmax, Embedding, Sequential, Residual, Stack and seqmix | 🚧 | 13 |
 | 4 | **CNN / RNN / LSTM** | 6 | CNN1–3, RNN, LSTM; numerical coverage, applicable forward/backward, state and train grids | 🚧 | 5 |
 | 5 | **Extended layers** | 7 | GDN, ConvT1–3, Mamba, KMeans, Parallel, Metacognition; applicable gradients and state | 🚧 | 7 |
-| 6 | **Runtime + architecture** | 8 | Standalone volumetric grid, dispatch, forward, backward, training, Step/Mesh, links and execution ordering | 🚧 | 3 |
+| 6 | **Runtime + architecture** | 8 | Standalone volumetric grid, dispatch, forward, backward, training, Step/Mesh, links and execution ordering | 🚧 | 5 |
 | 7 | **Systems** | 5 | DNA, evolution, Tween, TANHI and telemetry implemented in C++ | ⬜ | 0 |
 | 8 | **Model / IO** | 8 | Tokenizer, ENTITY, transformer execution, sampling, HF inspection/loading and model construction | ⬜ | 0 |
-| 9 | **Training credit** | 8 | NormalBP/StepBP/MeshBP, Tween families, proxies, sparse/alternating credit, cameral BranchModes and CamSync | ⬜ | 0 |
+| 9 | **Training credit** | 8 | NormalBP/StepBP/MeshBP, Tween families, proxies, sparse/alternating credit, cameral BranchModes and CamSync | 🚧 | 1 |
 | 10 | **Peak fused / no host ALU** | 14 | Validated native/SIMD/device kernels, attention/RoPE, norms, activations, conv/recurrence, embedding and decoder fusion | ⬜ | 0 |
-| | **Engine rebuild total** | **100** | | **🚧** | **47 / 100** |
+| | **Engine rebuild total** | **100** | | **🚧** | **52 / 100** |
 
-Partial credit notes (v0.1.20): Foundation **9/15**, Dense **10/15**, Runtime+architecture **3/8**, Transformer **13/14** = Sequential + Residual + Parallel Dense×7 combines + seqmix Kind — not Stack/poly Parallel/backward; CNN/RNN/LSTM **5/6**; Extended **7/7**.
+Partial credit notes (v0.1.21): Foundation **9/15**, Dense **12/15** (+ NormalBP FormatNone×34), Runtime+architecture **5/8** (+ Dense volume Backward/Step), Training credit **1/8** (NormalBP Dense only), Transformer **13/14**; CNN/RNN/LSTM **5/6**; Extended **7/7**.
 
 Post-v1 Go features are included in the relevant categories: Lucy/LPD and Lean in model construction, CamSync in training credit, and train/action FlightRole in runtime scheduling. The original Go board excludes applications and unfinished stubs; those stay separately visible below rather than receiving inherited engine credit.
 
@@ -204,7 +204,7 @@ Post-v1 Go features are included in the relevant categories: Lucy/LPD and Lean i
 | 10 | Hardware validation + performance | 8 | Real-device matrices, provenance, transfer-inclusive timings and released-artifact checks | 🚧 | 3 |
 | | **Extension total** | **100** | | **🚧** | **13 / 100** |
 
-**Combined runway: 60 / 200.** Partial notes (v0.1.20): C ABI adds Parallel (`WPL1`, 7 combines). Validation covers Dense×34 + Parallel Add×34 + all combine F32 smokes; Stack/poly Parallel still gap. Imported SIMD under `include/welvet/simd/` + `imported/`.
+**Combined runway: 65 / 200.** Partial notes (v0.1.21): Dense NormalBP (`WDB1`/`WVN1`) leaf+volume exact_bit×34; Parallel (`WPL1`) still forward-only. Stack/poly Parallel / other TrainModes still gap.
 
 “All GPUs/NPUs/TPUs” is the expansion ambition. Each supported device model, numerical type, layer, shape and pass must have an explicit tested capability profile. A working inference partition cannot earn training credit. Additional vendors and device generations can extend the coverage inventory without quietly changing these fixed weights.
 
@@ -302,7 +302,7 @@ Dense FormatNone×34 forward is implemented (v0.1.1); remaining rows are unimple
 
 | ID | Layer | Forward target | Backward target | Native F | Native B | Device coverage |
 |---:|---|---|---|:---:|:---:|:---:|
-| 0 | **Dense** | GEMV/GEMM, bias, activation | dX, dW, db, activation derivative | 🚧 | ⬜ | ⬜ |
+| 0 | **Dense** | GEMV/GEMM, bias, activation | dX, dW, act'; ApplyGradSGD (NormalBP) | 🚧 | 🚧 | ⬜ |
 | 1 | **MultiHeadAttention** | Q/K/V/O, attention, masks, RoPE, cache | Projection + attention + RoPE gradients | 🚧 | ⬜ | ⬜ |
 | 2 | **SwiGLU** | Gate/up/down projections, SiLU product | All projections and product/SiLU derivatives | 🚧 | ⬜ | ⬜ |
 | 3 | **RMSNorm** | RMS reduction and scale | dX and scale gradient | 🚧 | ⬜ | ⬜ |
@@ -619,7 +619,7 @@ A C++ implementation is not automatically faster than Welvet's Go SIMD. Existing
 |---|---|---|:---:|
 | M0 — Engine contract | Pin Go revision, enumerate all subsystems, freeze numerical semantics and both boards' sub-gates | Reviewed source inventory and cross-language fixtures | ⬜ |
 | M1 — C++ foundation | Native build, tensors, dtype-native weights and Dense forward | Standalone C++ example + `w2a` Go_v_Cpp exact_bit×34 | 🚧 |
-| M2 — Native training | Dense dX/dW/db/update, ownership and resident state | Multi-step parity and save/reload | ⬜ |
+| M2 — Native training | Dense dX/dW/db/update, ownership and resident state | Multi-step parity and save/reload | 🚧 |
 | M3 — Numerical breadth | All 34 numerical dtypes and declared arithmetic/update paths | Dtype/pass matrix across CPU/SIMD | ⬜ |
 | M4 — Layer breadth | Transformer, CNN/ConvT, recurrence, extended and composed layers | All applicable layer forward/backward gates | ⬜ |
 | M5 — Full runtime | Architecture, dispatch, volume forward/backward, training, Step/Mesh and credit families | Standalone multi-cell training and scheduling parity | ⬜ |

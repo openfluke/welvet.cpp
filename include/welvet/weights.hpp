@@ -32,9 +32,16 @@ struct WeightStore {
 
   Status encode_format_none(DType dt, const float* scratch, int n);
   Status decode_row_f64(int row, double* dst) const;
+  // Decode full matrix to float32 (FormatNone).
+  Status export_f32(float* dst) const;
 
   // y[rows] = W @ x[cols], float64 accumulate then cast to float32.
   Status matvec_f32(const float* x, float* y) const;
+  // gx[cols] += W^T @ gy[rows] (float64 accumulate; caller zeros gx).
+  Status matvect_f32(const float* gy, float* gx) const;
+
+  // w <- w - lr*dW in native FormatNone storage (Go weights.ApplySGD).
+  Status apply_sgd(const double* dW, double lr);
 };
 
 } // namespace welvet

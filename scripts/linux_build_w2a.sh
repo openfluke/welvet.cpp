@@ -21,6 +21,7 @@
 #   ./scripts/linux_build_w2a.sh --gdn        # GDN Gated DeltaNet (Float32)
 #   ./scripts/linux_build_w2a.sh --seqmix     # seqmix Kind contract smoke
 #   ./scripts/linux_build_w2a.sh --parallel   # Parallel Dense × 7 combine modes
+#   ./scripts/linux_build_w2a.sh --dense-train # Dense NormalBP leaf + volumetric
 #   ./scripts/linux_build_w2a.sh --go-v-cpp   # same as default
 #   ./scripts/linux_build_w2a.sh --all        # entire w2a go test ./...
 #   BUILD_DIR=/tmp/welvet-build ./scripts/linux_build_w2a.sh
@@ -55,8 +56,9 @@ for arg in "$@"; do
     --gdn) MODE="gdn" ;;
     --seqmix) MODE="seqmix" ;;
     --parallel) MODE="parallel" ;;
+    --dense-train) MODE="dense_train" ;;
     -h|--help)
-      sed -n '2,31p' "$0"
+      sed -n '2,32p' "$0"
       exit 0
       ;;
     *)
@@ -163,6 +165,10 @@ case "$MODE" in
   parallel)
     echo "==> w2a go_v_cpp Parallel"
     go test ./tests/go_v_cpp/ -run '^TestGoVCppParallel$' -v -count=1
+    ;;
+  dense_train)
+    echo "==> w2a go_v_cpp Dense NormalBP (leaf + volumetric)"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppDenseTrain$' -v -count=1
     ;;
   all)
     echo "==> w2a full suite (go test ./...)"
