@@ -19,7 +19,11 @@ struct Result {
   std::vector<GradW> grad_ws;
 };
 
-// Reverse hop over a Dense-only forward tape. Remote cells keep local gradIn
+// Per-cell backward dispatch (all bound OpKinds).
+Status cell(architecture::Cell& cell, const TensorF32& grad_out, const TensorF32& input,
+            const TensorF32& pre, TensorF32* grad_in, TensorF32* dW);
+
+// Reverse hop over a forward tape. Remote cells keep local gradIn
 // (not re-routed to the remote source — Go v0 parity).
 Status volume_dense(architecture::Grid& g, const forward::Result& fwd, const TensorF32& grad_out,
                     Result* out);

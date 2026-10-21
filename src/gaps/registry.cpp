@@ -171,7 +171,7 @@ const std::vector<Entry>& build() {
       {"runtime.forward", "runtime", "gap? volume Forward all layer kinds (Dense done)", false},
       {"runtime.backward", "runtime", "volume Backward Dense+RMSNorm+LayerNorm+SwiGLU + training.Step (NormalBP)", true},
       {"runtime.training", "runtime", "NormalBP volume Step + Line StepBP; other TrainModes gap?", true},
-      {"runtime.step_mesh", "runtime", "gap? MeshBP / volumetric Step grid tick", false},
+      {"runtime.step_mesh", "runtime", "MeshBP FamilyBP: runtime/step Forward+Backward+SGD; MBP1/MBPO; ModeMeshBP volume Step", true},
       {"arch.branches", "architecture", "gap? ParallelBranches/SequentialLayers combine", false},
       {"tiling.cpu", "tiling", "gap? CPU tile partition helpers", false},
       {"simd.x86_arm", "simd", "imported DotTile (x86 AVX2 + arm64 NEON stubs)", true},

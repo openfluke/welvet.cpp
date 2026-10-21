@@ -16,8 +16,9 @@ struct CoordLess {
   }
 };
 
-Status dispatch_cell(architecture::Cell& cell, const TensorF32& in, TensorF32* pre,
-                     TensorF32* post) {
+} // namespace
+
+Status cell(architecture::Cell& cell, const TensorF32& in, TensorF32* pre, TensorF32* post) {
   switch (cell.op_kind) {
   case architecture::OpKind::Dense:
     return dense::forward(cell.dense_op, in, pre, post);
@@ -62,8 +63,6 @@ Status dispatch_cell(architecture::Cell& cell, const TensorF32& in, TensorF32* p
   }
 }
 
-} // namespace
-
 Status volume_dense(architecture::Grid& g, const TensorF32& input, Result* out) {
   if (!out) {
     return Status::Err(StatusCode::InvalidArgument, "runtime.forward: nil result");
@@ -77,11 +76,11 @@ Status volume_dense(architecture::Grid& g, const TensorF32& input, Result* out) 
   Result result;
 
   for (const auto& coord : architecture::hop_order(g)) {
-    architecture::Cell* cell = architecture::at(g, coord.z, coord.y, coord.x, coord.l);
-    if (!cell || cell->meta.is_disabled) {
+    architecture::Cell* c = architecture::at(g, coord.z, coord.y, coord.x, coord.l);
+    if (!c || c->meta.is_disabled) {
       continue;
     }
-    if (cell->op_kind == architecture::OpKind::None) {
+    if (c->op_kind == architecture::OpKind::None) {
       std::ostringstream oss;
       oss << "runtime.forward: no op at z=" << coord.z << " y=" << coord.y << " x=" << coord.x
           << " l=" << coord.l;
@@ -90,8 +89,8 @@ Status volume_dense(architecture::Grid& g, const TensorF32& input, Result* out) 
 
     const TensorF32* in = &current;
     TensorF32 remote_holder;
-    if (cell->is_remote_link) {
-      architecture::Coord tc{cell->target_z, cell->target_y, cell->target_x, cell->target_l};
+    if (c->is_remote_link) {
+      architecture::Coord tc{c->target_z, c->target_y, c->target_x, c->target_l};
       auto it = posts.find(tc);
       if (it == posts.end()) {
         std::ostringstream oss;
@@ -104,7 +103,7 @@ Status volume_dense(architecture::Grid& g, const TensorF32& input, Result* out) 
     }
 
     TensorF32 pre, post;
-    Status st = dispatch_cell(*cell, *in, &pre, &post);
+    Status st = cell(*c, *in, &pre, &post);
     if (!st) {
       return st;
     }

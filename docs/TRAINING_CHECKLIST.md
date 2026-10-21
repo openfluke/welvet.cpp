@@ -15,7 +15,7 @@ Canonical enum: Go `layers/parallel/train_mode.go` (`TrainMode`).
 
 Tick `[x]` when done. Put the **release tag** in **Ver** when that row (or the whole mode table) is signed.
 
-**Current engine:** `0.1.34-m2-stepbp`
+**Current engine:** `0.1.35-m2-meshbp`
 
 ---
 
@@ -227,30 +227,32 @@ Timing: same `--bench=N` / spd%Δ convention. Scan BPTT + In/Out Dense; loom In|
 
 ---
 
-## w2a Go↔C++ (StepBP Line) — sign-off evidence
+## w2a Go↔C++ (StepBP Line + MeshBP) — sign-off evidence
 
 Run: `./scripts/linux_build_w2a.sh --stepbp-train`  
-Wire: `STB1`/`STBO` (Line TickLine/TrainLineMSE + FamilyBP on pop). Exact_bit vs Go.  
-Each kind prints a dtype band table (Dense also prints goµs/cppµs/spd%Δ).  
-Volumetric StepBP → MeshBP (not this ship). CNN2/3 & ConvT2/3 share CNN1/ConvT1 FamilyBP path.
+Wires: `STB1`/`STBO` (Line StepBP); `MBP1`/`MBPO` (mesh-clock MeshBP FamilyBP). Exact_bit vs Go.  
+Each Line ×34 kind prints **dtype / band / exact%W / goµs / cppµs / spd%Δ**.  
+3D: Dense mesh-clock 1×1×1×1 / 2×1×1×1 / 2×2×2×1 + ModeMeshBP volume 2×2×2×1 for all NormalBP-signed kinds (Go cameral ModeMeshBP = volume Forward+Step). CNN2/3 & ConvT2/3 share CNN1/ConvT1 path.
 
 | # | Case | Status | Notes |
 |---|---|:---:|---|
 | 1 | Dense multi-hop Float32 (W/loss) | [x] | warm-up ticks until first pop |
 | 2 | Dense 1-hop ×34 | [x] | spectrum + speed table |
-| 3–4 | RMSNorm f32 + ×34 | [x] | spectrum table |
-| 5–6 | LayerNorm f32 + ×34 | [x] | spectrum table |
-| 7–8 | Softmax f32 + ×34 | [x] | loss-only / spectrum table |
-| 9–10 | SwiGLU f32 + ×34 | [x] | spectrum table |
-| 11–12 | Sequential f32 + ×34 | [x] | spectrum table |
-| 13–14 | Residual f32 + ×34 | [x] | spectrum table |
-| 15–16 | Mamba f32 + ×34 | [x] | spectrum table |
-| 17–18 | Embedding f32 + ×34 | [x] | spectrum table |
-| 19–20 | MHA f32 + ×34 | [x] | spectrum table |
-| 21–22 | CNN1 f32 + ×34 | [x] | spectrum table (CNN2/3 share) |
-| 23–24 | ConvT1 f32 + ×34 | [x] | spectrum table (ConvT2/3 share) |
-| 25–26 | RNN f32 + ×34 | [x] | spectrum table |
-| 27–28 | LSTM f32 + ×34 | [x] | spectrum table |
+| 3–4 | RMSNorm f32 + ×34 | [x] | full spectrum + speed |
+| 5–6 | LayerNorm f32 + ×34 | [x] | full spectrum + speed |
+| 7–8 | Softmax f32 + ×34 | [x] | full spectrum + speed |
+| 9–10 | SwiGLU f32 + ×34 | [x] | full spectrum + speed |
+| 11–12 | Sequential f32 + ×34 | [x] | full spectrum + speed |
+| 13–14 | Residual f32 + ×34 | [x] | full spectrum + speed |
+| 15–16 | Mamba f32 + ×34 | [x] | full spectrum + speed |
+| 17–18 | Embedding f32 + ×34 | [x] | full spectrum + speed |
+| 19–20 | MHA f32 + ×34 | [x] | full spectrum + speed |
+| 21–22 | CNN1 f32 + ×34 | [x] | full spectrum + speed (CNN2/3 share) |
+| 23–24 | ConvT1 f32 + ×34 | [x] | full spectrum + speed (ConvT2/3 share) |
+| 25–26 | RNN f32 + ×34 | [x] | full spectrum + speed |
+| 27–28 | LSTM f32 + ×34 | [x] | full spectrum + speed |
+| 29–31 | Dense MeshBP mesh-clock 111/211/222 | [x] | MBP1 exact_bit + speed |
+| 32–49 | MeshBP volume 2×2×2×1 all signed kinds | [x] | ModeMeshBP = volume Step |
 
 ## 1 — NormalBP
 
@@ -290,35 +292,35 @@ Chain-rule Backward + ApplyGradSGD. Start here. Dense first.
 
 Needs Step `Line` pipe + FamilyBP (NormalBP credit) on pop.  
 Ship: thin Stack host + `runtime/line` TickLine/TrainLineMSE; wire `STB1`/`STBO`; w2a `--stepbp-train`.  
-**3D volumetric** for StepBP = MeshBP (deferred). CNN2/3 and ConvT2/3 share CNN1/ConvT1 FamilyBP dispatch.
+**3D volumetric** for StepBP = MeshBP (`runtime/step` mesh-clock FamilyBP + ModeMeshBP volume Step). CNN2/3 and ConvT2/3 share CNN1/ConvT1 FamilyBP dispatch.
 
 | Layer | Inside node | 3D volumetric | Fully signed off | Ver |
 |---|:---:|:---:|:---:|---|
-| Dense | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
-| RMSNorm | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
-| LayerNorm | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
-| SwiGLU | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
-| Softmax | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
-| Embedding | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
-| MHA | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
-| CNN1 | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
-| CNN2 | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
-| CNN3 | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
-| ConvT1 | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
-| ConvT2 | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
-| ConvT3 | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
-| RNN | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
-| LSTM | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
-| Sequential | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
-| Residual | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
+| Dense | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
+| RMSNorm | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
+| LayerNorm | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
+| SwiGLU | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
+| Softmax | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
+| Embedding | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
+| MHA | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
+| CNN1 | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
+| CNN2 | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
+| CNN3 | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
+| ConvT1 | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
+| ConvT2 | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
+| ConvT3 | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
+| RNN | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
+| LSTM | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
+| Sequential | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
+| Residual | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
 | KMeans | [ ] | [ ] | [ ] | |
-| Mamba | [x] | [ ] | [x] | `0.1.34-m2-stepbp` |
+| Mamba | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
 | Metacognition | [ ] | [ ] | [ ] | |
 | GDN | [ ] | [ ] | [ ] | |
 | Parallel | [ ] | [ ] | [ ] | |
 | Stack | [ ] | [ ] | [ ] | |
 
-**Checkpoint:** `0.1.34-m2-stepbp` — Line Inside+×34 for NormalBP-signed kinds; MeshBP / full cameral Stack still open.
+**Checkpoint:** `0.1.35-m2-meshbp` — Line Inside+×34 + MeshBP 3D for NormalBP-signed kinds; full cameral Stack still open.
 
 ---
 
@@ -456,37 +458,35 @@ Needs Line + TweenChain.
 
 ## 7 — MeshBP
 
-Needs Mesh/Grid schedule + NormalBP.
+Grid tick FamilyBP: `runtime/step` Forward×ticks + Backward BPTT + ApplyGradSGD (`MBP1`/`MBPO` for Dense mesh-clock).  
+Go ModeMeshBP on grid also = volume Forward+Step (cameral_train) — signed 2×2×2×1 for all NormalBP-signed kinds via `--stepbp-train`.
 
 | Layer | Inside node | 3D volumetric | Fully signed off | Ver |
 |---|:---:|:---:|:---:|---|
-| Dense | [ ] | [ ] | [ ] | |
-| RMSNorm | [ ] | [ ] | [ ] | |
-| LayerNorm | [ ] | [ ] | [ ] | |
-| SwiGLU | [ ] | [ ] | [ ] | |
-| Softmax | [ ] | [ ] | [ ] | |
-| Embedding | [ ] | [ ] | [ ] | |
-| MHA | [ ] | [ ] | [ ] | |
-| CNN1 | [ ] | [ ] | [ ] | |
-| CNN2 | [ ] | [ ] | [ ] | |
-| CNN3 | [ ] | [ ] | [ ] | |
-| ConvT1 | [ ] | [ ] | [ ] | |
-| ConvT2 | [ ] | [ ] | [ ] | |
-| ConvT3 | [ ] | [ ] | [ ] | |
-| RNN | [ ] | [ ] | [ ] | |
-| LSTM | [ ] | [ ] | [ ] | |
-| Sequential | [ ] | [ ] | [ ] | |
-| Residual | [ ] | [ ] | [ ] | |
+| Dense | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
+| RMSNorm | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
+| LayerNorm | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
+| SwiGLU | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
+| Softmax | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
+| Embedding | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
+| MHA | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
+| CNN1 | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
+| CNN2 | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
+| CNN3 | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
+| ConvT1 | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
+| ConvT2 | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
+| ConvT3 | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
+| RNN | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
+| LSTM | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
+| Sequential | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
+| Residual | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
 | KMeans | [ ] | [ ] | [ ] | |
-| Mamba | [ ] | [ ] | [ ] | |
+| Mamba | [x] | [x] | [x] | `0.1.35-m2-meshbp` |
 | Metacognition | [ ] | [ ] | [ ] | |
 | GDN | [ ] | [ ] | [ ] | |
 | Parallel | [ ] | [ ] | [ ] | |
 | Stack | [ ] | [ ] | [ ] | |
 
-**Checkpoint:** bump version when this mode table advances.
-
----
 
 ## 8 — MeshTween
 

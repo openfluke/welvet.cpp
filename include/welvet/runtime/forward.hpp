@@ -20,8 +20,10 @@ struct Result {
   std::vector<Step> steps;
 };
 
-// Walk HopOrder; Dense ops only. Remote-link cells take input from target Post.
-// Other LayerType / missing Op → Status::Gap / Invalid.
+// Per-cell forward dispatch (all bound OpKinds).
+Status cell(architecture::Cell& cell, const TensorF32& in, TensorF32* pre, TensorF32* post);
+
+// Walk HopOrder. Remote-link cells take input from target Post.
 Status volume_dense(architecture::Grid& g, const TensorF32& input, Result* out);
 
 } // namespace welvet::runtime::forward

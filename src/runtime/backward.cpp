@@ -5,6 +5,55 @@
 
 namespace welvet::runtime::backward {
 
+Status cell(architecture::Cell& cell, const TensorF32& grad_out, const TensorF32& input,
+            const TensorF32& pre, TensorF32* grad_in, TensorF32* dW) {
+  if (!grad_in || !dW) {
+    return Status::Err(StatusCode::InvalidArgument, "runtime.backward: nil grad buffers");
+  }
+  switch (cell.op_kind) {
+  case architecture::OpKind::Dense:
+    return dense::backward_f32(cell.dense_op, grad_out, input, pre, grad_in, dW);
+  case architecture::OpKind::RMSNorm:
+    return rmsnorm::backward_f32(cell.rmsnorm_op, grad_out, input, pre, grad_in, dW);
+  case architecture::OpKind::LayerNorm:
+    return layernorm::backward_f32(cell.layernorm_op, grad_out, input, pre, grad_in, dW);
+  case architecture::OpKind::SwiGLU:
+    return swiglu::backward_f32(cell.swiglu_op, grad_out, input, pre, grad_in, dW);
+  case architecture::OpKind::Softmax:
+    return softmax::backward_f32(cell.softmax_op, grad_out, input, pre, grad_in, dW);
+  case architecture::OpKind::Embedding:
+    return embedding::backward_f32(cell.embedding_op, grad_out, input, pre, grad_in, dW);
+  case architecture::OpKind::MHA:
+    return mha::backward_f32(cell.mha_op, grad_out, input, pre, grad_in, dW);
+  case architecture::OpKind::CNN1:
+    return cnn1::backward_f32(cell.cnn1_op, grad_out, input, pre, grad_in, dW);
+  case architecture::OpKind::CNN2:
+    return cnn2::backward_f32(cell.cnn2_op, grad_out, input, pre, grad_in, dW);
+  case architecture::OpKind::CNN3:
+    return cnn3::backward_f32(cell.cnn3_op, grad_out, input, pre, grad_in, dW);
+  case architecture::OpKind::ConvT1:
+    return convt1::backward_f32(cell.convt1_op, grad_out, input, pre, grad_in, dW);
+  case architecture::OpKind::ConvT2:
+    return convt2::backward_f32(cell.convt2_op, grad_out, input, pre, grad_in, dW);
+  case architecture::OpKind::ConvT3:
+    return convt3::backward_f32(cell.convt3_op, grad_out, input, pre, grad_in, dW);
+  case architecture::OpKind::RNN:
+    return rnn::backward_f32(cell.rnn_op, grad_out, input, pre, grad_in, dW);
+  case architecture::OpKind::LSTM:
+    return lstm::backward_f32(cell.lstm_op, grad_out, input, pre, grad_in, dW);
+  case architecture::OpKind::Sequential:
+    return sequential::backward_f32(cell.sequential_op, grad_out, input, pre, grad_in, dW);
+  case architecture::OpKind::Residual:
+    return residual::backward_f32(cell.residual_op, grad_out, input, pre, grad_in, dW);
+  case architecture::OpKind::Mamba:
+    return mamba::backward_f32(cell.mamba_op, grad_out, input, pre, grad_in, dW);
+  case architecture::OpKind::Stack:
+    return stack::backward_f32(cell.stack_op, grad_out, input, pre, grad_in, dW);
+  default:
+    return Status::Err(StatusCode::InvalidArgument, "runtime.backward: unsupported cell Op");
+  }
+}
+
 Status volume_dense(architecture::Grid& g, const forward::Result& fwd, const TensorF32& grad_out,
                     Result* out) {
   if (!out) {
@@ -23,8 +72,8 @@ Status volume_dense(architecture::Grid& g, const forward::Result& fwd, const Ten
 
   for (int i = static_cast<int>(fwd.steps.size()) - 1; i >= 0; --i) {
     const auto& st = fwd.steps[static_cast<std::size_t>(i)];
-    architecture::Cell* cell = architecture::at(g, st.coord.z, st.coord.y, st.coord.x, st.coord.l);
-    if (!cell) {
+    architecture::Cell* c = architecture::at(g, st.coord.z, st.coord.y, st.coord.x, st.coord.l);
+    if (!c) {
       std::ostringstream oss;
       oss << "runtime.backward: missing cell at z=" << st.coord.z << " y=" << st.coord.y
           << " x=" << st.coord.x << " l=" << st.coord.l;
@@ -32,73 +81,7 @@ Status volume_dense(architecture::Grid& g, const forward::Result& fwd, const Ten
     }
 
     TensorF32 gx, dw;
-    Status st_b = Status::Ok();
-    switch (cell->op_kind) {
-    case architecture::OpKind::Dense:
-      st_b = dense::backward_f32(cell->dense_op, gy, st.input, st.pre, &gx, &dw);
-      break;
-    case architecture::OpKind::RMSNorm:
-      st_b = rmsnorm::backward_f32(cell->rmsnorm_op, gy, st.input, st.pre, &gx, &dw);
-      break;
-    case architecture::OpKind::LayerNorm:
-      st_b = layernorm::backward_f32(cell->layernorm_op, gy, st.input, st.pre, &gx, &dw);
-      break;
-    case architecture::OpKind::SwiGLU:
-      st_b = swiglu::backward_f32(cell->swiglu_op, gy, st.input, st.pre, &gx, &dw);
-      break;
-    case architecture::OpKind::Softmax:
-      st_b = softmax::backward_f32(cell->softmax_op, gy, st.input, st.pre, &gx, &dw);
-      break;
-    case architecture::OpKind::Embedding:
-      st_b = embedding::backward_f32(cell->embedding_op, gy, st.input, st.pre, &gx, &dw);
-      break;
-    case architecture::OpKind::MHA:
-      st_b = mha::backward_f32(cell->mha_op, gy, st.input, st.pre, &gx, &dw);
-      break;
-    case architecture::OpKind::CNN1:
-      st_b = cnn1::backward_f32(cell->cnn1_op, gy, st.input, st.pre, &gx, &dw);
-      break;
-    case architecture::OpKind::CNN2:
-      st_b = cnn2::backward_f32(cell->cnn2_op, gy, st.input, st.pre, &gx, &dw);
-      break;
-    case architecture::OpKind::CNN3:
-      st_b = cnn3::backward_f32(cell->cnn3_op, gy, st.input, st.pre, &gx, &dw);
-      break;
-    case architecture::OpKind::ConvT1:
-      st_b = convt1::backward_f32(cell->convt1_op, gy, st.input, st.pre, &gx, &dw);
-      break;
-    case architecture::OpKind::ConvT2:
-      st_b = convt2::backward_f32(cell->convt2_op, gy, st.input, st.pre, &gx, &dw);
-      break;
-    case architecture::OpKind::ConvT3:
-      st_b = convt3::backward_f32(cell->convt3_op, gy, st.input, st.pre, &gx, &dw);
-      break;
-    case architecture::OpKind::RNN:
-      st_b = rnn::backward_f32(cell->rnn_op, gy, st.input, st.pre, &gx, &dw);
-      break;
-    case architecture::OpKind::LSTM:
-      st_b = lstm::backward_f32(cell->lstm_op, gy, st.input, st.pre, &gx, &dw);
-      break;
-    case architecture::OpKind::Sequential:
-      st_b = sequential::backward_f32(cell->sequential_op, gy, st.input, st.pre, &gx, &dw);
-      break;
-    case architecture::OpKind::Residual:
-      st_b = residual::backward_f32(cell->residual_op, gy, st.input, st.pre, &gx, &dw);
-      break;
-    case architecture::OpKind::Mamba:
-      st_b = mamba::backward_f32(cell->mamba_op, gy, st.input, st.pre, &gx, &dw);
-      break;
-    case architecture::OpKind::Stack:
-      st_b = stack::backward_f32(cell->stack_op, gy, st.input, st.pre, &gx, &dw);
-      break;
-    default: {
-      std::ostringstream oss;
-      oss << "runtime.backward: unsupported Op at z=" << st.coord.z << " y=" << st.coord.y
-          << " x=" << st.coord.x << " l=" << st.coord.l;
-      return Status::Err(StatusCode::InvalidArgument, oss.str());
-    }
-    }
-    if (!st_b) {
+    if (auto st_b = cell(*c, gy, st.input, st.pre, &gx, &dw); !st_b) {
       return st_b;
     }
     // Softmax (weightless) returns empty dW — skip like Go (nil GradW omitted).
