@@ -15,7 +15,7 @@ Canonical enum: Go `layers/parallel/train_mode.go` (`TrainMode`).
 
 Tick `[x]` when done. Put the **release tag** in **Ver** when that row (or the whole mode table) is signed.
 
-**Current engine:** `0.1.40-m2-meshtween`
+**Current engine:** `0.1.41-m2-tweensplit`
 
 ---
 
@@ -307,6 +307,16 @@ Each leaf ×34 kind prints **dtype / band / exact%W / goµs / cppµs / spd%Δ**.
 | 27–28 | LSTM f32 + ×34 | [x] | full spectrum + speed |
 | 29–31 | Dense TweenChain volume 111/211/222 | [x] | TCV1 exact_bit + speed |
 | 32–48 | ModeTweenChain volume 2×2×2×1 all signed kinds | [x] | TRC1…MBTC / C1TC…; volume Step |
+
+## w2a Go↔C++ (TweenSplit ModeTweenSplit) — sign-off evidence
+
+Run: `./scripts/linux_build_w2a.sh --tweensplit-train`  
+Wires: `TSB1`/`TSBO` (Stack 1/N @ full lr); `TSP1`/`TSPO` + `TRP1`…`MBTP` (volume leaf collect 1/N). Exact_bit vs Go.
+
+| # | Case | Status | Notes |
+|---|---|:---:|---|
+| 1–28 | Leaf kinds ×34 | [x] | FamilyTweenSplit OpenSplitTape twin |
+| 29–48 | Volume 2×2×2×1 all signed kinds | [x] | TSP1/TRP1… collect leaves 1/N |
 
 ## w2a Go↔C++ (MeshTween mesh-clock) — sign-off evidence
 
@@ -671,33 +681,36 @@ Ship: `runtime/step` `Credit::FamilyBP` under mesh clock (`MTC1`/`MTCO` ≡ Mesh
 
 ## 10 — TweenSplit
 
+Ship: `systems::tween_split` + `runtime/tween_split_train` — collect trainable leaves, apply \(g_i=\frac1N P(g_y)\) @ full lr (`TSB1`/`TSP1`/`TRP1`…); w2a `--tweensplit-train`.  
+CNN2/3 & ConvT2/3 share CNN1/ConvT1 path. Softmax weightless (N may be 0).
+
 | Layer | Inside node | 3D volumetric | Fully signed off | Ver |
 |---|:---:|:---:|:---:|---|
-| Dense | [ ] | [ ] | [ ] | |
-| RMSNorm | [ ] | [ ] | [ ] | |
-| LayerNorm | [ ] | [ ] | [ ] | |
-| SwiGLU | [ ] | [ ] | [ ] | |
-| Softmax | [ ] | [ ] | [ ] | |
-| Embedding | [ ] | [ ] | [ ] | |
-| MHA | [ ] | [ ] | [ ] | |
-| CNN1 | [ ] | [ ] | [ ] | |
-| CNN2 | [ ] | [ ] | [ ] | |
-| CNN3 | [ ] | [ ] | [ ] | |
-| ConvT1 | [ ] | [ ] | [ ] | |
-| ConvT2 | [ ] | [ ] | [ ] | |
-| ConvT3 | [ ] | [ ] | [ ] | |
-| RNN | [ ] | [ ] | [ ] | |
-| LSTM | [ ] | [ ] | [ ] | |
-| Sequential | [ ] | [ ] | [ ] | |
-| Residual | [ ] | [ ] | [ ] | |
+| Dense | [x] | [x] | [x] | `0.1.41-m2-tweensplit` |
+| RMSNorm | [x] | [x] | [x] | `0.1.41-m2-tweensplit` |
+| LayerNorm | [x] | [x] | [x] | `0.1.41-m2-tweensplit` |
+| SwiGLU | [x] | [x] | [x] | `0.1.41-m2-tweensplit` |
+| Softmax | [x] | [x] | [x] | `0.1.41-m2-tweensplit` |
+| Embedding | [x] | [x] | [x] | `0.1.41-m2-tweensplit` |
+| MHA | [x] | [x] | [x] | `0.1.41-m2-tweensplit` |
+| CNN1 | [x] | [x] | [x] | `0.1.41-m2-tweensplit` |
+| CNN2 | [x] | [x] | [x] | `0.1.41-m2-tweensplit` |
+| CNN3 | [x] | [x] | [x] | `0.1.41-m2-tweensplit` |
+| ConvT1 | [x] | [x] | [x] | `0.1.41-m2-tweensplit` |
+| ConvT2 | [x] | [x] | [x] | `0.1.41-m2-tweensplit` |
+| ConvT3 | [x] | [x] | [x] | `0.1.41-m2-tweensplit` |
+| RNN | [x] | [x] | [x] | `0.1.41-m2-tweensplit` |
+| LSTM | [x] | [x] | [x] | `0.1.41-m2-tweensplit` |
+| Sequential | [x] | [x] | [x] | `0.1.41-m2-tweensplit` |
+| Residual | [x] | [x] | [x] | `0.1.41-m2-tweensplit` |
 | KMeans | [ ] | [ ] | [ ] | |
-| Mamba | [ ] | [ ] | [ ] | |
+| Mamba | [x] | [x] | [x] | `0.1.41-m2-tweensplit` |
 | Metacognition | [ ] | [ ] | [ ] | |
 | GDN | [ ] | [ ] | [ ] | |
 | Parallel | [ ] | [ ] | [ ] | |
 | Stack | [ ] | [ ] | [ ] | |
 
-**Checkpoint:** bump version when this mode table advances.
+**Checkpoint:** `0.1.41-m2-tweensplit` — ModeTweenSplit Inside+×34 + volume 2×2×2×1 for NormalBP-signed kinds.
 
 ---
 
@@ -1489,3 +1502,4 @@ Fill as you tick rows / finish mode tables.
 | `0.1.38-m2-steptween` | StepTween × signed kinds | Line FamilyTween @ lr×0.5; STW1; 3D MeshTween vol (= ModeTween) |
 | `0.1.39-m2-steptweenchain` | StepTweenChain × signed kinds | Line FamilyBP @ full lr; STC1; 3D MeshTweenChain vol (= TweenChain) |
 | `0.1.40-m2-meshtween` | MeshTween + MeshTweenChain × signed kinds | MTW1 FamilyTween mesh-clock; MTC1 FamilyBP (= MeshBP); volume ModeTween/TweenChain |
+| `0.1.41-m2-tweensplit` | TweenSplit × signed kinds | 1/N projected gap @ full lr; TSB1/TSP1/TRP1…; leaf ×34 + volume |
