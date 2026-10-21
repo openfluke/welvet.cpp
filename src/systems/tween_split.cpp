@@ -379,6 +379,91 @@ Status collect_volume_leaves(architecture::Grid& g, const runtime::forward::Resu
   return Status::Ok();
 }
 
+Status linear_grad_in_leaf(Leaf& leaf, const TensorF32& gy, TensorF32* gx_out) {
+  if (!gx_out) {
+    return Status::Err(StatusCode::InvalidArgument, "tween_split linear: nil gx");
+  }
+  *gx_out = TensorF32{};
+  if (gy.data.empty() || leaf.input.data.empty()) {
+    return Status::Ok();
+  }
+  if (leaf.dense) {
+    return dense::linear_grad_in(*leaf.dense, gy, leaf.input, gx_out);
+  }
+  if (leaf.child && leaf.child->kind == stack::Kind::Dense) {
+    return dense::linear_grad_in(leaf.child->dense_op, gy, leaf.input, gx_out);
+  }
+  if (leaf.cell && leaf.cell->op_kind == architecture::OpKind::Dense) {
+    return dense::linear_grad_in(leaf.cell->dense_op, gy, leaf.input, gx_out);
+  }
+  TensorF32 dW;
+  if (leaf.child) {
+    return stack::child_family_bp(*leaf.child, gy, leaf.input, leaf.pre, 0.0, gx_out);
+  }
+  if (leaf.cell) {
+    return runtime::backward::cell(*leaf.cell, gy, leaf.input, leaf.pre, gx_out, &dW);
+  }
+  *gx_out = systems::tween::project_gap(gy, leaf.input.shape);
+  return Status::Ok();
+}
+
+Status apply_dense_dw_only(dense::Layer& d, const TensorF32& gy, const TensorF32& input,
+                           const TensorF32& pre, double lr) {
+  if (gy.data.empty() || input.data.empty()) {
+    return Status::Ok();
+  }
+  TensorF32 dW;
+  if (auto st = dense::grad_w_only(d, gy, input, pre, &dW); !st) {
+    return st;
+  }
+  if (lr != 0.0 && !dW.data.empty()) {
+    return dense::apply_grad_sgd(&d, dW, lr);
+  }
+  return Status::Ok();
+}
+
+Status apply_leaf_dw_linear(Leaf& leaf, const TensorF32& gy, double lr) {
+  if (leaf.dense) {
+    return apply_dense_dw_only(*leaf.dense, gy, leaf.input, leaf.pre, lr);
+  }
+  if (leaf.child && leaf.child->kind == stack::Kind::Dense) {
+    return apply_dense_dw_only(leaf.child->dense_op, gy, leaf.input, leaf.pre, lr);
+  }
+  if (leaf.cell && leaf.cell->op_kind == architecture::OpKind::Dense) {
+    return apply_dense_dw_only(leaf.cell->dense_op, gy, leaf.input, leaf.pre, lr);
+  }
+  return apply_one_leaf(leaf, gy, lr);
+}
+
+Status apply_linear_leaves(std::vector<Leaf>& leaves, const TensorF32& grad_out, double lr) {
+  const int n = static_cast<int>(leaves.size());
+  if (n == 0) {
+    return Status::Ok();
+  }
+  TensorF32 gy = grad_out;
+  const double scale = 1.0 / static_cast<double>(n);
+  for (int i = n - 1; i >= 0; --i) {
+    Leaf& leaf = leaves[static_cast<std::size_t>(i)];
+    if (!leaf.post.data.empty()) {
+      TensorF32 gi = systems::tween::project_gap(gy, leaf.post.shape);
+      scale_gap(&gi, scale);
+      if (auto st = apply_leaf_dw_linear(leaf, gi, lr); !st) {
+        return Status::Err(st.code, std::string("tween_split linear leaf: ") + st.message);
+      }
+    }
+    TensorF32 gx;
+    if (auto st = linear_grad_in_leaf(leaf, gy, &gx); !st) {
+      return Status::Err(st.code, std::string("tween_split linear gx: ") + st.message);
+    }
+    if (!gx.data.empty()) {
+      gy = std::move(gx);
+    } else if (!leaf.input.data.empty()) {
+      gy = systems::tween::project_gap(gy, leaf.input.shape);
+    }
+  }
+  return Status::Ok();
+}
+
 } // namespace
 
 Status apply_split(stack::Layer& ops, const TensorF32& grad_out, const TensorF32& input, double lr) {
@@ -458,6 +543,46 @@ Status train_volume_mse_head_proxy(architecture::Grid& g, const runtime::forward
     return st;
   }
   return apply_head_proxy_leaves(leaves, gy, lr);
+}
+
+Status apply_linear(stack::Layer& ops, const TensorF32& grad_out, const TensorF32& input,
+                    double lr) {
+  std::vector<Leaf> leaves;
+  if (auto st = collect_stack_leaves(ops, input, &leaves); !st) {
+    return st;
+  }
+  return apply_linear_leaves(leaves, grad_out, lr);
+}
+
+Status apply_linear_child(stack::Child& c, const TensorF32& grad_out, const TensorF32& input,
+                          double lr) {
+  std::vector<Leaf> leaves;
+  if (auto st = collect_child(c, input, &leaves); !st) {
+    return st;
+  }
+  return apply_linear_leaves(leaves, grad_out, lr);
+}
+
+Status train_volume_mse_linear(architecture::Grid& g, const runtime::forward::Result& fwd,
+                               const TensorF32& target, double lr, double* loss) {
+  if (!loss) {
+    return Status::Err(StatusCode::InvalidArgument, "tween_split linear: nil loss");
+  }
+  if (fwd.steps.empty()) {
+    return Status::Err(StatusCode::InvalidArgument, "tween_split linear: empty forward tape");
+  }
+  if (auto st = runtime::training::mse(fwd.output, target, loss); !st) {
+    return st;
+  }
+  TensorF32 gy;
+  if (auto st = runtime::training::mse_grad(fwd.output, target, &gy); !st) {
+    return st;
+  }
+  std::vector<Leaf> leaves;
+  if (auto st = collect_volume_leaves(g, fwd, &leaves); !st) {
+    return st;
+  }
+  return apply_linear_leaves(leaves, gy, lr);
 }
 
 } // namespace welvet::systems::tween_split

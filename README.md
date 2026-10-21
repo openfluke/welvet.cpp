@@ -23,16 +23,16 @@ Applications can choose **automatic placement** or **force an explicit backend**
 
 ## Support scorecard — so far
 
-**Version `0.1.45` — M2 TweenSplitHeadProxy + StepTweenAlt + TweenAlt + StepTweenSplit + TweenSplit + MeshTween + MeshTweenChain + Step*/ModeTween* + MeshBP + StepBP Line ×34 + prior NormalBP**. Engine board **70 / 100**, extensions **13 / 100**, combined **83 / 200**. Live inventory: `GAPS.md` / `welvet_dense_fwd --gaps` / `welvet_dense_fwd --version`.
+**Version `0.1.46` — M2 TweenSplitLinear + TweenSplitHeadProxy + StepTweenAlt + TweenAlt + StepTweenSplit + TweenSplit + MeshTween + MeshTweenChain + Step*/ModeTween* + MeshBP + StepBP Line ×34 + prior NormalBP**. Engine board **70 / 100**, extensions **13 / 100**, combined **83 / 200**. Live inventory: `GAPS.md` / `welvet_dense_fwd --gaps` / `welvet_dense_fwd --version`.
 
-- [ ] **Layers:** Dense + MHA + SwiGLU + norms + Softmax + Sequential + Residual + Parallel + CNN1/2/3 + ConvT1/2/3 + RNN + LSTM + Embedding + KMeans + Mamba + Metacognition + GDN forward — **22 / 23** kinds have any forward; **NormalBP + StepBP/MeshBP + ModeTween/TweenChain/TweenSplit/TweenAlt/TweenSplitHeadProxy + StepTween/StepTweenChain/StepTweenSplit/StepTweenAlt + MeshTween/MeshTweenChain** signed for Dense+norms+SwiGLU+Softmax+Embedding+MHA+CNN+ConvT+RNN+LSTM+Sequential+Residual+Mamba; thin Stack host done (full cameral Stack gap); seqmix Kind helper done.
+- [ ] **Layers:** Dense + MHA + SwiGLU + norms + Softmax + Sequential + Residual + Parallel + CNN1/2/3 + ConvT1/2/3 + RNN + LSTM + Embedding + KMeans + Mamba + Metacognition + GDN forward — **22 / 23** kinds have any forward; **NormalBP + StepBP/MeshBP + ModeTween/TweenChain/TweenSplit/TweenAlt/TweenSplitHeadProxy/TweenSplitLinear + StepTween/StepTweenChain/StepTweenSplit/StepTweenAlt + MeshTween/MeshTweenChain** signed for Dense+norms+SwiGLU+Softmax+Embedding+MHA+CNN+ConvT+RNN+LSTM+Sequential+Residual+Mamba; thin Stack host done (full cameral Stack gap); seqmix Kind helper done.
 - [x] **Dtypes:** FormatNone pack/decode + Dense MatVec for **all 34** storage types (quant formats still `gap?`).
 - [x] **Forward compute:** Dense FormatNone×34 CPU/SIMD validated via `w2a` `Go_v_Cpp` **exact_bit** spectrum (other 22 kinds pending).
 - [ ] **Backward compute:** **18 / 23** — Dense + norms + SwiGLU + Softmax + Embedding + MHA + CNN1/2/3 + ConvT1/2/3 + RNN + LSTM + Sequential + Residual + Mamba NormalBP (dX/dW·dγβ/SGD + volume; Softmax dX-only; Embedding dX=0; MHA ModeSelf; CNN im2col; ConvT scatter; RNN/LSTM BPTT; Sequential reverse Dense; Residual F+skip; Mamba scan BPTT) w2a exact_bit ×34; others pending.
 - [ ] **Compute targets:** CPU host path only; vendor accel loaders are `gap?` placeholders — see the hardware summary below.
 - [ ] **Platforms:** Linux host build path present; macOS / Windows / Android / iOS toolchains are placeholders — **1 / 5** OS families buildable (not yet multi-OS CI validated).
-- [x] **Runtime / architecture (partial):** volumetric Grid/Cell/HopOrder/remote links + NormalBP volume Step; **Line StepBP/StepTween/StepTweenSplit/StepTweenAlt** + **MeshBP/MeshTween/MeshTweenChain** (`runtime/step` Credit FamilyBP|FamilyTween); **ModeTween** + **ModeTweenChain** + **TweenSplit** + **TweenAlt** + **TweenSplitHeadProxy**; full cameral Stack pending.
-- [ ] **Systems:** DNA, evolution, TANHI and telemetry pending; **ModeTween** + **ModeTweenChain** + **TweenSplit** (+ HeadProxy) + **TweenAlt** done (`systems/tween*`).
+- [x] **Runtime / architecture (partial):** volumetric Grid/Cell/HopOrder/remote links + NormalBP volume Step; **Line StepBP/StepTween/StepTweenSplit/StepTweenAlt** + **MeshBP/MeshTween/MeshTweenChain** (`runtime/step` Credit FamilyBP|FamilyTween); **ModeTween** + **ModeTweenChain** + **TweenSplit** + **TweenAlt** + **TweenSplitHeadProxy** + **TweenSplitLinear**; full cameral Stack pending.
+- [ ] **Systems:** DNA, evolution, TANHI and telemetry pending; **ModeTween** + **ModeTweenChain** + **TweenSplit** (+ HeadProxy/Linear) + **TweenAlt** done (`systems/tween*`).
 - [ ] **Model / IO:** tokenizer, ENTITY, transformer, sampling and HF support pending.
 - [ ] **Post-v1 engine features:** Lucy/LPD, Lean, CamSync and train/action scheduling pending.
 - [x] **Native use / integration (partial):** C++ API + C ABI for Dense forward + `welvet_dense_fwd` tool; Go delegation / NAC still `gap?`.
@@ -43,7 +43,7 @@ Applications can choose **automatic placement** or **force an explicit backend**
 
 | Compute target | Forward | Backward | Weight updates | Supported cards / devices so far |
 |---|:---:|:---:|:---:|---|
-| Native CPU — x86-64 / Arm64 | 🚧 | 🚧 | 🚧 | Dense+norms+SwiGLU+Softmax+Embedding+MHA+CNN+ConvT+RNN+LSTM+Sequential+Residual+Mamba FormatNone×34 fwd + NormalBP + volume Step + Line StepBP/StepTween/StepTweenSplit/StepTweenAlt + MeshBP + ModeTween/TweenChain/TweenSplit/TweenAlt/TweenSplitHeadProxy + MeshTween/MeshTweenChain (v0.1.45); other TrainModes pending |
+| Native CPU — x86-64 / Arm64 | 🚧 | 🚧 | 🚧 | Dense+norms+SwiGLU+Softmax+Embedding+MHA+CNN+ConvT+RNN+LSTM+Sequential+Residual+Mamba FormatNone×34 fwd + NormalBP + volume Step + Line StepBP/StepTween/StepTweenSplit/StepTweenAlt + MeshBP + ModeTween/TweenChain/TweenSplit/TweenAlt/TweenSplitHeadProxy/TweenSplitLinear + MeshTween/MeshTweenChain (v0.1.46); other TrainModes pending |
 | NVIDIA GPU | ⬜ | ⬜ | ⬜ | None validated |
 | AMD GPU | ⬜ | ⬜ | ⬜ | None validated |
 | Intel GPU | ⬜ | ⬜ | ⬜ | None validated |
@@ -62,14 +62,14 @@ The long-term destination is a standalone C++ Welvet engine that discovers avail
 
 | Project state | Readout |
 |---|---|
-| **Version** | **`0.1.45-m2-tweensplitheadproxy`** (`welvet_dense_fwd --version` / CMake `0.1.45`) |
+| **Version** | **`0.1.46-m2-tweensplitlinear`** (`welvet_dense_fwd --version` / CMake `0.1.46`) |
 | **Runway** | **70 / 100 engine + 13 / 100 extensions = 83 / 200** |
-| **Milestone** | **M2.25** — TweenSplitHeadProxy (`HPB1` head Jᵀgy + hidden 1/(N−1) P(gx)) leaf ×34 + volume; prior StepTweenAlt + TweenAlt |
+| **Milestone** | **M2.26** — TweenSplitLinear (`LLB1` reverse 1/N P(gy); Dense Wᵀgy no act′) leaf ×34 + volume; prior HeadProxy |
 | **Scope** | Full Welvet engine rebuild: architecture, runtime, layers, numerical types, training, systems, model/IO; extended hardware, integration and distribution |
 | **Platforms** | Linux (host build) · macOS / Windows / Android / iOS (toolchain placeholders) |
 | **Hardware families** | Native CPU · NVIDIA · AMD · Intel GPU/NPU · Apple GPU/Neural Engine · Qualcomm GPU/NPU · Google TPU |
 | **Baseline inspected** | Welvet source identifying itself as v1.1.3; 18 October 2026 |
-| **What exists here today** | Buildable `libwelvet` + C ABI + `welvet_dense_fwd` (…/**MTW1**/**MTC1**/**TWB1**/**TWV1**/**TCB1**/**TCV1**/**STW1**/**STC1**/**STS1**/**TSB1**/**HPB1**); Dense+…+Mamba FormatNone×34 fwd+**NormalBP** + volume F/B/SGD + **Line StepBP/StepTween/StepTweenSplit/StepTweenAlt** + **MeshBP/MeshTween/MeshTweenChain** + **ModeTween** + **ModeTweenChain** + **TweenSplit** + **TweenSplitHeadProxy** + Parallel/seqmix + KMeans + Metacognition + GDN; `GAPS.md` census; research notes under [`docs/`](docs/README.md) |
+| **What exists here today** | Buildable `libwelvet` + C ABI + `welvet_dense_fwd` (…/**MTW1**/**MTC1**/**TWB1**/**TWV1**/**TCB1**/**TCV1**/**STW1**/**STC1**/**STS1**/**TSB1**/**HPB1**/**LLB1**); Dense+…+Mamba FormatNone×34 fwd+**NormalBP** + volume F/B/SGD + **Line StepBP/StepTween/StepTweenSplit/StepTweenAlt** + **MeshBP/MeshTween/MeshTweenChain** + **ModeTween** + **ModeTweenChain** + **TweenSplit** + **TweenSplitHeadProxy** + **TweenSplitLinear** + Parallel/seqmix + KMeans + Metacognition + GDN; `GAPS.md` census; research notes under [`docs/`](docs/README.md) |
 
 This README is the **runway**: the implementation contract and scorecard for where welvet.cpp is going. Every unchecked cell is planned work. Welvet's Go engine score does not transfer to the C++ rebuild, and historical benchmark reports do not count as a shipped native backend.
 
@@ -204,7 +204,7 @@ Post-v1 Go features are included in the relevant categories: Lucy/LPD and Lean i
 | 10 | Hardware validation + performance | 8 | Real-device matrices, provenance, transfer-inclusive timings and released-artifact checks | 🚧 | 3 |
 | | **Extension total** | **100** | | **🚧** | **13 / 100** |
 
-**Combined runway: 83 / 200.** Partial notes (v0.1.45): NormalBP leaf+volume ×34 retained; **StepBP/StepTween/StepTweenSplit/StepTweenAlt Line** + **MeshBP/MeshTween/MeshTweenChain** 3D; **ModeTween** + **ModeTweenChain** + **TweenSplit** + **TweenAlt** + **TweenSplitHeadProxy**; full cameral Stack / poly Parallel / MeshTweenSplit / MeshTweenAlt still gap. Parallel (`WPL1`) still forward-only.
+**Combined runway: 83 / 200.** Partial notes (v0.1.46): NormalBP leaf+volume ×34 retained; **StepBP/StepTween/StepTweenSplit/StepTweenAlt Line** + **MeshBP/MeshTween/MeshTweenChain** 3D; **ModeTween** + **ModeTweenChain** + **TweenSplit** + **TweenAlt** + **TweenSplitHeadProxy** + **TweenSplitLinear**; full cameral Stack / poly Parallel / MeshTweenSplit / MeshTweenAlt still gap. Parallel (`WPL1`) still forward-only.
 
 “All GPUs/NPUs/TPUs” is the expansion ambition. Each supported device model, numerical type, layer, shape and pass must have an explicit tested capability profile. A working inference partition cannot earn training credit. Additional vendors and device generations can extend the coverage inventory without quietly changing these fixed weights.
 
@@ -429,7 +429,8 @@ The C++ engine must implement Welvet's credit assignment and scheduling, as well
 | StepTween / MeshTween | Tween credit under Step/Mesh schedule | ✅ StepTween + MeshTween mesh-clock (MTW1) signed |
 | TweenSplit / StepTweenSplit / MeshTweenSplit | Leaf enumeration, split credit, correct scaling | 🚧 TweenSplit + StepTweenSplit signed; MeshTweenSplit open |
 | TweenAlt / StepTweenAlt / MeshTweenAlt | Alternating schedules without stale weight/state use | 🚧 TweenAlt + StepTweenAlt signed; MeshTweenAlt open |
-| HeadProxy / StepHeadProxy variants | True head Jacobian, hidden dW-only work | 🚧 TweenSplitHeadProxy signed; Step/Async/Linear/FastProxy/Sparse open |
+| HeadProxy / StepHeadProxy variants | True head Jacobian, hidden dW-only work | 🚧 TweenSplitHeadProxy signed; Step/Async open |
+| Linear / LinearCache Split variants | 1/N P(W̃ᵀ g_y), skip act′ on the walk | 🚧 TweenSplitLinear signed; LinearCache/Step open |
 | Linear / StepLinear variants | Affine transpose walk under Welvet's derivative policy | ⬜ |
 | FastProxy / StepFastProxy / MeshFastProxy variants | Head-transpose proxy plus hidden dW-only | ⬜ |
 | LinearCache / StepLinearCache variants | Explicit cache generation and invalidation | ⬜ |

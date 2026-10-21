@@ -15,7 +15,7 @@ Canonical enum: Go `layers/parallel/train_mode.go` (`TrainMode`).
 
 Tick `[x]` when done. Put the **release tag** in **Ver** when that row (or the whole mode table) is signed.
 
-**Current engine:** `0.1.45-m2-tweensplitheadproxy`
+**Current engine:** `0.1.46-m2-tweensplitlinear`
 
 ---
 
@@ -888,33 +888,36 @@ CNN2/3 & ConvT2/3 share CNN1/ConvT1 path.
 
 ## 15 — TweenSplitLinear
 
+Ship: `systems::tween_split::apply_linear` + `runtime/tween_split_linear_train` — reverse walk; each leaf 1/N P(gy); Dense gx = Wᵀgy (no act'); wire `LLB1`/`LLV1`/`LRP1`…; w2a `--tweensplitlinear-train`.  
+CNN2/3 & ConvT2/3 share CNN1/ConvT1 path.
+
 | Layer | Inside node | 3D volumetric | Fully signed off | Ver |
 |---|:---:|:---:|:---:|---|
-| Dense | [ ] | [ ] | [ ] | |
-| RMSNorm | [ ] | [ ] | [ ] | |
-| LayerNorm | [ ] | [ ] | [ ] | |
-| SwiGLU | [ ] | [ ] | [ ] | |
-| Softmax | [ ] | [ ] | [ ] | |
-| Embedding | [ ] | [ ] | [ ] | |
-| MHA | [ ] | [ ] | [ ] | |
-| CNN1 | [ ] | [ ] | [ ] | |
-| CNN2 | [ ] | [ ] | [ ] | |
-| CNN3 | [ ] | [ ] | [ ] | |
-| ConvT1 | [ ] | [ ] | [ ] | |
-| ConvT2 | [ ] | [ ] | [ ] | |
-| ConvT3 | [ ] | [ ] | [ ] | |
-| RNN | [ ] | [ ] | [ ] | |
-| LSTM | [ ] | [ ] | [ ] | |
-| Sequential | [ ] | [ ] | [ ] | |
-| Residual | [ ] | [ ] | [ ] | |
+| Dense | [x] | [x] | [x] | `0.1.46-m2-tweensplitlinear` |
+| RMSNorm | [x] | [x] | [x] | `0.1.46-m2-tweensplitlinear` |
+| LayerNorm | [x] | [x] | [x] | `0.1.46-m2-tweensplitlinear` |
+| SwiGLU | [x] | [x] | [x] | `0.1.46-m2-tweensplitlinear` |
+| Softmax | [x] | [x] | [x] | `0.1.46-m2-tweensplitlinear` |
+| Embedding | [x] | [x] | [x] | `0.1.46-m2-tweensplitlinear` |
+| MHA | [x] | [x] | [x] | `0.1.46-m2-tweensplitlinear` |
+| CNN1 | [x] | [x] | [x] | `0.1.46-m2-tweensplitlinear` |
+| CNN2 | [x] | [x] | [x] | `0.1.46-m2-tweensplitlinear` |
+| CNN3 | [x] | [x] | [x] | `0.1.46-m2-tweensplitlinear` |
+| ConvT1 | [x] | [x] | [x] | `0.1.46-m2-tweensplitlinear` |
+| ConvT2 | [x] | [x] | [x] | `0.1.46-m2-tweensplitlinear` |
+| ConvT3 | [x] | [x] | [x] | `0.1.46-m2-tweensplitlinear` |
+| RNN | [x] | [x] | [x] | `0.1.46-m2-tweensplitlinear` |
+| LSTM | [x] | [x] | [x] | `0.1.46-m2-tweensplitlinear` |
+| Sequential | [x] | [x] | [x] | `0.1.46-m2-tweensplitlinear` |
+| Residual | [x] | [x] | [x] | `0.1.46-m2-tweensplitlinear` |
 | KMeans | [ ] | [ ] | [ ] | |
-| Mamba | [ ] | [ ] | [ ] | |
+| Mamba | [x] | [x] | [x] | `0.1.46-m2-tweensplitlinear` |
 | Metacognition | [ ] | [ ] | [ ] | |
 | GDN | [ ] | [ ] | [ ] | |
 | Parallel | [ ] | [ ] | [ ] | |
 | Stack | [ ] | [ ] | [ ] | |
 
-**Checkpoint:** bump version when this mode table advances.
+**Checkpoint:** `0.1.46-m2-tweensplitlinear` — ModeTweenSplitLinear Inside+×34 + volume 2×2×2×1 for NormalBP-signed kinds.
 
 ---
 
@@ -1547,3 +1550,4 @@ Fill as you tick rows / finish mode tables.
 | `0.1.43-m2-tweenalt` | TweenAlt × signed kinds | Split→Tween AltTimes=1; TAB1/TAV1/TRA1…; leaf ×34 + volume |
 | `0.1.44-m2-steptweenalt` | StepTweenAlt × signed kinds | Line FamilyTweenAlt Split→Tween; STA1; 3D MeshTweenAlt vol (= TweenAlt) |
 | `0.1.45-m2-tweensplitheadproxy` | TweenSplitHeadProxy × signed kinds | Head Jᵀgy + hidden 1/(N−1) P(gx); HPB1/HPV1/HRP1…; leaf ×34 + volume |
+| `0.1.46-m2-tweensplitlinear` | TweenSplitLinear × signed kinds | Reverse walk 1/N P(gy); Dense gx=Wᵀgy no act'; LLB1/LLV1/LRP1…; leaf ×34 + volume |

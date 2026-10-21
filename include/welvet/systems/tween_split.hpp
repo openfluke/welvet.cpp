@@ -30,4 +30,12 @@ Status apply_head_proxy_child(stack::Child& c, const TensorF32& grad_out, const 
 Status train_volume_mse_head_proxy(architecture::Grid& g, const runtime::forward::Result& fwd,
                                    const TensorF32& target, double lr, double* loss);
 
+// ModeTweenSplitLinear: reverse walk; each leaf 1/N P(gy); Dense gx = Wᵀgy (no act').
+Status apply_linear(stack::Layer& ops, const TensorF32& grad_out, const TensorF32& input,
+                    double lr);
+Status apply_linear_child(stack::Child& c, const TensorF32& grad_out, const TensorF32& input,
+                          double lr);
+Status train_volume_mse_linear(architecture::Grid& g, const runtime::forward::Result& fwd,
+                               const TensorF32& target, double lr, double* loss);
+
 } // namespace welvet::systems::tween_split

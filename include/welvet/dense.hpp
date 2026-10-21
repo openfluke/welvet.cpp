@@ -37,6 +37,14 @@ Status forward(const Layer& layer, const TensorF32& input, TensorF32* pre, Tenso
 Status backward_f32(const Layer& layer, const TensorF32& grad_out, const TensorF32& input,
                     const TensorF32& pre, TensorF32* grad_in, TensorF32* grad_w);
 
+// Go dense.LinearGradIn: gx = Wᵀ gy with no ⊙ act' (TweenSplitLinear walk).
+Status linear_grad_in(const Layer& layer, const TensorF32& grad_out, const TensorF32& input,
+                      TensorF32* grad_in);
+
+// Go dense.GradWOnly: dW = outer(gy ⊙ act'(pre), x); no gx / Wᵀ.
+Status grad_w_only(const Layer& layer, const TensorF32& grad_out, const TensorF32& input,
+                   const TensorF32& pre, TensorF32* grad_w);
+
 // Apply dW via weights.ApplySGD (FormatNone native).
 Status apply_grad_sgd(Layer* layer, const TensorF32& dW, double lr);
 
