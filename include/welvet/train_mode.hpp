@@ -55,4 +55,57 @@ inline bool train_mode_is_frozen(TrainMode m) {
 
 inline bool train_mode_is_shadow(TrainMode m) { return m == TrainMode::Shadow; }
 
+// Go parallel.TrainMode.Family — collapses Step/Mesh scheduling to Op update class.
+enum class TrainFamily : std::uint8_t {
+  BP = 0,
+  Tween = 1,
+  TweenChain = 2,
+  TweenSplit = 3,
+  TweenAlt = 4,
+  Freeze = 5,
+};
+
+inline TrainFamily train_mode_family(TrainMode m) {
+  switch (m) {
+  case TrainMode::Freeze:
+  case TrainMode::Shadow:
+    return TrainFamily::Freeze;
+  case TrainMode::Adversarial:
+  case TrainMode::Memory:
+    return TrainFamily::BP; // signs/gates applied in mixed train
+  case TrainMode::Tween:
+  case TrainMode::StepTween:
+  case TrainMode::MeshTween:
+    return TrainFamily::Tween;
+  case TrainMode::TweenChain:
+  case TrainMode::StepTweenChain:
+  case TrainMode::MeshTweenChain:
+    return TrainFamily::TweenChain;
+  case TrainMode::TweenSplit:
+  case TrainMode::StepTweenSplit:
+  case TrainMode::MeshTweenSplit:
+  case TrainMode::TweenSplitHeadProxy:
+  case TrainMode::TweenSplitLinear:
+  case TrainMode::TweenSplitFastProxy:
+  case TrainMode::TweenSplitLinearCache:
+  case TrainMode::TweenSplitHeadProxyAsync:
+  case TrainMode::TweenSplitSparse:
+  case TrainMode::MeshTweenSplitFastProxy:
+  case TrainMode::MeshTweenSplitSparse:
+  case TrainMode::StepTweenSplitHeadProxy:
+  case TrainMode::StepTweenSplitLinear:
+  case TrainMode::StepTweenSplitFastProxy:
+  case TrainMode::StepTweenSplitLinearCache:
+  case TrainMode::StepTweenSplitHeadProxyAsync:
+  case TrainMode::StepTweenSplitSparse:
+    return TrainFamily::TweenSplit;
+  case TrainMode::TweenAlt:
+  case TrainMode::StepTweenAlt:
+  case TrainMode::MeshTweenAlt:
+    return TrainFamily::TweenAlt;
+  default:
+    return TrainFamily::BP;
+  }
+}
+
 } // namespace welvet

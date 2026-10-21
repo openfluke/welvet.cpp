@@ -1,6 +1,6 @@
 # welvet.cpp gap census
 
-**Version `0.1.72-m2-memory`** — see main [README](README.md) scoreboard (**72 / 100** engine + **13 / 100** extensions = **85 / 200**).
+**Version `0.1.82-m2-parallel-cascade`** — see main [README](README.md) scoreboard (**73 / 100** engine + **13 / 100** extensions = **86 / 200**).
 
 SIMD/GEMV code under `include/welvet/simd/` + `include/welvet/imported/` was **copied** from `welvet-to-rust_n_cpp/welvet_cpp` (kernels only — not that tree’s docs).
 
@@ -40,6 +40,7 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 ./scripts/linux_build_w2a.sh --tweensplitlinear-train
 ./scripts/linux_build_w2a.sh --tweensplitfastproxy-train
 ./scripts/linux_build_w2a.sh --parallel
+./scripts/linux_build_w2a.sh --parallel-train
 ./scripts/linux_build_w2a.sh --seqmix
 ./scripts/linux_build_w2a.sh --all
 
@@ -47,7 +48,7 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 ./build/welvet_dense_fwd --gaps
 ```
 
-## Done (through M2.45 Memory cascade + M2.44 Adversarial cascade + M2.43 Meta/GDN/Stack cascade + M2.42 Shadow + M2.41 Memory Parallel + M2.40 Adversarial Parallel + M2.39 Freeze + M2.38 StepTweenSplitSparse + StepTweenSplitHeadProxyAsync + StepTweenSplitLinearCache + StepTweenSplitFastProxy + StepTweenSplitLinear + StepTweenSplitHeadProxy + MeshTweenSplitSparse + MeshTweenSplit/Alt/SplitFastProxy + TweenSplitSparse + TweenSplitHeadProxyAsync + TweenSplitLinearCache + TweenSplitFastProxy + TweenSplitLinear + TweenSplitHeadProxy + StepTweenAlt + TweenAlt + StepTweenSplit + TweenSplit + MeshTween* + Step*/ModeTween* + MeshBP + StepBP Line + NormalBP credit)
+## Done (through M2.51 Parallel Phase F cascade — combines + nested Parallel + poly polish — + M2.50 Phase E poly BranchOp — + M2.49 Parallel OpKind + 3D Phase D — + prior cascades)
 
 | ID | Detail |
 |---|---|
@@ -99,22 +100,26 @@ Every unimplemented rebuild item is marked **`gap?`**. Implemented slices flip t
 | **TweenSplitLinearCache** | Cached linear walk; refresh every 20; hit rescale cache×live/norm; LCB1 leaf ×34; LCV1/CRP1… volume; w2a `--tweensplitlinearcache-train` |
 | **TweenSplitHeadProxyAsync** | Stale-proxy hidden first; head GradWOnly; store Wᵀgy; HAB1 leaf ×34; HAV1/ARPA… volume; w2a `--tweensplitheadproxyasync-train` |
 | **TweenSplitSparse** | Head GradWOnly; one hidden at sparse%(N−1) on P(Wᵀgy); SPB1 leaf ×34; SPV1/SRP1… volume; w2a `--tweensplitsparse-train` |
-| **Freeze** | Fwd+mse; no ApplyGrad; FRB1 leaf ×34; FRV1/FRR1… volume; w2a `--freeze-train` |
+| **Freeze** | Fwd+mse; no ApplyGrad; FRB1 leaf ×34; FRV1/FRR1… volume; Parallel BranchMode FZB1 Freeze∥NormalBP + parent ModeFreeze; w2a `--freeze-train` |
 | **Adversarial** | Parallel BranchMode neg-LR (ADB1); top-level Stack ModeAdversarial ≡ FamilyBP (TCB1 leaf ×34 + TRC1…MBTC vol); w2a `--adversarial-train` |
 | **Memory** | Parallel BranchMode + CamKit SurpriseThresh (MMB1); top-level Stack ModeMemory ≡ FamilyBP (TCB1 leaf ×34 + TRC1…MBTC vol); w2a `--memory-train` |
 | **Shadow** | Parallel BranchMode + CamKit KD; SHB1 Dense Add ×34; w2a `--shadow-train` |
-| Transformer / composition | Sequential+Residual NormalBP, seqmix Kind, **Parallel Dense×7 combines** |
+| **Parallel NormalBP** | Dense all combines (Concat/Add/Avg/Max/SparseK/Disagree/Filter+gate) ModeNormalBP PNB1 f32 exact_bit + Add Inside+×34 + volume PNV1 2×2×2×1; w2a `--parallel-train` |
+| **Parallel Freeze** | Dense Add Freeze∥NormalBP + parent ModeFreeze Inside+×34 (FZB1) + volume PNFR; w2a `--freeze-train` |
+| **Parallel Tween families + 3D** | PTW1/PTC1/PTS1/PTA1 leaf + PNV1/PNTV/PNTC/PNTP/PNTA/PNFP/PNSP/PNFR volume; Mesh* Parallel Dense Add 2×2×2×1; Shadow/Adv/Memory Parallel 3D closed; w2a `--parallel-train` |
+| **Parallel poly + nested (Phase E/F)** | `stack::Child` BranchOp under Parallel; NewFromBranches; ModeNormalBP Add PPB1 — Dense/norms/SwiGLU/Softmax/Seq/Res/Meta/MHA/RNN/LSTM/Emb/CNN1–3/ConvT1–3/Mamba/GDN/KMeans/NestedStack + **nested Parallel-as-branch** f32; w2a `--parallel-train` |
+| Transformer / composition | Sequential+Residual NormalBP, seqmix Kind, **Parallel Dense×7 combines** + **poly Parallel** + nested Parallel |
 | Extended | ConvT, **KMeans NormalBP+cascade**, Mamba NormalBP, Metacognition, GDN NormalBP, Stack NestedStack NormalBP |
 | CNN / RNN / LSTM | FormatNone×34 forwards |
-| ABI wires | … / FRB1 / ADB1 / MMB1 / SHB1 |
+| ABI wires | … / FRB1 / ADB1 / MMB1 / SHB1 / PNB1 / **PPB1** / PNV1 / PNTV…PNFR / FZB1 / PTW1 / PTC1 / PTS1 / PTA1 |
 
 ## gap? — remaining
 
-- Parallel poly/nested/CamSync/DNA/Dream; Parallel Meta/GDN under Adv/Memory/Shadow 3D (stack Meta/GDN/NestedStack cameral Inside signed); full cameral Stack host
-- Parallel/cameral remaining; Dense quants; systems (DNA/evolution/TANHI/telemetry); model/IO; vendor accel
+- **Parallel cameral leftovers (deferred):** CamSync (full Go BlendStores/groups/cross), DNA/Dream systems, full cameral Stack host (NewFromOps + BranchModes on Stack)
+- Dense quants; systems (DNA/evolution/TANHI/telemetry); model/IO; vendor accel
 
 See `src/gaps/registry.cpp`.
 
 Training runway checklist (leaf NormalBP → TrainModes): [`docs/TRAINING_CHECKLIST.md`](docs/TRAINING_CHECKLIST.md).
 
-Note: Go Parallel also has a large **w2a/suites/parallel** suite (cameral/poly/train). C++ M1 is Dense combine host via **go_v_cpp** `WPL1` only.
+Note: Go Parallel also has a large **w2a/suites/parallel** suite (cameral/poly/train). C++ Phase F signs combines + nested + poly via **go_v_cpp** `PNB1`/`PPB1` (+ Dense `WPL1`).

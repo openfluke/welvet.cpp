@@ -149,6 +149,9 @@ Status sgd_dense(architecture::Grid& g, const forward::Result& fwd, const backwa
     case architecture::OpKind::KMeans:
       st_a = kmeans::apply_grad_sgd(&cell->kmeans_op, *it->second, lr);
       break;
+    case architecture::OpKind::Parallel:
+      st_a = parallel::apply_grad_sgd(&cell->parallel_op, *it->second, lr);
+      break;
     default:
       return Status::Err(StatusCode::InvalidArgument, "training: SGD unsupported cell Op");
     }

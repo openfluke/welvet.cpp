@@ -40,7 +40,7 @@ struct SplitAccel {
   int sparse = 0;
 };
 
-// Matches architecture::OpKind values (Dense=1 … Mamba=18; NestedStack=19; Metacognition=20; GDN=21; KMeans=22).
+// Matches architecture::OpKind values (Dense=1 … KMeans=22; Parallel=23).
 enum class Kind : int32_t {
   None = 0,
   Dense = 1,
@@ -65,6 +65,18 @@ enum class Kind : int32_t {
   Metacognition = 20,
   GDN = 21,
   KMeans = 22,
+  Parallel = 23, // nested Parallel-as-branch (nested = branches; dense_op = optional Filter gate)
+};
+
+// POD Parallel nest header (avoids circular include of parallel::Layer).
+struct ParallelNest {
+  int32_t combine = 1; // parallel::Combine
+  int dim = 0;
+  int out_feat = 0;
+  int seq_len = 0;
+  int sparse_k = 0;
+  double disagree_beta = 0;
+  int has_gate = 0; // when 1, dense_op holds Filter gate
 };
 
 // Thin heterogeneous chain host (Go parallel.Stack subset — no CamSync / BranchModes).
@@ -91,7 +103,8 @@ struct Child {
   metacognition::Layer metacognition_op;
   gdn::Layer gdn_op;
   kmeans::Layer kmeans_op;
-  std::vector<Child> nested; // when kind == NestedStack
+  std::vector<Child> nested; // NestedStack children, or Parallel branches
+  ParallelNest parallel_nest{}; // when kind == Parallel
 };
 
 struct Layer {

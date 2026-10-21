@@ -479,4 +479,20 @@ Status bind_kmeans(Grid& g, int z, int y, int x, int l, kmeans::Layer op) {
   return Status::Ok();
 }
 
+Status bind_parallel(Grid& g, int z, int y, int x, int l, parallel::Layer op) {
+  Cell* c = at(g, z, y, x, l);
+  if (!c) {
+    return bad_coord("bind", z, y, x, l);
+  }
+  c->meta = op.meta;
+  c->meta.type = LayerType::Parallel;
+  c->meta.z = z;
+  c->meta.y = y;
+  c->meta.x = x;
+  c->meta.l = l;
+  c->op_kind = OpKind::Parallel;
+  c->parallel_op = std::move(op);
+  return Status::Ok();
+}
+
 } // namespace welvet::architecture

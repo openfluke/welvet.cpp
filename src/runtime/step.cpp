@@ -123,6 +123,8 @@ Status apply_one(architecture::Cell* cell, const TensorF32& dW, double lr) {
     return gdn::apply_grad_sgd(&cell->gdn_op, dW, lr);
   case architecture::OpKind::KMeans:
     return kmeans::apply_grad_sgd(&cell->kmeans_op, dW, lr);
+  case architecture::OpKind::Parallel:
+    return parallel::apply_grad_sgd(&cell->parallel_op, dW, lr);
   default:
     return Status::Err(StatusCode::InvalidArgument, "step: SGD unsupported cell Op");
   }

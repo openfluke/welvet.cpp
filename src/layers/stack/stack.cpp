@@ -1,9 +1,39 @@
 #include "welvet/stack.hpp"
 
+#include "welvet/parallel.hpp"
+
+#include <optional>
 #include <string>
 #include <utility>
 
 namespace welvet::stack {
+namespace {
+
+Status parallel_from_child(Child& c, parallel::Layer* out) {
+  if (!out) return Status::Err(StatusCode::InvalidArgument, "stack: nil parallel out");
+  parallel::Config cfg;
+  cfg.combine = static_cast<parallel::Combine>(c.parallel_nest.combine);
+  cfg.dim = c.parallel_nest.dim;
+  cfg.out_feat = c.parallel_nest.out_feat;
+  cfg.seq_len = c.parallel_nest.seq_len;
+  cfg.sparse_k = c.parallel_nest.sparse_k;
+  cfg.disagree_beta = c.parallel_nest.disagree_beta;
+  cfg.branches = static_cast<int>(c.nested.size());
+  std::optional<dense::Layer> gate;
+  if (c.parallel_nest.has_gate) gate = c.dense_op;
+  return parallel::new_from_branches(cfg, c.nested, std::move(gate), out);
+}
+
+void write_back_parallel(Child* c, parallel::Layer& tmp) {
+  if (!c) return;
+  c->nested = std::move(tmp.branches);
+  if (tmp.gate) {
+    c->dense_op = std::move(*tmp.gate);
+    c->parallel_nest.has_gate = 1;
+  }
+}
+
+} // namespace
 
 void flatten_ops(Child& c, std::vector<Child*>* out) {
   if (!out) return;
@@ -77,6 +107,13 @@ Status child_forward(Child& c, const TensorF32& input, TensorF32* pre, TensorF32
     tmp.children = c.nested;
     return forward(tmp, input, pre, post);
   }
+  case Kind::Parallel: {
+    parallel::Layer tmp;
+    if (auto st = parallel_from_child(c, &tmp); !st) return st;
+    auto st = parallel::forward(tmp, input, pre, post);
+    write_back_parallel(&c, tmp);
+    return st;
+  }
   default:
     return Status::Err(StatusCode::InvalidArgument, "stack: unsupported child kind");
   }
@@ -135,6 +172,13 @@ Status child_backward(Child& c, const TensorF32& grad_out, const TensorF32& inpu
     tmp.children = std::move(c.nested);
     auto st = backward_f32(tmp, grad_out, input, pre, grad_in, grad_w);
     c.nested = std::move(tmp.children);
+    return st;
+  }
+  case Kind::Parallel: {
+    parallel::Layer tmp;
+    if (auto st = parallel_from_child(c, &tmp); !st) return st;
+    auto st = parallel::backward_f32(tmp, grad_out, input, pre, grad_in, grad_w);
+    write_back_parallel(&c, tmp);
     return st;
   }
   default:
@@ -199,6 +243,13 @@ Status child_apply_sgd(Child* c, const TensorF32& dW, double lr) {
     c->nested = std::move(tmp.children);
     return st;
   }
+  case Kind::Parallel: {
+    parallel::Layer tmp;
+    if (auto st = parallel_from_child(*c, &tmp); !st) return st;
+    auto st = parallel::apply_grad_sgd(&tmp, dW, lr);
+    write_back_parallel(c, tmp);
+    return st;
+  }
   default:
     return Status::Err(StatusCode::InvalidArgument, "stack: unsupported child sgd");
   }
@@ -252,6 +303,16 @@ int child_grad_w_size(const Child& c) {
     int n = 0;
     for (const auto& ch : c.nested) {
       n += child_grad_w_size(ch);
+    }
+    return n;
+  }
+  case Kind::Parallel: {
+    int n = 0;
+    for (const auto& ch : c.nested) {
+      n += child_grad_w_size(ch);
+    }
+    if (c.parallel_nest.has_gate) {
+      n += c.dense_op.input_height * c.dense_op.output_height;
     }
     return n;
   }
@@ -318,6 +379,20 @@ Status child_export_f32(const Child& c, float* dst) {
         if (auto st = child_export_f32(ch, dst + off); !st) return st;
       }
       off += n;
+    }
+    return Status::Ok();
+  }
+  case Kind::Parallel: {
+    int off = 0;
+    for (const auto& ch : c.nested) {
+      const int n = child_grad_w_size(ch);
+      if (n > 0) {
+        if (auto st = child_export_f32(ch, dst + off); !st) return st;
+      }
+      off += n;
+    }
+    if (c.parallel_nest.has_gate) {
+      if (auto st = c.dense_op.weights.export_f32(dst + off); !st) return st;
     }
     return Status::Ok();
   }

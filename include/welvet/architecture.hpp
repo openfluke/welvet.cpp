@@ -16,6 +16,7 @@
 #include "welvet/mamba.hpp"
 #include "welvet/metacognition.hpp"
 #include "welvet/mha.hpp"
+#include "welvet/parallel.hpp"
 #include "welvet/rmsnorm.hpp"
 #include "welvet/residual.hpp"
 #include "welvet/rnn.hpp"
@@ -63,6 +64,7 @@ enum class OpKind : int32_t {
   Metacognition = 20,
   GDN = 21,
   KMeans = 22,
+  Parallel = 23, // Dense-branch Parallel host (volume = Forward+Backward+SGD / family credit)
 };
 
 // One processing unit in the grid (Go architecture.Cell topology subset).
@@ -91,6 +93,7 @@ struct Cell {
   metacognition::Layer metacognition_op; // valid when op_kind == Metacognition
   gdn::Layer gdn_op;               // valid when op_kind == GDN
   kmeans::Layer kmeans_op;         // valid when op_kind == KMeans
+  parallel::Layer parallel_op;     // valid when op_kind == Parallel
 
   bool is_remote_link = false;
   int target_z = 0, target_y = 0, target_x = 0, target_l = 0;
@@ -160,5 +163,6 @@ Status bind_stack(Grid& g, int z, int y, int x, int l, stack::Layer op);
 Status bind_metacognition(Grid& g, int z, int y, int x, int l, metacognition::Layer op);
 Status bind_gdn(Grid& g, int z, int y, int x, int l, gdn::Layer op);
 Status bind_kmeans(Grid& g, int z, int y, int x, int l, kmeans::Layer op);
+Status bind_parallel(Grid& g, int z, int y, int x, int l, parallel::Layer op);
 
 } // namespace welvet::architecture

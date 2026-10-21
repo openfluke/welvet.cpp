@@ -23,7 +23,7 @@ Applications can choose **automatic placement** or **force an explicit backend**
 
 ## Support scorecard — so far
 
-**Version `0.1.72` — M2 Memory ModeMemory ≡ FamilyBP cascade (all Adversarial/Shadow-signed kinds leaf+vol; Parallel BranchMode CamKit SurpriseThresh kept) + prior Adversarial + Shadow + KMeans cascade + Meta/GDN/Stack cascade + NestedStack NormalBP + GDN truncated-BPTT + Metacognition + Freeze + StepTweenSplit* + MeshTween* + Tween* + MeshBP + StepBP Line ×34 + prior NormalBP**. Engine board **72 / 100**, extensions **13 / 100**, combined **85 / 200**. Live inventory: `GAPS.md` / `welvet_dense_fwd --gaps` / `welvet_dense_fwd --version`.
+**Version `0.1.82` — M2 Parallel Phase F cascade (all combines + nested Parallel + poly LSTM/KMeans/Mamba/GDN/CNN2–3/ConvT) + Phase E/D + Tween-family parents + Freeze/Adv/Memory/Shadow + prior cascades**. Engine board **73 / 100**, extensions **13 / 100**, combined **86 / 200**. Live inventory: `GAPS.md` / `welvet_dense_fwd --gaps` / `welvet_dense_fwd --version`.
 
 - [ ] **Layers:** Dense + MHA + SwiGLU + norms + Softmax + Sequential + Residual + Parallel + CNN1/2/3 + ConvT1/2/3 + RNN + LSTM + Embedding + KMeans + Mamba + Metacognition + GDN — **22 / 23** kinds have any forward; **NormalBP + StepBP/MeshBP + ModeTween/TweenChain/TweenSplit/TweenAlt/TweenSplitHeadProxy/TweenSplitLinear/TweenSplitFastProxy/TweenSplitLinearCache/TweenSplitHeadProxyAsync/TweenSplitSparse/Freeze + StepTween/StepTweenChain/StepTweenSplit/StepTweenAlt + MeshTween/MeshTweenChain** signed for Dense+norms+SwiGLU+Softmax+Embedding+MHA+CNN+ConvT+RNN+LSTM+Sequential+Residual+**KMeans**+Mamba+Meta+**GDN(f32)**+**Stack NestedStack-of-Dense** (Meta/GDN/Stack cascade leaf+vol; Linear-family Meta+Stack 3D closed; Parallel Meta/GDN Adv/Memory/Shadow 3D gap); thin Stack host done (full cameral Stack gap); seqmix Kind helper done.
 - [x] **Dtypes:** FormatNone pack/decode + Dense MatVec for **all 34** storage types (quant formats still `gap?`).
@@ -31,7 +31,7 @@ Applications can choose **automatic placement** or **force an explicit backend**
 - [ ] **Backward compute:** **22 / 23** — Dense + norms + SwiGLU + Softmax + Embedding + MHA + CNN1/2/3 + ConvT1/2/3 + RNN + LSTM + Sequential + Residual + KMeans + Mamba + Metacognition + GDN + Stack NormalBP (dX/dW·dγβ/SGD + volume; Softmax dX-only; Embedding dX=0; MHA ModeSelf; CNN im2col; ConvT scatter; RNN/LSTM BPTT; Sequential reverse Dense; Residual F+skip; KMeans softMaxBwd; Mamba scan BPTT; Meta lastGate+Observed Dense; GDN truncated-BPTT f32; Stack NestedStack Dense) w2a exact_bit ×34 (GDN f32-only); others pending.
 - [ ] **Compute targets:** CPU host path only; vendor accel loaders are `gap?` placeholders — see the hardware summary below.
 - [ ] **Platforms:** Linux host build path present; macOS / Windows / Android / iOS toolchains are placeholders — **1 / 5** OS families buildable (not yet multi-OS CI validated).
-- [x] **Runtime / architecture (partial):** volumetric Grid/Cell/HopOrder/remote links + NormalBP volume Step; **Line StepBP/StepTween/StepTweenSplit/StepTweenAlt/StepTweenSplitHeadProxy/StepTweenSplitLinear/StepTweenSplitFastProxy/StepTweenSplitLinearCache/StepTweenSplitHeadProxyAsync/StepTweenSplitSparse** + **MeshBP/MeshTween/MeshTweenChain/MeshTweenSplit/MeshTweenAlt/MeshTweenSplitFastProxy/MeshTweenSplitSparse** (`runtime/step` Credit FamilyBP|FamilyTween); **ModeTween** + **ModeTweenChain** + **TweenSplit** + **TweenAlt** + **TweenSplitHeadProxy** + **TweenSplitLinear** + **TweenSplitFastProxy** + **TweenSplitLinearCache** + **TweenSplitHeadProxyAsync** + **TweenSplitSparse** + **Freeze** + Parallel BranchModes Adv/Memory/Shadow + CamKit core; full cameral Stack/CamSync/poly still pending.
+- [x] **Runtime / architecture (partial):** volumetric Grid/Cell/HopOrder/remote links + NormalBP volume Step; **Line StepBP/StepTween/StepTweenSplit/StepTweenAlt/StepTweenSplitHeadProxy/StepTweenSplitLinear/StepTweenSplitFastProxy/StepTweenSplitLinearCache/StepTweenSplitHeadProxyAsync/StepTweenSplitSparse** + **MeshBP/MeshTween/MeshTweenChain/MeshTweenSplit/MeshTweenAlt/MeshTweenSplitFastProxy/MeshTweenSplitSparse** (`runtime/step` Credit FamilyBP|FamilyTween); **ModeTween** + **ModeTweenChain** + **TweenSplit** + **TweenAlt** + **TweenSplitHeadProxy** + **TweenSplitLinear** + **TweenSplitFastProxy** + **TweenSplitLinearCache** + **TweenSplitHeadProxyAsync** + **TweenSplitSparse** + **Freeze** + Parallel BranchModes Freeze/Adv/Memory/Shadow + CamKit core + **poly Parallel + nested Parallel + all combines (Phase F)**; full cameral Stack/CamSync still pending.
 - [ ] **Systems:** DNA, evolution, TANHI and telemetry pending; **ModeTween** + **ModeTweenChain** + **TweenSplit** (+ HeadProxy/Linear/FastProxy/LinearCache/HeadProxyAsync/Sparse) + **TweenAlt** done (`systems/tween*`).
 - [ ] **Model / IO:** tokenizer, ENTITY, transformer, sampling and HF support pending.
 - [ ] **Post-v1 engine features:** Lucy/LPD, Lean, CamSync and train/action scheduling pending.
@@ -43,7 +43,7 @@ Applications can choose **automatic placement** or **force an explicit backend**
 
 | Compute target | Forward | Backward | Weight updates | Supported cards / devices so far |
 |---|:---:|:---:|:---:|---|
-| Native CPU — x86-64 / Arm64 | 🚧 | 🚧 | 🚧 | Dense+norms+SwiGLU+Softmax+Embedding+MHA+CNN+ConvT+RNN+LSTM+Sequential+Residual+Mamba+Metacognition FormatNone×34 + GDN f32 fwd + Stack NestedStack-of-Dense + Meta/GDN/Stack train cascade (v0.1.67) + volume Step + Line StepBP/StepTween/StepTweenSplit/StepTweenAlt/StepTweenSplitHeadProxy/StepTweenSplitLinear/StepTweenSplitFastProxy/StepTweenSplitLinearCache/StepTweenSplitHeadProxyAsync/StepTweenSplitSparse + MeshBP + ModeTween/TweenChain/TweenSplit/TweenAlt/TweenSplitHeadProxy/TweenSplitLinear/TweenSplitFastProxy/TweenSplitLinearCache/TweenSplitHeadProxyAsync/TweenSplitSparse/Freeze + MeshTween/MeshTweenChain/MeshTweenSplit/MeshTweenAlt/MeshTweenSplitFastProxy/MeshTweenSplitSparse; CamSync/poly Parallel / remaining kinds pending |
+| Native CPU — x86-64 / Arm64 | 🚧 | 🚧 | 🚧 | Dense+norms+SwiGLU+Softmax+Embedding+MHA+CNN+ConvT+RNN+LSTM+Sequential+Residual+Mamba+Metacognition FormatNone×34 + GDN f32 fwd + Stack NestedStack-of-Dense + Meta/GDN/Stack train cascade + **Parallel Phase F cascade (v0.1.82)** + volume Step + Line/Mesh Step*/Tween* + ModeTween*/Freeze; CamSync/DNA/Dream deferred |
 | NVIDIA GPU | ⬜ | ⬜ | ⬜ | None validated |
 | AMD GPU | ⬜ | ⬜ | ⬜ | None validated |
 | Intel GPU | ⬜ | ⬜ | ⬜ | None validated |
@@ -62,9 +62,9 @@ The long-term destination is a standalone C++ Welvet engine that discovers avail
 
 | Project state | Readout |
 |---|---|
-| **Version** | **`0.1.72-m2-memory`** (`welvet_dense_fwd --version` / CMake `0.1.72`) |
-| **Runway** | **72 / 100 engine + 13 / 100 extensions = 85 / 200** |
-| **Milestone** | **M2.45** — Memory ModeMemory ≡ FamilyBP cascade (TCB1/TRC1…); Parallel BranchMode CamKit SurpriseThresh kept; 3D Parallel gap |
+| **Version** | **`0.1.82-m2-parallel-cascade`** (`welvet_dense_fwd --version` / CMake `0.1.82`) |
+| **Runway** | **73 / 100 engine + 13 / 100 extensions = 86 / 200** |
+| **Milestone** | **M2.51** — Parallel Phase F cascade (combines + nested + poly); CamSync/DNA/Dream deferred |
 | **Scope** | Full Welvet engine rebuild: architecture, runtime, layers, numerical types, training, systems, model/IO; extended hardware, integration and distribution |
 | **Platforms** | Linux (host build) · macOS / Windows / Android / iOS (toolchain placeholders) |
 | **Hardware families** | Native CPU · NVIDIA · AMD · Intel GPU/NPU · Apple GPU/Neural Engine · Qualcomm GPU/NPU · Google TPU |
@@ -318,7 +318,7 @@ Dense FormatNone×34 forward is implemented (v0.1.1); remaining rows are unimple
 | 13 | **Embedding** | Indexed gather from a dtype-native table | Repeated-index scatter/reduction; defined token dX (NormalBP) | 🚧 | 🚧 | ⬜ |
 | 14 | **KMeans** | Welvet soft assignment and centroid computation | Welvet-defined differentiable paths and updates | 🚧 | 🚧 | ⬜ |
 | 15 | **Softmax** | Standard/grid/temperature and supported variants | Welvet-defined Jacobian-vector products (NormalBP) | 🚧 | 🚧 | ⬜ |
-| 16 | **Parallel** | Branches, routing, combine, cameral modes | Branch credit, combine/routing gradients | 🚧 | ⬜ | ⬜ |
+| 16 | **Parallel** | Branches, routing, combine, cameral modes | Branch credit Add/Avg NormalBP + Tween families (PTW1/PTC1/PTS1/PTA1) + Freeze/Adv/Memory/Shadow; Mesh* OPEN | 🚧 | 🚧 | 🚧 |
 | 17 | **Sequential** | Ordered child operation chain | Reverse Dense Dim→Dim chain (NormalBP; NewFromOps mix still gap) | 🚧 | 🚧 | ⬜ |
 | 18 | **Residual** | F(x) + skip with shape checks | F reverse Dense + skip grad (NormalBP; NewFromOps mix still gap) | 🚧 | 🚧 | ⬜ |
 | 19 | **Metacognition** | Observed computation and rule application | lastGate-scale + Observed Dense NormalBP | 🚧 | 🚧 | ⬜ |

@@ -21,7 +21,8 @@
 #   ./scripts/linux_build_w2a.sh --metacognition # Metacognition Observed+rules
 #   ./scripts/linux_build_w2a.sh --gdn        # GDN Gated DeltaNet (Float32)
 #   ./scripts/linux_build_w2a.sh --seqmix     # seqmix Kind contract smoke
-#   ./scripts/linux_build_w2a.sh --parallel   # Parallel Dense × 7 combine modes
+#   ./scripts/linux_build_w2a.sh --parallel   # Parallel Dense × 7 combine modes (forward)
+#   ./scripts/linux_build_w2a.sh --parallel-train # Parallel Dense NormalBP + Tween families
 #   ./scripts/linux_build_w2a.sh --dense-train # Dense NormalBP leaf + volumetric
 #   ./scripts/linux_build_w2a.sh --rmsnorm-train # RMSNorm NormalBP leaf + volumetric
 #   ./scripts/linux_build_w2a.sh --layernorm-train # LayerNorm NormalBP leaf + volumetric
@@ -66,10 +67,11 @@
 #   ./scripts/linux_build_w2a.sh --steptweensplitlinearcache-train # Line StepTweenSplitLinearCache + LinearCache vol
 #   ./scripts/linux_build_w2a.sh --steptweensplitheadproxyasync-train # Line StepTweenSplitHeadProxyAsync + HeadProxyAsync vol
 #   ./scripts/linux_build_w2a.sh --steptweensplitsparse-train # Line StepTweenSplitSparse + Sparse vol
-#   ./scripts/linux_build_w2a.sh --freeze-train # ModeFreeze fwd+mse no apply + volume
+#   ./scripts/linux_build_w2a.sh --freeze-train # ModeFreeze fwd+mse no apply + volume + Parallel FZB1
 #   ./scripts/linux_build_w2a.sh --adversarial-train # Parallel BranchMode Adversarial
 #   ./scripts/linux_build_w2a.sh --memory-train # Parallel BranchMode Memory + CamKit
 #   ./scripts/linux_build_w2a.sh --shadow-train # Parallel BranchMode Shadow KD + CamKit
+#   ./scripts/linux_build_w2a.sh --parallel-train # Parallel Dense NormalBP + Tween families (PNB1/PTW1/PTC1/PTS1/PTA1)
 #   ./scripts/linux_build_w2a.sh --go-v-cpp   # same as default
 #   ./scripts/linux_build_w2a.sh --all        # entire w2a go test ./...
 #   BUILD_DIR=/tmp/welvet-build ./scripts/linux_build_w2a.sh
@@ -153,6 +155,7 @@ for arg in "$@"; do
     --adversarial-train) MODE="adversarial_train" ;;
     --memory-train) MODE="memory_train" ;;
     --shadow-train) MODE="shadow_train" ;;
+    --parallel-train) MODE="parallel_train" ;;
     -h|--help)
       sed -n '2,60p' "$0"
       exit 0
@@ -457,6 +460,16 @@ case "$MODE" in
   shadow_train)
     echo "==> w2a go_v_cpp Shadow train (Parallel BranchMode KD teacher)"
     go test ./tests/go_v_cpp/ -run '^TestGoVCppShadowTrain$' -v -count=1
+    ;;
+  parallel_train)
+    echo "==> w2a go_v_cpp Parallel NormalBP train (Dense all combines + poly PPB1 + nested + volume PNV1)"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppParallelNBPTrain$|^TestGoVCppParallelPolyTrain$' -v -count=1
+    echo "==> w2a go_v_cpp Parallel Tween-family train (Tween/Chain/Split/Alt + volume)"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppParallelTweenTrain$' -v -count=1
+    echo "==> w2a go_v_cpp Mesh* Parallel volume (MeshBP/Tween/Chain/Split/Alt/FastProxy/Sparse)"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppStepBPTrain$|^TestGoVCppMeshTweenTrain$|^TestGoVCppMeshTweenChainTrain$|^TestGoVCppMeshTweenSplitTrain$|^TestGoVCppMeshTweenAltTrain$|^TestGoVCppMeshTweenSplitFastProxyTrain$|^TestGoVCppMeshTweenSplitSparseTrain$' -v -count=1
+    echo "==> w2a go_v_cpp Freeze/Shadow/Adv/Memory Parallel 3D"
+    go test ./tests/go_v_cpp/ -run '^TestGoVCppFreezeTrain$|^TestGoVCppShadowTrain$|^TestGoVCppAdversarialTrain$|^TestGoVCppMemoryTrain$' -v -count=1
     ;;
   all)
     echo "==> w2a full suite (go test ./...)"

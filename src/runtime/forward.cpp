@@ -64,6 +64,8 @@ Status cell(architecture::Cell& cell, const TensorF32& in, TensorF32* pre, Tenso
     return gdn::forward(cell.gdn_op, in, pre, post);
   case architecture::OpKind::KMeans:
     return kmeans::forward(cell.kmeans_op, in, pre, post);
+  case architecture::OpKind::Parallel:
+    return parallel::forward(cell.parallel_op, in, pre, post);
   default:
     return Status::Gap("runtime.forward: unsupported cell Op");
   }
