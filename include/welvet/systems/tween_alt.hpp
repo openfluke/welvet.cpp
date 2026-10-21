@@ -18,4 +18,8 @@ Status apply_alt_child(stack::Child& c, const TensorF32& grad_out, const TensorF
 Status train_volume_mse(architecture::Grid& g, const TensorF32& input, const TensorF32& target,
                         double lr, double* loss, int alt_times = 1);
 
+// Mesh-clock per-cell: AltTimes × (Split @ lr → Tween @ lr×0.5) with frozen gap.
+Status apply_cell_alt(architecture::Cell& cell, const TensorF32& grad_out, const TensorF32& input,
+                      const TensorF32& pre, const TensorF32& post, double lr, int alt_times = 1);
+
 } // namespace welvet::systems::tween_alt

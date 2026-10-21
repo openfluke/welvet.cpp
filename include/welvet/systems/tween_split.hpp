@@ -72,4 +72,11 @@ Status apply_sparse_child(stack::Child& c, const TensorF32& grad_out, const Tens
 Status train_volume_mse_sparse(architecture::Grid& g, const runtime::forward::Result& fwd,
                                const TensorF32& target, double lr, double* loss);
 
+// Mesh-clock per-cell helpers (Dense mesh suites; Sequential/Residual expand leaves).
+Status apply_cell_split(architecture::Cell& cell, const TensorF32& grad_out, const TensorF32& input,
+                        const TensorF32& pre, const TensorF32& post, double lr);
+Status apply_cell_fast_proxy(architecture::Cell& cell, const TensorF32& grad_out,
+                             const TensorF32& input, const TensorF32& pre, const TensorF32& post,
+                             double lr);
+
 } // namespace welvet::systems::tween_split

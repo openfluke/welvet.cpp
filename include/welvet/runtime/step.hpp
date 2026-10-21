@@ -36,9 +36,15 @@ Status apply_sgd(architecture::Grid& g, const std::vector<TensorF32>& layer_dws,
 
 // FamilyBP = MeshBP / MeshTweenChain (BPTT + SGD @ full lr).
 // FamilyTween = MeshTween (last-tick projected local @ lr*0.5; no BPTT chain).
+// FamilyTweenSplit = MeshTweenSplit (last-tick 1/N split @ full lr; no BPTT).
+// FamilyTweenAlt = MeshTweenAlt (last-tick Split→Tween; no BPTT).
+// FamilyTweenSplitFastProxy = MeshTweenSplitFastProxy (last-tick FastProxy; no BPTT).
 enum class Credit : int32_t {
   FamilyBP = 0,
   FamilyTween = 1,
+  FamilyTweenSplit = 2,
+  FamilyTweenAlt = 3,
+  FamilyTweenSplitFastProxy = 4,
 };
 
 // Mesh-clock train: Forward×ticks → MSE on last cell → credit update.

@@ -1063,103 +1063,109 @@ CNN2/3 & ConvT2/3 share CNN1/ConvT1 path.
 
 ## 20 — MeshTweenSplit
 
-Needs Mesh + TweenSplit.
+Needs Mesh + TweenSplit.  
+Ship: `runtime/step` `Credit::FamilyTweenSplit` — Forward×ticks → last-tick per-cell 1/N split @ full lr (`MTS1`/`MTSO`); w2a `--meshtweensplit-train`.  
+**3D volumetric** = ModeTweenSplit / TweenSplit volume credit (`TSP1`/`TRP1`…). CNN2/3 & ConvT2/3 share CNN1/ConvT1 path.
 
 | Layer | Inside node | 3D volumetric | Fully signed off | Ver |
 |---|:---:|:---:|:---:|---|
-| Dense | [ ] | [ ] | [ ] | |
-| RMSNorm | [ ] | [ ] | [ ] | |
-| LayerNorm | [ ] | [ ] | [ ] | |
-| SwiGLU | [ ] | [ ] | [ ] | |
-| Softmax | [ ] | [ ] | [ ] | |
-| Embedding | [ ] | [ ] | [ ] | |
-| MHA | [ ] | [ ] | [ ] | |
-| CNN1 | [ ] | [ ] | [ ] | |
-| CNN2 | [ ] | [ ] | [ ] | |
-| CNN3 | [ ] | [ ] | [ ] | |
-| ConvT1 | [ ] | [ ] | [ ] | |
-| ConvT2 | [ ] | [ ] | [ ] | |
-| ConvT3 | [ ] | [ ] | [ ] | |
-| RNN | [ ] | [ ] | [ ] | |
-| LSTM | [ ] | [ ] | [ ] | |
-| Sequential | [ ] | [ ] | [ ] | |
-| Residual | [ ] | [ ] | [ ] | |
+| Dense | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| RMSNorm | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| LayerNorm | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| SwiGLU | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| Softmax | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| Embedding | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| MHA | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| CNN1 | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| CNN2 | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| CNN3 | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| ConvT1 | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| ConvT2 | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| ConvT3 | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| RNN | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| LSTM | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| Sequential | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| Residual | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
 | KMeans | [ ] | [ ] | [ ] | |
-| Mamba | [ ] | [ ] | [ ] | |
+| Mamba | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
 | Metacognition | [ ] | [ ] | [ ] | |
 | GDN | [ ] | [ ] | [ ] | |
 | Parallel | [ ] | [ ] | [ ] | |
 | Stack | [ ] | [ ] | [ ] | |
 
-**Checkpoint:** bump version when this mode table advances.
+**Checkpoint:** `0.1.51-m2-meshtweensplit-alt-fastproxy` — Dense mesh-clock MTS1 111/211/222 + TweenSplit volume for NormalBP-signed kinds.
 
 ---
 
 ## 21 — MeshTweenAlt
 
-Needs Mesh + TweenAlt.
+Needs Mesh + TweenAlt.  
+Ship: `runtime/step` `Credit::FamilyTweenAlt` — Forward×ticks → last-tick Split→Tween (`MTA1`/`MTAO`); w2a `--meshtweenalt-train`.  
+**3D volumetric** = ModeTweenAlt / TweenAlt volume credit (`TAV1`/`TRA1`…). CNN2/3 & ConvT2/3 share CNN1/ConvT1 path.
 
 | Layer | Inside node | 3D volumetric | Fully signed off | Ver |
 |---|:---:|:---:|:---:|---|
-| Dense | [ ] | [ ] | [ ] | |
-| RMSNorm | [ ] | [ ] | [ ] | |
-| LayerNorm | [ ] | [ ] | [ ] | |
-| SwiGLU | [ ] | [ ] | [ ] | |
-| Softmax | [ ] | [ ] | [ ] | |
-| Embedding | [ ] | [ ] | [ ] | |
-| MHA | [ ] | [ ] | [ ] | |
-| CNN1 | [ ] | [ ] | [ ] | |
-| CNN2 | [ ] | [ ] | [ ] | |
-| CNN3 | [ ] | [ ] | [ ] | |
-| ConvT1 | [ ] | [ ] | [ ] | |
-| ConvT2 | [ ] | [ ] | [ ] | |
-| ConvT3 | [ ] | [ ] | [ ] | |
-| RNN | [ ] | [ ] | [ ] | |
-| LSTM | [ ] | [ ] | [ ] | |
-| Sequential | [ ] | [ ] | [ ] | |
-| Residual | [ ] | [ ] | [ ] | |
+| Dense | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| RMSNorm | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| LayerNorm | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| SwiGLU | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| Softmax | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| Embedding | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| MHA | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| CNN1 | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| CNN2 | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| CNN3 | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| ConvT1 | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| ConvT2 | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| ConvT3 | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| RNN | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| LSTM | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| Sequential | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| Residual | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
 | KMeans | [ ] | [ ] | [ ] | |
-| Mamba | [ ] | [ ] | [ ] | |
+| Mamba | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
 | Metacognition | [ ] | [ ] | [ ] | |
 | GDN | [ ] | [ ] | [ ] | |
 | Parallel | [ ] | [ ] | [ ] | |
 | Stack | [ ] | [ ] | [ ] | |
 
-**Checkpoint:** bump version when this mode table advances.
+**Checkpoint:** `0.1.51-m2-meshtweensplit-alt-fastproxy` — Dense mesh-clock MTA1 111/211/222 + TweenAlt volume for NormalBP-signed kinds.
 
 ---
 
 ## 22 — MeshTweenSplitFastProxy
 
-Needs Mesh + TweenSplitFastProxy.
+Needs Mesh + TweenSplitFastProxy.  
+Ship: `runtime/step` `Credit::FamilyTweenSplitFastProxy` — Forward×ticks → last-tick FastProxy (`MTF1`/`MTFO`); w2a `--meshtweensplitfastproxy-train`.  
+**3D volumetric** = ModeTweenSplitFastProxy / TweenSplitFastProxy volume credit (`FPV1`/`FRP1`…). CNN2/3 & ConvT2/3 share CNN1/ConvT1 path.
 
 | Layer | Inside node | 3D volumetric | Fully signed off | Ver |
 |---|:---:|:---:|:---:|---|
-| Dense | [ ] | [ ] | [ ] | |
-| RMSNorm | [ ] | [ ] | [ ] | |
-| LayerNorm | [ ] | [ ] | [ ] | |
-| SwiGLU | [ ] | [ ] | [ ] | |
-| Softmax | [ ] | [ ] | [ ] | |
-| Embedding | [ ] | [ ] | [ ] | |
-| MHA | [ ] | [ ] | [ ] | |
-| CNN1 | [ ] | [ ] | [ ] | |
-| CNN2 | [ ] | [ ] | [ ] | |
-| CNN3 | [ ] | [ ] | [ ] | |
-| ConvT1 | [ ] | [ ] | [ ] | |
-| ConvT2 | [ ] | [ ] | [ ] | |
-| ConvT3 | [ ] | [ ] | [ ] | |
-| RNN | [ ] | [ ] | [ ] | |
-| LSTM | [ ] | [ ] | [ ] | |
-| Sequential | [ ] | [ ] | [ ] | |
-| Residual | [ ] | [ ] | [ ] | |
+| Dense | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| RMSNorm | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| LayerNorm | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| SwiGLU | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| Softmax | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| Embedding | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| MHA | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| CNN1 | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| CNN2 | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| CNN3 | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| ConvT1 | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| ConvT2 | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| ConvT3 | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| RNN | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| LSTM | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| Sequential | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
+| Residual | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
 | KMeans | [ ] | [ ] | [ ] | |
-| Mamba | [ ] | [ ] | [ ] | |
+| Mamba | [x] | [x] | [x] | `0.1.51-m2-meshtweensplit-alt-fastproxy` |
 | Metacognition | [ ] | [ ] | [ ] | |
 | GDN | [ ] | [ ] | [ ] | |
 | Parallel | [ ] | [ ] | [ ] | |
 | Stack | [ ] | [ ] | [ ] | |
 
-**Checkpoint:** bump version when this mode table advances.
+**Checkpoint:** `0.1.51-m2-meshtweensplit-alt-fastproxy` — Dense mesh-clock MTF1 111/211/222 + FastProxy volume for NormalBP-signed kinds.
 
 ---
 
@@ -1567,3 +1573,4 @@ Fill as you tick rows / finish mode tables.
 | `0.1.48-m2-tweensplitlinearcache` | TweenSplitLinearCache × signed kinds | Cached linear walk; refresh every 20; LCB1/LCV1/CRP1…; leaf ×34 + volume |
 | `0.1.49-m2-tweensplitheadproxyasync` | TweenSplitHeadProxyAsync × signed kinds | Stale-proxy hidden; head GradWOnly; store Wᵀgy; HAB1/HAV1/ARPA…; leaf ×34 + volume |
 | `0.1.50-m2-tweensplitsparse` | TweenSplitSparse × signed kinds | Head GradWOnly + one hidden P(Wᵀgy); SPB1/SPV1/SRP1…; leaf ×34 + volume |
+| `0.1.51-m2-meshtweensplit-alt-fastproxy` | MeshTweenSplit + MeshTweenAlt + MeshTweenSplitFastProxy | MTS1/MTA1/MTF1 mesh-clock; volume = TweenSplit/Alt/FastProxy |

@@ -945,6 +945,72 @@ Status train_volume_mse_head_proxy_async(architecture::Grid& g, const runtime::f
   return apply_head_proxy_async_leaves(leaves, gy, lr, &g.accel);
 }
 
+Status collect_cell_leaves(architecture::Cell& cell, const TensorF32& input, const TensorF32& pre,
+                           const TensorF32& post, std::vector<Leaf>* leaves) {
+  if (!leaves) {
+    return Status::Err(StatusCode::InvalidArgument, "tween_split: nil leaves");
+  }
+  leaves->clear();
+  auto expand_dense_chain = [&](std::vector<dense::Layer>& children) -> Status {
+    TensorF32 cur = flatten_seq_like(input);
+    for (auto& ch : children) {
+      stack::Child c;
+      c.kind = stack::Kind::Dense;
+      c.dense_op = ch;
+      TensorF32 p, o;
+      if (auto st = stack::child_forward(c, cur, &p, &o); !st) {
+        return st;
+      }
+      Leaf lf;
+      lf.dense = &ch;
+      lf.input = cur;
+      lf.pre = std::move(p);
+      lf.post = o;
+      leaves->push_back(lf);
+      cur = std::move(o);
+    }
+    return Status::Ok();
+  };
+  if (cell.op_kind == architecture::OpKind::Sequential) {
+    return expand_dense_chain(cell.sequential_op.children);
+  }
+  if (cell.op_kind == architecture::OpKind::Residual) {
+    return expand_dense_chain(cell.residual_op.children);
+  }
+  Leaf lf;
+  lf.cell = &cell;
+  lf.input = input;
+  lf.pre = pre;
+  lf.post = post;
+  leaves->push_back(lf);
+  return Status::Ok();
+}
+
+Status apply_cell_split(architecture::Cell& cell, const TensorF32& grad_out, const TensorF32& input,
+                        const TensorF32& pre, const TensorF32& post, double lr) {
+  if (cell.meta.is_disabled || grad_out.data.empty() || input.data.empty()) {
+    return Status::Ok();
+  }
+  std::vector<Leaf> leaves;
+  if (auto st = collect_cell_leaves(cell, input, pre, post, &leaves); !st) {
+    return st;
+  }
+  return apply_leaves(leaves, grad_out, lr);
+}
+
+Status apply_cell_fast_proxy(architecture::Cell& cell, const TensorF32& grad_out,
+                             const TensorF32& input, const TensorF32& pre, const TensorF32& post,
+                             double lr) {
+  if (cell.meta.is_disabled || grad_out.data.empty() || input.data.empty()) {
+    return Status::Ok();
+  }
+  std::vector<Leaf> leaves;
+  if (auto st = collect_cell_leaves(cell, input, pre, post, &leaves); !st) {
+    return st;
+  }
+  return apply_fast_proxy_leaves(leaves, grad_out, lr);
+}
+
 Status apply_sparse(stack::Layer& ops, const TensorF32& grad_out, const TensorF32& input, double lr) {
   std::vector<Leaf> leaves;
   if (auto st = collect_stack_leaves(ops, input, &leaves); !st) {

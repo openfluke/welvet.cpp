@@ -56,6 +56,9 @@
 //   MBP1 — MeshBP FamilyBP (runtime/step Forward×ticks + Backward + SGD)
 //   MTW1 — MeshTween FamilyTween (mesh-clock projected local @ lr*0.5)
 //   MTC1 — MeshTweenChain FamilyBP (= MeshBP under mesh clock)
+//   MTS1 — MeshTweenSplit FamilyTweenSplit (mesh-clock 1/N @ full lr)
+//   MTA1 — MeshTweenAlt FamilyTweenAlt (mesh-clock Split→Tween)
+//   MTF1 — MeshTweenSplitFastProxy (mesh-clock FastProxy)
 //   TWB1 — ModeTween leaf (Stack projected local FamilyBP @ lr*0.5)
 //   TSB1 — ModeTweenSplit leaf (Stack 1/N gap @ full lr)
 //   TSP1 — ModeTweenSplit volume Dense
@@ -15380,6 +15383,21 @@ int run_meshtween(int bench_iters) {
 
 int run_meshtweenchain(int bench_iters) {
   return run_mesh_dense_train(bench_iters, welvet::runtime::step::Credit::FamilyBP, "MTC1", "MTCO");
+}
+
+int run_meshtweensplit(int bench_iters) {
+  return run_mesh_dense_train(bench_iters, welvet::runtime::step::Credit::FamilyTweenSplit, "MTS1",
+                              "MTSO");
+}
+
+int run_meshtweenalt(int bench_iters) {
+  return run_mesh_dense_train(bench_iters, welvet::runtime::step::Credit::FamilyTweenAlt, "MTA1",
+                              "MTAO");
+}
+
+int run_meshtweensplitfastproxy(int bench_iters) {
+  return run_mesh_dense_train(bench_iters, welvet::runtime::step::Credit::FamilyTweenSplitFastProxy,
+                              "MTF1", "MTFO");
 }
 
 int run_stepbp(int bench_iters) {
@@ -37977,6 +37995,15 @@ int main(int argc, char** argv) {
   if (std::memcmp(magic, "MTC1", 4) == 0) {
     return run_meshtweenchain(bench_iters);
   }
+  if (std::memcmp(magic, "MTS1", 4) == 0) {
+    return run_meshtweensplit(bench_iters);
+  }
+  if (std::memcmp(magic, "MTA1", 4) == 0) {
+    return run_meshtweenalt(bench_iters);
+  }
+  if (std::memcmp(magic, "MTF1", 4) == 0) {
+    return run_meshtweensplitfastproxy(bench_iters);
+  }
   if (std::memcmp(magic, "TWB1", 4) == 0) {
     return run_tween_leaf(bench_iters);
   }
@@ -38556,7 +38583,7 @@ int main(int argc, char** argv) {
                          "WVC1/2/3/WVT1/2/3/WRN1/WLS1/WEM1/WSM1/WKM1/WSQ1/WRE1/WMB1/WMC1/WGD1/WSX1/"
                          "WPL1/WDB1/WVN1/WRB1/WRV1/WLB1/WLV1/WSB1/WSV1/WXB1/WXV1/WEB1/WEV1/"
                          "WHB1/WHV1/C1B1/C1V1/C2B1/C2V1/C3B1/C3V1/T1B1/T1V1/T2B1/T2V1/T3B1/T3V1/"
-                         "RNB1/RNV1/LSB1/LSV1/SQB1/SQV1/REB1/REV1/MBB1/MBV1/STB1/MBP1/MTW1/MTC1/TWB1/TWV1/TRV1…MBTV/TCB1/TCV1/TRC1…MBTC/STW1/STC1/STS1/STA1/TSB1/TSP1/TAB1/TAV1/HPB1/HPV1/LLB1/LLV1/FPB1/FPV1/LCB1/LCV1/HAB1/HAV1/SPB1/SPV1)\n");
+                         "RNB1/RNV1/LSB1/LSV1/SQB1/SQV1/REB1/REV1/MBB1/MBV1/STB1/MBP1/MTW1/MTC1/MTS1/MTA1/MTF1/TWB1/TWV1/TRV1…MBTV/TCB1/TCV1/TRC1…MBTC/STW1/STC1/STS1/STA1/TSB1/TSP1/TAB1/TAV1/HPB1/HPV1/LLB1/LLV1/FPB1/FPV1/LCB1/LCV1/HAB1/HAV1/SPB1/SPV1)\n");
     return 2;
   }
   return run_dense(v1, v2, v3, bench_iters);

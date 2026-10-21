@@ -4,6 +4,8 @@
 #include "welvet/runtime/forward.hpp"
 #include "welvet/runtime/training.hpp"
 #include "welvet/systems/tween.hpp"
+#include "welvet/systems/tween_alt.hpp"
+#include "welvet/systems/tween_split.hpp"
 
 #include "welvet/cnn1.hpp"
 #include "welvet/cnn2.hpp"
@@ -329,15 +331,14 @@ Status train_mse(architecture::Grid& g, const TensorF32& input, const TensorF32&
     return s;
   }
 
-  if (credit == Credit::FamilyTween) {
-    // MeshTween: last-tick projected local @ soft_lr (no BPTT). Matches ModeTween credit
-    // family under mesh schedule (Go trainTweenLocal / applyProjectedTween).
+  if (credit == Credit::FamilyTween || credit == Credit::FamilyTweenSplit ||
+      credit == Credit::FamilyTweenAlt || credit == Credit::FamilyTweenSplitFastProxy) {
+    // Last-tick mesh credit (no BPTT). Dense mesh-clock suites; gin = copy gap / zeros.
     if (st.history_in.empty() || st.history_pre.empty()) {
       return Status::Err(StatusCode::InvalidArgument, "step: empty tween history");
     }
     const auto& step_in = st.history_in.back();
     const auto& step_pre = st.history_pre.back();
-    const double soft_lr = lr * 0.5;
     const int num_layers = static_cast<int>(g.cells.size());
     TensorF32 gap = std::move(gy);
     for (int idx = num_layers - 1; idx >= 0; --idx) {
@@ -351,9 +352,31 @@ Status train_mse(architecture::Grid& g, const TensorF32& input, const TensorF32&
       if (tensor_empty(cin) || tensor_empty(pre) || tensor_empty(post)) {
         continue;
       }
-      if (auto s = systems::tween::apply_cell_projected(cell, gap, cin, pre, post, soft_lr); !s) {
-        return Status::Err(s.code, std::string("step tween cell ") + std::to_string(idx) + ": " +
-                                       s.message);
+      if (credit == Credit::FamilyTween) {
+        const double soft_lr = lr * 0.5;
+        if (auto s = systems::tween::apply_cell_projected(cell, gap, cin, pre, post, soft_lr); !s) {
+          return Status::Err(s.code, std::string("step tween cell ") + std::to_string(idx) + ": " +
+                                         s.message);
+        }
+      } else if (credit == Credit::FamilyTweenSplit) {
+        // MeshTweenSplit: per-cell 1/N split @ full lr (Dense n=1 ⇒ full gap GradW/Backward).
+        if (auto s = systems::tween_split::apply_cell_split(cell, gap, cin, pre, post, lr); !s) {
+          return Status::Err(s.code, std::string("step split cell ") + std::to_string(idx) + ": " +
+                                         s.message);
+        }
+      } else if (credit == Credit::FamilyTweenAlt) {
+        // MeshTweenAlt: Split @ lr → Tween @ lr×0.5 (frozen gap).
+        if (auto s = systems::tween_alt::apply_cell_alt(cell, gap, cin, pre, post, lr, 1); !s) {
+          return Status::Err(s.code, std::string("step alt cell ") + std::to_string(idx) + ": " +
+                                         s.message);
+        }
+      } else {
+        // MeshTweenSplitFastProxy: head GradWOnly; n=1 Dense ⇒ no hidden.
+        if (auto s =
+                systems::tween_split::apply_cell_fast_proxy(cell, gap, cin, pre, post, lr); !s) {
+          return Status::Err(s.code, std::string("step fastproxy cell ") + std::to_string(idx) +
+                                         ": " + s.message);
+        }
       }
       TensorF32 next;
       next.shape = cin.shape;

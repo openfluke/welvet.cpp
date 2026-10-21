@@ -184,7 +184,7 @@ const std::vector<Entry>& build() {
       {"systems.dna", "systems", "gap? DNA", false},
       {"systems.evolution", "systems", "gap? evolution", false},
       {"systems.tween", "systems",
-       "ModeTween + MeshTween projected local @ lr*0.5; apply_cell_projected; TWB1/TWV1/MTW1", true},
+       "ModeTween + MeshTween/MeshTweenSplit/Alt/FastProxy mesh-clock; TWB1/MTW1/MTS1/MTA1/MTF1", true},
       {"systems.tween_chain", "systems", "ModeTweenChain FamilyBP @ full lr; TCB1/TCBO + TCV1/TCVO + TRC1…MBTC", true},
       {"systems.tween_split", "systems",
        "ModeTweenSplit/…/HeadProxyAsync/Sparse + Line StepTweenSplit; TSB1…/HAB1/SPB1…",
