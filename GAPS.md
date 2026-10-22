@@ -128,5 +128,7 @@ Note: Go Parallel also has a large **w2a/suites/parallel** suite (cameral/poly/t
 
 | Platform | Status |
 |----------|--------|
-| linux/amd64 | **PASS** 52/52 sections (~51s) vs engine `0.1.82` — Go Welvet v1.1.4 ships `native/cpp/linux_amd64/libwelvet.so` |
-| linux/arm64 / darwin/arm64 / windows_* | pending (drop lib + re-run `--all-train`) |
+| linux/amd64 | **PASS** 52/52 sections (~51s) vs engine `0.1.82` — Go Welvet ships `native/cpp/linux_amd64/libwelvet.so` |
+| darwin/arm64 | **lib + nativecpp cgo** in Go Welvet v1.1.9; w2a `logs/mac.txt` — re-run `--all-train` to close sign-off |
+| android_arm64 / android_x86_64 / ios_arm64 | **libs shipped** in Go Welvet v1.1.9 (device AllTrain later) |
+| linux/arm64 / windows_* | partial / pending (drop lib + re-run `--all-train`) |
