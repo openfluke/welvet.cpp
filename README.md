@@ -23,19 +23,19 @@ Applications can choose **automatic placement** or **force an explicit backend**
 
 ## Support scorecard — so far
 
-**Version `0.1.82` — M2 Parallel Phase F cascade (all combines + nested Parallel + poly LSTM/KMeans/Mamba/GDN/CNN2–3/ConvT) + Phase E/D + Tween-family parents + Freeze/Adv/Memory/Shadow + prior cascades**. Engine board **73 / 100**, extensions **13 / 100**, combined **86 / 200**. Live inventory: `GAPS.md` / `welvet_dense_fwd --gaps` / `welvet_dense_fwd --version`.
+**Version `0.67`** — same formula as Go Welvet: `0.{round(earned)}` on the **identical 100-pt engine board**. Earned **67 / 100** (layers + FormatNone×34 + train/Line/Mesh deep). **Not 1.0** until Model/IO + remaining Systems + CamSync + quants/peak close. Vendor GPU/NPU is **out of this number** (siblings). See [VERSIONING.md](VERSIONING.md). Live: `GAPS.md` / `welvet_dense_fwd --version`.
 
-- [ ] **Layers:** Dense + MHA + SwiGLU + norms + Softmax + Sequential + Residual + Parallel + CNN1/2/3 + ConvT1/2/3 + RNN + LSTM + Embedding + KMeans + Mamba + Metacognition + GDN — **22 / 23** kinds have any forward; **NormalBP + StepBP/MeshBP + ModeTween/TweenChain/TweenSplit/TweenAlt/TweenSplitHeadProxy/TweenSplitLinear/TweenSplitFastProxy/TweenSplitLinearCache/TweenSplitHeadProxyAsync/TweenSplitSparse/Freeze + StepTween/StepTweenChain/StepTweenSplit/StepTweenAlt + MeshTween/MeshTweenChain** signed for Dense+norms+SwiGLU+Softmax+Embedding+MHA+CNN+ConvT+RNN+LSTM+Sequential+Residual+**KMeans**+Mamba+Meta+**GDN(f32)**+**Stack NestedStack-of-Dense** (Meta/GDN/Stack cascade leaf+vol; Linear-family Meta+Stack 3D closed; Parallel Meta/GDN Adv/Memory/Shadow 3D gap); thin Stack host done (full cameral Stack gap); seqmix Kind helper done.
-- [x] **Dtypes:** FormatNone pack/decode + Dense MatVec for **all 34** storage types (quant formats still `gap?`).
-- [x] **Forward compute:** Dense FormatNone×34 CPU/SIMD validated via `w2a` `Go_v_Cpp` **exact_bit** spectrum (other 22 kinds pending).
-- [ ] **Backward compute:** **22 / 23** — Dense + norms + SwiGLU + Softmax + Embedding + MHA + CNN1/2/3 + ConvT1/2/3 + RNN + LSTM + Sequential + Residual + KMeans + Mamba + Metacognition + GDN + Stack NormalBP (dX/dW·dγβ/SGD + volume; Softmax dX-only; Embedding dX=0; MHA ModeSelf; CNN im2col; ConvT scatter; RNN/LSTM BPTT; Sequential reverse Dense; Residual F+skip; KMeans softMaxBwd; Mamba scan BPTT; Meta lastGate+Observed Dense; GDN truncated-BPTT f32; Stack NestedStack Dense) w2a exact_bit ×34 (GDN f32-only); others pending.
-- [ ] **Compute targets:** CPU host path only; vendor accel loaders are `gap?` placeholders — see the hardware summary below.
-- [ ] **Platforms:** Linux host build path present; macOS / Windows / Android / iOS toolchains are placeholders — **1 / 5** OS families buildable (not yet multi-OS CI validated).
-- [x] **Runtime / architecture (partial):** volumetric Grid/Cell/HopOrder/remote links + NormalBP volume Step; **Line StepBP/StepTween/StepTweenSplit/StepTweenAlt/StepTweenSplitHeadProxy/StepTweenSplitLinear/StepTweenSplitFastProxy/StepTweenSplitLinearCache/StepTweenSplitHeadProxyAsync/StepTweenSplitSparse** + **MeshBP/MeshTween/MeshTweenChain/MeshTweenSplit/MeshTweenAlt/MeshTweenSplitFastProxy/MeshTweenSplitSparse** (`runtime/step` Credit FamilyBP|FamilyTween); **ModeTween** + **ModeTweenChain** + **TweenSplit** + **TweenAlt** + **TweenSplitHeadProxy** + **TweenSplitLinear** + **TweenSplitFastProxy** + **TweenSplitLinearCache** + **TweenSplitHeadProxyAsync** + **TweenSplitSparse** + **Freeze** + Parallel BranchModes Freeze/Adv/Memory/Shadow + CamKit core + **poly Parallel + nested Parallel + all combines (Phase F)**; full cameral Stack/CamSync still pending.
-- [ ] **Systems:** DNA, evolution, TANHI and telemetry pending; **ModeTween** + **ModeTweenChain** + **TweenSplit** (+ HeadProxy/Linear/FastProxy/LinearCache/HeadProxyAsync/Sparse) + **TweenAlt** done (`systems/tween*`).
-- [ ] **Model / IO:** tokenizer, ENTITY, transformer, sampling and HF support pending.
-- [ ] **Post-v1 engine features:** Lucy/LPD, Lean, CamSync and train/action scheduling pending.
-- [x] **Native use / integration (partial):** C++ API + C ABI for Dense forward + `welvet_dense_fwd` tool; Go delegation / NAC still `gap?`.
+### Parity snapshot vs Go (what moves the version)
+
+| Axis | Status |
+|------|--------|
+| **Layers** | **22 / 23** kinds fwd + NormalBP (GDN f32-only; seqmix helper-only; Stack = NestedStack-Dense) |
+| **Dtypes** | FormatNone **×34** pack/MatVec/SGD ✅ — **20 quants** still gap |
+| **Training** | NormalBP + Step*/Mesh* + Tween*/Freeze + Parallel BranchModes ✅ — **CamSync** gap |
+| **Runtime** | Grid + Line + Mesh volume ✅ |
+| **Systems** | Tween* ✅ — DNA / evolution / TANHI / telemetry ❌ |
+| **Model / IO** | tokenizer / ENTITY / transformer / sampling / HF ❌ (**0 / 8** pts) |
+| **Vendor GPU/NPU** | Not on this board — Qualcomm HTP = [welvet.qnn](https://github.com/openfluke/welvet.qnn) **1.0.0** |
 
 ### Supported cards / compute
 
@@ -51,7 +51,7 @@ Applications can choose **automatic placement** or **force an explicit backend**
 | Apple GPU | ⬜ | ⬜ | ⬜ | None validated |
 | Apple Neural Engine | ⬜ | ⬜ | ⬜ | None validated |
 | Qualcomm GPU | ⬜ | ⬜ | ⬜ | None validated |
-| Qualcomm NPU | ⬜ | ⬜ | ⬜ | None validated |
+| Qualcomm NPU | ✅* | ⬜ | ⬜ | *Forward via sibling **welvet.qnn 1.0.0** (not in this tree) — Windows ARM64 Hexagon V73 |
 | Google TPU | ⬜ | ⬜ | ⬜ | None validated |
 
 Counts refer to **the C++ engine**, independently of existing Go Welvet support and historical experiments. A target may eventually support only a documented subset; inference support never automatically checks its backward or update boxes. Detailed [layer](#layer-runway), [dtype](#dtype-runway--34-storage-types), and [hardware](#hardware-backend-runway) tables define the remaining runway.
@@ -62,9 +62,10 @@ The long-term destination is a standalone C++ Welvet engine that discovers avail
 
 | Project state | Readout |
 |---|---|
-| **Version** | **`0.1.82-m2-parallel-cascade`** (`welvet_dense_fwd --version` / CMake `0.1.82`) |
-| **Runway** | **73 / 100 engine + 13 / 100 extensions = 86 / 200** |
-| **Milestone** | **M2.51** — Parallel Phase F cascade (combines + nested + poly); CamSync/DNA/Dream deferred |
+| **Version** | **`0.67`** (`welvet_version()` / CMake `0.67`) = `0.{round(67)}` |
+| **Engine board** | **67 / 100** (same 10 categories as Go Welvet) |
+| **Vendor board** | Separate — does **not** move `0.x` (see below) |
+| **Milestone** | FormatNone layer+train parity deep; Model/IO + Systems next for 1.0 |
 | **Scope** | Full Welvet engine rebuild: architecture, runtime, layers, numerical types, training, systems, model/IO; extended hardware, integration and distribution |
 | **Platforms** | Linux (host build) · macOS / Windows / Android / iOS (toolchain placeholders) |
 | **Hardware families** | Native CPU · NVIDIA · AMD · Intel GPU/NPU · Apple GPU/Neural Engine · Qualcomm GPU/NPU · Google TPU |
@@ -164,49 +165,39 @@ Each section below has a point budget. Before work earns points, split that budg
 
 **No silent substitution.** Explicit device selection either runs the requested supported path or returns an error. Automatic placement may choose among supported implementations before execution, but records that decision. Runtime recovery or migration requires an explicit policy and a visible event.
 
-**Version policy:** engine rebuild and extensions have separate 100-point boards. Engine completion requires all declared core gates; hardware/delivery completion requires its own gates. Report `engine / 100`, `extensions / 100`, and optionally their sum `/ 200`. A high hardware score cannot cover a missing tokenizer, backward runtime, or system. Release versions are independent of Go Welvet and require an explicit release review.
+**Version policy:** **Only the Go-mirrored engine board sets `welvet_version()`.**  
+`version = 0.{round(earned)}` until **100 → 1.0.0**. Vendor/hardware inventory below is tracking only — it must not inflate the tag.
 
-## Engine rebuild scoreboard — 100 points
+## Engine scoreboard — 100 points (same as Go Welvet)
 
-This mirrors the **ten categories and exact weights** of Go Welvet's main version scoreboard. The descriptions express the C++ numerical/layer scope; Go's completed cells are not copied as C++ achievements. The separate extension board adds the wider hardware and delivery goals.
+Go Welvet’s ten categories and weights. Credit only from **this** C++ tree’s evidence (w2a `Go_v_Cpp` / train suites). Go’s ✅ cells are not copied.
 
-| # | Go Welvet scoreboard category | Weight | C++ acceptance target | Status | Earned |
+| # | Category (Go board) | Wt | C++ today | Status | Earned |
 |---:|---|---:|---|:---:|---:|
-| 1 | **Foundation** | 15 | Core tensors, 34 numerical dtypes, weights, activations, layout, tiling, CPU/SIMD/device abstraction and ownership | 🚧 | 9 |
-| 2 | **Dense MatVec microkernel** | 15 | Shared Dense compute across numerical dtypes; forward, dX, dW/db, updates; SC/MC/SIMD and declared device paths | 🚧 | 12 |
-| 3 | **Transformer stack** | 14 | MHA, SwiGLU, RMSNorm, LayerNorm, Softmax, Embedding, Sequential, Residual, Stack and seqmix | 🚧 | 13 |
-| 4 | **CNN / RNN / LSTM** | 6 | CNN1–3, RNN, LSTM; numerical coverage, applicable forward/backward, state and train grids | 🚧 | 6 |
-| 5 | **Extended layers** | 7 | GDN, ConvT1–3, Mamba, KMeans, Parallel, Metacognition; applicable gradients and state | 🚧 | 7 |
-| 6 | **Runtime + architecture** | 8 | Standalone volumetric grid, dispatch, forward, backward, training, Step/Mesh, links and execution ordering | 🚧 | 8 |
-| 7 | **Systems** | 5 | DNA, evolution, Tween, TANHI and telemetry implemented in C++ | 🚧 | 1 |
-| 8 | **Model / IO** | 8 | Tokenizer, ENTITY, transformer execution, sampling, HF inspection/loading and model construction | ⬜ | 0 |
-| 9 | **Training credit** | 8 | NormalBP/StepBP/MeshBP, Tween families, proxies, sparse/alternating credit, cameral BranchModes and CamSync | 🚧 | 8 |
-| 10 | **Peak fused / no host ALU** | 14 | Validated native/SIMD/device kernels, attention/RoPE, norms, activations, conv/recurrence, embedding and decoder fusion | ⬜ | 0 |
-| | **Engine rebuild total** | **100** | | **🚧** | **67 / 100** |
+| 1 | **Foundation** | 15 | 34 dtypes + FormatNone weights + imported DotTile; **no quant package** | 🚧 | **11** |
+| 2 | **Dense MatVec** | 15 | FormatNone×34 fwd/dX/dW/SGD + SIMD bridge; **0/20 quants** | 🚧 | **12** |
+| 3 | **Transformer stack** | 14 | MHA/SwiGLU/norms/Softmax/Emb/Sequential/Residual FormatNone NormalBP; Stack NestedStack-Dense; NewFromOps mix gap | 🚧 | **13** |
+| 4 | **CNN / RNN / LSTM** | 6 | CNN1–3 + RNN + LSTM FormatNone×34 NormalBP | ✅ | **6** |
+| 5 | **Extended layers** | 7 | ConvT/Mamba/KMeans/Meta/Parallel Phase F/GDN(f32); CamSync / full cameral Stack gap | 🚧 | **6.5** |
+| 6 | **Runtime + architecture** | 8 | Grid + Line Step* + Mesh* + volume NormalBP | ✅ | **8** |
+| 7 | **Systems** | 5 | Tween* families only — DNA/evolution/TANHI/telemetry gap | 🚧 | **1** |
+| 8 | **Model / IO** | 8 | tokenizer / ENTITY / transformer / sampling / HF — **all gap** | ⬜ | **0** |
+| 9 | **Training credit** | 8 | NormalBP + Step*/Mesh*/Tween*/Freeze + BranchModes; **CamSync** gap | 🚧 | **7.5** |
+| 10 | **Peak fused / no host ALU** | 14 | DotTile/DotI8 only — Softmax SIMD / quant Dot* / decoder fuse gap | 🚧 | **2** |
+| | **Total → version** | **100** | | **🚧** | **67 / 100 → `0.67`** |
 
-Partial credit notes (v0.1.40): Foundation **9/15**, Dense **12/15**, Runtime+architecture **8/8**, Systems **2/5**, Training credit **8/8** (NormalBP + Step*/Mesh* BP + Tween/TweenChain families for signed kinds; Split/Alt still open), Transformer **13/14**; CNN/RNN/LSTM **6/6**; Extended **7/7**.
+**Path to 1.0:** Model/IO (+8) + Systems DNA/evol/tanhi/telemetry (+4) + CamSync (~+1) + quants / peak CPU kernels (~+20). Layers+train alone already bought us **0.67** (not 0.2).
 
-Post-v1 Go features are included in the relevant categories: Lucy/LPD and Lean in model construction, CamSync in training credit, and train/action FlightRole in runtime scheduling. The original Go board excludes applications and unfinished stubs; those stay separately visible below rather than receiving inherited engine credit.
+## Vendor / delivery inventory (does **not** set version)
 
-## Hardware and delivery extension scoreboard — 100 points
+Sibling repos own SDKs. Tracking only:
 
-| # | Extension | Weight | Acceptance target | Status | Earned |
-|---:|---|---:|---|:---:|---:|
-| 1 | NVIDIA GPU | 10 | Declared real-device numerical/layer forward, backward and update profiles | ⬜ | 0 |
-| 2 | AMD GPU | 10 | Independent adapter, exact supported device/runtime profiles and validation | ⬜ | 0 |
-| 3 | Intel GPU + NPU | 10 | Independently reported GPU and NPU operation/pass support | ⬜ | 0 |
-| 4 | Apple GPU + Neural Engine | 10 | Independently reported Metal/native GPU and supported Neural Engine partitions | ⬜ | 0 |
-| 5 | Qualcomm GPU + NPU | 10 | Independently reported mobile GPU and NPU operation/pass support | ⬜ | 0 |
-| 6 | Google TPU | 10 | Supported runtime bridge, compiled partitions and explicit local/remote execution | ⬜ | 0 |
-| 7 | Heterogeneous placement + residency | 12 | Capability-driven partitions, resident weights, cross-device forward/backward and coherent updates | ⬜ | 0 |
-| 8 | Public C++ API + C ABI / Go FFI | 10 | Direct native use, stable versioned C boundary and optional Go delegation | 🚧 | 9 |
-| 9 | Platform binaries + distribution | 10 | Linux/macOS/Windows/Android/iOS, clean-environment load and standalone execution | 🚧 | 1 |
-| 10 | Hardware validation + performance | 8 | Real-device matrices, provenance, transfer-inclusive timings and released-artifact checks | 🚧 | 3 |
-| | **Extension total** | **100** | | **🚧** | **13 / 100** |
-
-**Combined runway: 83 / 200.** Partial notes (v0.1.58): NormalBP leaf+volume ×34 retained; **StepBP/StepTween/StepTweenSplit/StepTweenAlt/StepTweenSplitHeadProxy/StepTweenSplitLinear/StepTweenSplitFastProxy/StepTweenSplitLinearCache/StepTweenSplitHeadProxyAsync/StepTweenSplitSparse Line** + **MeshBP/MeshTween/MeshTweenChain/MeshTweenSplit/MeshTweenAlt/MeshTweenSplitFastProxy/MeshTweenSplitSparse** 3D; **ModeTween** + **ModeTweenChain** + **TweenSplit** + **TweenAlt** + **TweenSplitHeadProxy** + **TweenSplitLinear** + **TweenSplitFastProxy** + **TweenSplitLinearCache** + **TweenSplitHeadProxyAsync** + **TweenSplitSparse**; full cameral Stack / poly Parallel still gap. Parallel (`WPL1`) still forward-only.
-
-“All GPUs/NPUs/TPUs” is the expansion ambition. Each supported device model, numerical type, layer, shape and pass must have an explicit tested capability profile. A working inference partition cannot earn training credit. Additional vendors and device generations can extend the coverage inventory without quietly changing these fixed weights.
+| Target | Forward | Notes |
+|--------|:-------:|-------|
+| Native CPU | 🚧 | This repo — scored above |
+| Qualcomm NPU | ✅* | *welvet.qnn **1.0.0** (sibling) |
+| NVIDIA / AMD / Intel GPU · Intel NPU · Apple · TPU | ⬜ | Planned sibling repos |
+| C ABI + multi-OS libs | 🚧 | Shipped linux/windows/darwin/android/ios artifacts via Go `native/cpp` |
 
 ## Full engine subsystem runway
 

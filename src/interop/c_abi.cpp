@@ -3440,7 +3440,7 @@ welvet_status welvet_stack_line_train_mse(int32_t mode, int32_t n_children, int3
   return to_c(welvet::Status::Ok());
 }
 
-const char* welvet_version(void) { return "0.1.85-m2-grid-line-trainmodes"; }
+const char* welvet_version(void) { return "0.67"; }
 
 int32_t welvet_gap_count(void) { return static_cast<int32_t>(welvet::gaps::count_gaps()); }
 

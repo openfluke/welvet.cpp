@@ -15,7 +15,7 @@ Canonical enum: Go `layers/parallel/train_mode.go` (`TrainMode`).
 
 Tick `[x]` when done. Put the **release tag** in **Ver** when that row (or the whole mode table) is signed.
 
-**Current engine:** `0.1.85-m2-grid-line-trainmodes` (Go NativeCPU TrainMode C ABI)
+**Current engine:** `0.67` (Go-mirrored board 67/100; NativeCPU TrainMode C ABI; vendor HTP = welvet.qnn)
 
 ---
 
