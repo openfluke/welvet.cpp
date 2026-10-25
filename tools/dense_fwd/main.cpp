@@ -30,6 +30,7 @@
 //   WLB1 — LayerNorm NormalBP leaf
 //   WLV1 — Volume LayerNorm NormalBP
 //   WSB1 — SwiGLU NormalBP leaf
+//   WSG1 — volume SwiGLU forward (mount-all + volume_dense)
 //   WSV1 — Volume SwiGLU NormalBP
 //   WXB1 — Softmax NormalBP leaf (all Kind; dX-only)
 //   WXV1 — Volume Softmax NormalBP
@@ -2740,6 +2741,146 @@ int run_swiglu_normalbp(int bench_iters) {
       !write_exact(&dx_n, 1) || !write_exact(dX.data(), dX.size()) || !write_exact(&dw_n, 1) ||
       !write_exact(dW.data(), dW.size()) || !write_exact(&w_n, 1) ||
       !write_exact(W_after.data(), W_after.size()) || !write_exact(&loss, 1)) {
+    return 2;
+  }
+  return 0;
+}
+
+// WSG1 — Volume SwiGLU forward (bind all once → volume_dense). Cell layout = WSV1 minus target/lr.
+int run_volume_swiglu_fwd(int bench_iters) {
+  int32_t depth = 0, rows = 0, cols = 0, lpc = 0, batch = 0, backend = 0, n_links = 0;
+  if (!read_exact(&depth, 1) || !read_exact(&rows, 1) || !read_exact(&cols, 1) ||
+      !read_exact(&lpc, 1) || !read_exact(&batch, 1) || !read_exact(&backend, 1) ||
+      !read_exact(&n_links, 1)) {
+    std::fprintf(stderr, "welvet_dense_fwd: short WSG1 header\n");
+    return 2;
+  }
+  if (batch <= 0) {
+    std::fprintf(stderr, "welvet_dense_fwd: bad batch\n");
+    return 2;
+  }
+  (void)backend;
+
+  std::vector<int32_t> links(static_cast<std::size_t>(n_links) * 8);
+  if (n_links > 0 && !read_exact(links.data(), links.size())) return 2;
+
+  struct CellInit {
+    bool enabled = false;
+    int in = 0, inter = 0, dtype = 1;
+    welvet::architecture::Coord coord{};
+    std::vector<float> Gate, Up, Down;
+  };
+  auto hops = welvet::architecture::hop_order(
+      welvet::architecture::new_grid(depth, rows, cols, lpc));
+  std::vector<CellInit> cells;
+  cells.reserve(hops.size());
+  int first_in = -1;
+  for (const auto& coord : hops) {
+    CellInit c;
+    c.coord = coord;
+    int32_t en = 0;
+    if (!read_exact(&en, 1)) return 2;
+    c.enabled = en != 0;
+    if (!c.enabled) {
+      cells.push_back(std::move(c));
+      continue;
+    }
+    if (!read_exact(&c.in, 1) || !read_exact(&c.inter, 1) || !read_exact(&c.dtype, 1)) return 2;
+    c.Gate.resize(static_cast<std::size_t>(c.inter * c.in));
+    c.Up.resize(static_cast<std::size_t>(c.inter * c.in));
+    c.Down.resize(static_cast<std::size_t>(c.in * c.inter));
+    if (!read_exact(c.Gate.data(), c.Gate.size()) || !read_exact(c.Up.data(), c.Up.size()) ||
+        !read_exact(c.Down.data(), c.Down.size())) {
+      return 2;
+    }
+    if (first_in < 0) first_in = c.in;
+    cells.push_back(std::move(c));
+  }
+  if (first_in < 0) {
+    std::fprintf(stderr, "welvet_dense_fwd: no enabled cells\n");
+    return 1;
+  }
+
+  welvet::TensorF32 input;
+  input.shape = {batch, first_in};
+  input.data.resize(static_cast<std::size_t>(batch * first_in));
+  if (!read_exact(input.data.data(), input.data.size())) return 2;
+
+  const auto tm0 = std::chrono::steady_clock::now();
+  auto g = welvet::architecture::new_grid(depth, rows, cols, lpc);
+  for (int32_t i = 0; i < n_links; ++i) {
+    const int32_t* L = links.data() + static_cast<std::size_t>(i) * 8;
+    auto st = welvet::architecture::set_remote_link(g, L[0], L[1], L[2], L[3], L[4], L[5], L[6],
+                                                    L[7]);
+    if (!st) {
+      std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message.c_str());
+      return 1;
+    }
+  }
+  for (const auto& c : cells) {
+    if (!c.enabled) continue;
+    welvet::swiglu::Config cfg;
+    cfg.input_dim = c.in;
+    cfg.intermediate_dim = c.inter;
+    welvet::swiglu::Layer layer;
+    auto st = welvet::swiglu::new_configured(cfg, static_cast<welvet::DType>(c.dtype), c.Gate.data(),
+                                             c.Up.data(), c.Down.data(), &layer);
+    if (!st) {
+      std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message.c_str());
+      return 1;
+    }
+    layer.backend = welvet::Backend::CPUTiled;
+    st = welvet::architecture::bind_swiglu(g, c.coord.z, c.coord.y, c.coord.x, c.coord.l,
+                                           std::move(layer));
+    if (!st) {
+      std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message.c_str());
+      return 1;
+    }
+  }
+  const auto tm1 = std::chrono::steady_clock::now();
+  const int64_t mount_ns =
+      std::chrono::duration_cast<std::chrono::nanoseconds>(tm1 - tm0).count();
+
+  welvet::runtime::forward::Result result;
+  auto once = [&]() -> welvet::Status {
+    return welvet::runtime::forward::volume_dense(g, input, &result);
+  };
+
+  if (bench_iters > 0) {
+    for (int i = 0; i < 3; ++i) {
+      auto st = once();
+      if (!st) {
+        std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message.c_str());
+        return 1;
+      }
+    }
+    const auto te0 = std::chrono::steady_clock::now();
+    for (int i = 0; i < bench_iters; ++i) {
+      auto st = once();
+      if (!st) {
+        std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message.c_str());
+        return 1;
+      }
+    }
+    const auto te1 = std::chrono::steady_clock::now();
+    const int64_t exec_ns =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(te1 - te0).count();
+    const int32_t iters32 = static_cast<int32_t>(bench_iters);
+    if (!write_exact("WVB2", 4) || !write_exact(&mount_ns, 1) || !write_exact(&exec_ns, 1) ||
+        !write_exact(&iters32, 1)) {
+      return 2;
+    }
+  } else {
+    auto st = once();
+    if (!st) {
+      std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message.c_str());
+      return 1;
+    }
+  }
+
+  const int32_t n = static_cast<int32_t>(result.output.data.size());
+  if (!write_magic("WVFO") || !write_exact(&n, 1) ||
+      !write_exact(result.output.data.data(), result.output.data.size())) {
     return 2;
   }
   return 0;
@@ -50335,6 +50476,9 @@ int main(int argc, char** argv) {
   }
   if (std::memcmp(magic, "WSB1", 4) == 0) {
     return run_swiglu_normalbp(bench_iters);
+  }
+  if (std::memcmp(magic, "WSG1", 4) == 0) {
+    return run_volume_swiglu_fwd(bench_iters);
   }
   if (std::memcmp(magic, "WSV1", 4) == 0) {
     return run_volume_swiglu_normalbp(bench_iters);
