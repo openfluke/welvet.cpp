@@ -31,6 +31,12 @@
 //   WLV1 — Volume LayerNorm NormalBP
 //   WSB1 — SwiGLU NormalBP leaf
 //   WSG1 — volume SwiGLU forward (mount-all + volume_dense)
+//   SQG1 / REG1 — volume Sequential/Residual forward (mount-all + volume_dense)
+//   RNG1 / LSG1 — volume RNN/LSTM forward
+//   C1G1 / C2G1 / C3G1 — volume CNN1/2/3 forward
+//   T1G1 / T2G1 / T3G1 — volume ConvT1/2/3 forward
+//   WEG1 — volume Embedding forward
+//   MBG1 / GDG1 / MCG1 — volume Mamba/GDN/Metacognition forward
 //   WSV1 — Volume SwiGLU NormalBP
 //   WXB1 — Softmax NormalBP leaf (all Kind; dX-only)
 //   WXV1 — Volume Softmax NormalBP
@@ -146,6 +152,7 @@
 //   i32 out_len
 //   f32 out[out_len]
 
+#include "volume_fwd.hpp"
 #include "welvet_c.h"
 
 #include "welvet/architecture.hpp"
@@ -50479,6 +50486,48 @@ int main(int argc, char** argv) {
   }
   if (std::memcmp(magic, "WSG1", 4) == 0) {
     return run_volume_swiglu_fwd(bench_iters);
+  }
+  if (std::memcmp(magic, "SQG1", 4) == 0) {
+    return run_volume_sequential_fwd(bench_iters);
+  }
+  if (std::memcmp(magic, "REG1", 4) == 0) {
+    return run_volume_residual_fwd(bench_iters);
+  }
+  if (std::memcmp(magic, "RNG1", 4) == 0) {
+    return run_volume_rnn_fwd(bench_iters);
+  }
+  if (std::memcmp(magic, "LSG1", 4) == 0) {
+    return run_volume_lstm_fwd(bench_iters);
+  }
+  if (std::memcmp(magic, "C1G1", 4) == 0) {
+    return run_volume_cnn1_fwd(bench_iters);
+  }
+  if (std::memcmp(magic, "C2G1", 4) == 0) {
+    return run_volume_cnn2_fwd(bench_iters);
+  }
+  if (std::memcmp(magic, "C3G1", 4) == 0) {
+    return run_volume_cnn3_fwd(bench_iters);
+  }
+  if (std::memcmp(magic, "T1G1", 4) == 0) {
+    return run_volume_convt1_fwd(bench_iters);
+  }
+  if (std::memcmp(magic, "T2G1", 4) == 0) {
+    return run_volume_convt2_fwd(bench_iters);
+  }
+  if (std::memcmp(magic, "T3G1", 4) == 0) {
+    return run_volume_convt3_fwd(bench_iters);
+  }
+  if (std::memcmp(magic, "WEG1", 4) == 0) {
+    return run_volume_embedding_fwd(bench_iters);
+  }
+  if (std::memcmp(magic, "MBG1", 4) == 0) {
+    return run_volume_mamba_fwd(bench_iters);
+  }
+  if (std::memcmp(magic, "GDG1", 4) == 0) {
+    return run_volume_gdn_fwd(bench_iters);
+  }
+  if (std::memcmp(magic, "MCG1", 4) == 0) {
+    return run_volume_metacognition_fwd(bench_iters);
   }
   if (std::memcmp(magic, "WSV1", 4) == 0) {
     return run_volume_swiglu_normalbp(bench_iters);

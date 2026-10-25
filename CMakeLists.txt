@@ -143,7 +143,7 @@ if(WIN32)
 endif()
 
 if(WELVET_BUILD_TOOLS)
-  add_executable(welvet_dense_fwd tools/dense_fwd/main.cpp)
+  add_executable(welvet_dense_fwd tools/dense_fwd/main.cpp tools/dense_fwd/volume_fwd.cpp)
   target_link_libraries(welvet_dense_fwd PRIVATE welvet)
 endif()
 
