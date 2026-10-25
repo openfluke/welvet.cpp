@@ -50484,6 +50484,21 @@ int main(int argc, char** argv) {
   if (std::memcmp(magic, "WSB1", 4) == 0) {
     return run_swiglu_normalbp(bench_iters);
   }
+  if (std::memcmp(magic, "WRF1", 4) == 0) {
+    return run_volume_rmsnorm_fwd(bench_iters);
+  }
+  if (std::memcmp(magic, "WLF1", 4) == 0) {
+    return run_volume_layernorm_fwd(bench_iters);
+  }
+  if (std::memcmp(magic, "WSF1", 4) == 0) {
+    return run_volume_softmax_fwd(bench_iters);
+  }
+  if (std::memcmp(magic, "WPF1", 4) == 0) {
+    return run_volume_parallel_fwd(bench_iters);
+  }
+  if (std::memcmp(magic, "WKF1", 4) == 0) {
+    return run_volume_kmeans_fwd(bench_iters);
+  }
   if (std::memcmp(magic, "WSG1", 4) == 0) {
     return run_volume_swiglu_fwd(bench_iters);
   }

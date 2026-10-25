@@ -18,6 +18,11 @@
 #include "welvet/rnn.hpp"
 #include "welvet/runtime/forward.hpp"
 #include "welvet/sequential.hpp"
+#include "welvet/softmax.hpp"
+#include "welvet/rmsnorm.hpp"
+#include "welvet/parallel.hpp"
+#include "welvet/layernorm.hpp"
+#include "welvet/kmeans.hpp"
 
 #include <chrono>
 #include <cstdint>
@@ -946,3 +951,392 @@ int run_volume_convt3_fwd(int bench_iters) {
   return finish_volume(bench_iters, mount_ns,
       [&]() { return welvet::runtime::forward::volume_dense(g, input, &result); }, result);
 }
+
+int run_volume_rmsnorm_fwd(int bench_iters) {
+  int32_t depth = 0, rows = 0, cols = 0, lpc = 0, batch = 0, backend = 0, n_links = 0;
+  if (!read_grid_hdr(&depth, &rows, &cols, &lpc, &batch, &backend, &n_links, "WRF1")) return 2;
+  (void)backend;
+  std::vector<int32_t> links(static_cast<std::size_t>(n_links) * 8);
+  if (n_links > 0 && !read_exact(links.data(), links.size())) return 2;
+
+  struct Cell {
+    bool enabled = false;
+    int dim = 0, dtype = 1;
+    double eps = 0.0;
+    welvet::architecture::Coord coord{};
+    std::vector<float> gamma;
+  };
+  auto hops = welvet::architecture::hop_order(
+      welvet::architecture::new_grid(depth, rows, cols, lpc));
+  std::vector<Cell> cells;
+  int first_dim = -1;
+  for (const auto& coord : hops) {
+    Cell c;
+    c.coord = coord;
+    int32_t en = 0;
+    if (!read_exact(&en, 1)) return 2;
+    c.enabled = en != 0;
+    if (!c.enabled) {
+      cells.push_back(std::move(c));
+      continue;
+    }
+    if (!read_exact(&c.dim, 1) || !read_exact(&c.dtype, 1) || !read_exact(&c.eps, 1)) return 2;
+    c.gamma.resize(static_cast<std::size_t>(c.dim));
+    if (!read_exact(c.gamma.data(), c.gamma.size())) return 2;
+    if (first_dim < 0) first_dim = c.dim;
+    cells.push_back(std::move(c));
+  }
+  if (first_dim < 0) return 1;
+
+  welvet::TensorF32 input;
+  input.shape = {batch, first_dim};
+  input.data.resize(static_cast<std::size_t>(batch * first_dim));
+  if (!read_exact(input.data.data(), input.data.size())) return 2;
+
+  const auto tm0 = std::chrono::steady_clock::now();
+  auto g = welvet::architecture::new_grid(depth, rows, cols, lpc);
+  if (!apply_links(g, links, n_links)) return 1;
+  for (const auto& c : cells) {
+    if (!c.enabled) continue;
+    welvet::rmsnorm::Config cfg;
+    cfg.dim = c.dim;
+    cfg.eps = c.eps;
+    welvet::rmsnorm::Layer layer;
+    auto st = welvet::rmsnorm::new_configured(cfg, static_cast<welvet::DType>(c.dtype),
+                                              c.gamma.data(), &layer);
+    if (!st) {
+      std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message.c_str());
+      return 1;
+    }
+    layer.backend = welvet::Backend::CPUTiled;
+    st = welvet::architecture::bind_rmsnorm(g, c.coord.z, c.coord.y, c.coord.x, c.coord.l,
+                                            std::move(layer));
+    if (!st) {
+      std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message.c_str());
+      return 1;
+    }
+  }
+  const auto tm1 = std::chrono::steady_clock::now();
+  const int64_t mount_ns =
+      std::chrono::duration_cast<std::chrono::nanoseconds>(tm1 - tm0).count();
+
+  welvet::runtime::forward::Result result;
+  return finish_volume(
+      bench_iters, mount_ns,
+      [&]() { return welvet::runtime::forward::volume_dense(g, input, &result); }, result);
+}
+
+int run_volume_layernorm_fwd(int bench_iters) {
+  int32_t depth = 0, rows = 0, cols = 0, lpc = 0, batch = 0, backend = 0, n_links = 0;
+  if (!read_grid_hdr(&depth, &rows, &cols, &lpc, &batch, &backend, &n_links, "WLF1")) return 2;
+  (void)backend;
+  std::vector<int32_t> links(static_cast<std::size_t>(n_links) * 8);
+  if (n_links > 0 && !read_exact(links.data(), links.size())) return 2;
+
+  struct Cell {
+    bool enabled = false;
+    int dim = 0, dtype = 1;
+    double eps = 0.0;
+    welvet::architecture::Coord coord{};
+    std::vector<float> gamma, beta;
+  };
+  auto hops = welvet::architecture::hop_order(
+      welvet::architecture::new_grid(depth, rows, cols, lpc));
+  std::vector<Cell> cells;
+  int first_dim = -1;
+  for (const auto& coord : hops) {
+    Cell c;
+    c.coord = coord;
+    int32_t en = 0;
+    if (!read_exact(&en, 1)) return 2;
+    c.enabled = en != 0;
+    if (!c.enabled) {
+      cells.push_back(std::move(c));
+      continue;
+    }
+    if (!read_exact(&c.dim, 1) || !read_exact(&c.dtype, 1) || !read_exact(&c.eps, 1)) return 2;
+    c.gamma.resize(static_cast<std::size_t>(c.dim));
+    c.beta.resize(static_cast<std::size_t>(c.dim));
+    if (!read_exact(c.gamma.data(), c.gamma.size()) || !read_exact(c.beta.data(), c.beta.size())) {
+      return 2;
+    }
+    if (first_dim < 0) first_dim = c.dim;
+    cells.push_back(std::move(c));
+  }
+  if (first_dim < 0) return 1;
+
+  welvet::TensorF32 input;
+  input.shape = {batch, first_dim};
+  input.data.resize(static_cast<std::size_t>(batch * first_dim));
+  if (!read_exact(input.data.data(), input.data.size())) return 2;
+
+  const auto tm0 = std::chrono::steady_clock::now();
+  auto g = welvet::architecture::new_grid(depth, rows, cols, lpc);
+  if (!apply_links(g, links, n_links)) return 1;
+  for (const auto& c : cells) {
+    if (!c.enabled) continue;
+    welvet::layernorm::Config cfg;
+    cfg.dim = c.dim;
+    cfg.eps = c.eps;
+    welvet::layernorm::Layer layer;
+    auto st = welvet::layernorm::new_configured(cfg, static_cast<welvet::DType>(c.dtype),
+                                                c.gamma.data(), c.beta.data(), &layer);
+    if (!st) {
+      std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message.c_str());
+      return 1;
+    }
+    layer.backend = welvet::Backend::CPUTiled;
+    st = welvet::architecture::bind_layernorm(g, c.coord.z, c.coord.y, c.coord.x, c.coord.l,
+                                              std::move(layer));
+    if (!st) {
+      std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message.c_str());
+      return 1;
+    }
+  }
+  const auto tm1 = std::chrono::steady_clock::now();
+  const int64_t mount_ns =
+      std::chrono::duration_cast<std::chrono::nanoseconds>(tm1 - tm0).count();
+
+  welvet::runtime::forward::Result result;
+  return finish_volume(
+      bench_iters, mount_ns,
+      [&]() { return welvet::runtime::forward::volume_dense(g, input, &result); }, result);
+}
+
+int run_volume_softmax_fwd(int bench_iters) {
+  int32_t depth = 0, rows = 0, cols = 0, lpc = 0, batch = 0, backend = 0, n_links = 0;
+  if (!read_grid_hdr(&depth, &rows, &cols, &lpc, &batch, &backend, &n_links, "WSF1")) return 2;
+  (void)backend;
+  std::vector<int32_t> links(static_cast<std::size_t>(n_links) * 8);
+  if (n_links > 0 && !read_exact(links.data(), links.size())) return 2;
+
+  struct Cell {
+    bool enabled = false;
+    int dim = 0, dtype = 1;
+    welvet::architecture::Coord coord{};
+  };
+  auto hops = welvet::architecture::hop_order(
+      welvet::architecture::new_grid(depth, rows, cols, lpc));
+  std::vector<Cell> cells;
+  int first_dim = -1;
+  for (const auto& coord : hops) {
+    Cell c;
+    c.coord = coord;
+    int32_t en = 0;
+    if (!read_exact(&en, 1)) return 2;
+    c.enabled = en != 0;
+    if (!c.enabled) {
+      cells.push_back(std::move(c));
+      continue;
+    }
+    if (!read_exact(&c.dim, 1) || !read_exact(&c.dtype, 1)) return 2;
+    if (first_dim < 0) first_dim = c.dim;
+    cells.push_back(std::move(c));
+  }
+  if (first_dim < 0) return 1;
+
+  welvet::TensorF32 input;
+  input.shape = {batch, first_dim};
+  input.data.resize(static_cast<std::size_t>(batch * first_dim));
+  if (!read_exact(input.data.data(), input.data.size())) return 2;
+
+  const auto tm0 = std::chrono::steady_clock::now();
+  auto g = welvet::architecture::new_grid(depth, rows, cols, lpc);
+  if (!apply_links(g, links, n_links)) return 1;
+  for (const auto& c : cells) {
+    if (!c.enabled) continue;
+    welvet::softmax::Config cfg;
+    cfg.dim = c.dim;
+    cfg.seq_len = 1;
+    cfg.kind = welvet::softmax::Kind::Standard;
+    welvet::softmax::Layer layer;
+    auto st = welvet::softmax::new_configured(cfg, static_cast<welvet::DType>(c.dtype), &layer);
+    if (!st) {
+      std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message.c_str());
+      return 1;
+    }
+    layer.backend = welvet::Backend::CPUTiled;
+    st = welvet::architecture::bind_softmax(g, c.coord.z, c.coord.y, c.coord.x, c.coord.l,
+                                            std::move(layer));
+    if (!st) {
+      std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message.c_str());
+      return 1;
+    }
+  }
+  const auto tm1 = std::chrono::steady_clock::now();
+  const int64_t mount_ns =
+      std::chrono::duration_cast<std::chrono::nanoseconds>(tm1 - tm0).count();
+
+  welvet::runtime::forward::Result result;
+  return finish_volume(
+      bench_iters, mount_ns,
+      [&]() { return welvet::runtime::forward::volume_dense(g, input, &result); }, result);
+}
+
+int run_volume_parallel_fwd(int bench_iters) {
+  int32_t depth = 0, rows = 0, cols = 0, lpc = 0, batch = 0, backend = 0, n_links = 0;
+  if (!read_grid_hdr(&depth, &rows, &cols, &lpc, &batch, &backend, &n_links, "WPF1")) return 2;
+  (void)backend;
+  std::vector<int32_t> links(static_cast<std::size_t>(n_links) * 8);
+  if (n_links > 0 && !read_exact(links.data(), links.size())) return 2;
+
+  struct Cell {
+    bool enabled = false;
+    int dim = 0, out_feat = 0, branches = 0, dtype = 1, combine = 1;
+    welvet::architecture::Coord coord{};
+    std::vector<float> packed;
+  };
+  auto hops = welvet::architecture::hop_order(
+      welvet::architecture::new_grid(depth, rows, cols, lpc));
+  std::vector<Cell> cells;
+  int first_dim = -1;
+  for (const auto& coord : hops) {
+    Cell c;
+    c.coord = coord;
+    int32_t en = 0;
+    if (!read_exact(&en, 1)) return 2;
+    c.enabled = en != 0;
+    if (!c.enabled) {
+      cells.push_back(std::move(c));
+      continue;
+    }
+    if (!read_exact(&c.dim, 1) || !read_exact(&c.out_feat, 1) || !read_exact(&c.branches, 1) ||
+        !read_exact(&c.dtype, 1) || !read_exact(&c.combine, 1)) {
+      return 2;
+    }
+    const int nw = c.branches * c.out_feat * c.dim;
+    c.packed.resize(static_cast<std::size_t>(nw));
+    if (!read_exact(c.packed.data(), c.packed.size())) return 2;
+    if (first_dim < 0) first_dim = c.dim;
+    cells.push_back(std::move(c));
+  }
+  if (first_dim < 0) return 1;
+
+  welvet::TensorF32 input;
+  input.shape = {batch, first_dim};
+  input.data.resize(static_cast<std::size_t>(batch * first_dim));
+  if (!read_exact(input.data.data(), input.data.size())) return 2;
+
+  const auto tm0 = std::chrono::steady_clock::now();
+  auto g = welvet::architecture::new_grid(depth, rows, cols, lpc);
+  if (!apply_links(g, links, n_links)) return 1;
+  for (const auto& c : cells) {
+    if (!c.enabled) continue;
+    welvet::parallel::Config cfg;
+    cfg.dim = c.dim;
+    cfg.out_feat = c.out_feat;
+    cfg.branches = c.branches;
+    cfg.combine = static_cast<welvet::parallel::Combine>(c.combine);
+    welvet::parallel::Layer layer;
+    auto st = welvet::parallel::new_configured(cfg, static_cast<welvet::DType>(c.dtype),
+                                               c.packed.data(), &layer);
+    if (!st) {
+      std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message.c_str());
+      return 1;
+    }
+    layer.backend = welvet::Backend::CPUTiled;
+    st = welvet::architecture::bind_parallel(g, c.coord.z, c.coord.y, c.coord.x, c.coord.l,
+                                             std::move(layer));
+    if (!st) {
+      std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message.c_str());
+      return 1;
+    }
+  }
+  const auto tm1 = std::chrono::steady_clock::now();
+  const int64_t mount_ns =
+      std::chrono::duration_cast<std::chrono::nanoseconds>(tm1 - tm0).count();
+
+  welvet::runtime::forward::Result result;
+  return finish_volume(
+      bench_iters, mount_ns,
+      [&]() { return welvet::runtime::forward::volume_dense(g, input, &result); }, result);
+}
+
+int run_volume_kmeans_fwd(int bench_iters) {
+  int32_t depth = 0, rows = 0, cols = 0, lpc = 0, batch = 0, backend = 0, n_links = 0;
+  if (!read_grid_hdr(&depth, &rows, &cols, &lpc, &batch, &backend, &n_links, "WKF1")) return 2;
+  (void)backend;
+  std::vector<int32_t> links(static_cast<std::size_t>(n_links) * 8);
+  if (n_links > 0 && !read_exact(links.data(), links.size())) return 2;
+
+  struct Cell {
+    bool enabled = false;
+    int k = 0, d = 0, seq = 0, output_mode = 0, act = -1, dtype = 1;
+    double temperature = 1.0;
+    welvet::architecture::Coord coord{};
+    std::vector<float> W;
+  };
+  auto hops = welvet::architecture::hop_order(
+      welvet::architecture::new_grid(depth, rows, cols, lpc));
+  std::vector<Cell> cells;
+  int first_d = -1, first_seq = -1;
+  for (const auto& coord : hops) {
+    Cell c;
+    c.coord = coord;
+    int32_t en = 0;
+    if (!read_exact(&en, 1)) return 2;
+    c.enabled = en != 0;
+    if (!c.enabled) {
+      cells.push_back(std::move(c));
+      continue;
+    }
+    if (!read_exact(&c.k, 1) || !read_exact(&c.d, 1) || !read_exact(&c.seq, 1) ||
+        !read_exact(&c.output_mode, 1) || !read_exact(&c.act, 1) || !read_exact(&c.temperature, 1) ||
+        !read_exact(&c.dtype, 1)) {
+      return 2;
+    }
+    c.W.resize(static_cast<std::size_t>(c.k * c.d));
+    if (!read_exact(c.W.data(), c.W.size())) return 2;
+    if (first_d < 0) {
+      first_d = c.d;
+      first_seq = c.seq;
+    }
+    cells.push_back(std::move(c));
+  }
+  if (first_d < 0) return 1;
+
+  welvet::TensorF32 input;
+  if (first_seq == 1) {
+    input.shape = {batch, first_d};
+  } else {
+    input.shape = {batch, first_seq, first_d};
+  }
+  input.data.resize(static_cast<std::size_t>(batch * first_seq * first_d));
+  if (!read_exact(input.data.data(), input.data.size())) return 2;
+
+  const auto tm0 = std::chrono::steady_clock::now();
+  auto g = welvet::architecture::new_grid(depth, rows, cols, lpc);
+  if (!apply_links(g, links, n_links)) return 1;
+  for (const auto& c : cells) {
+    if (!c.enabled) continue;
+    welvet::kmeans::Config cfg;
+    cfg.num_clusters = c.k;
+    cfg.feature_dim = c.d;
+    cfg.temperature = c.temperature;
+    cfg.output_mode = static_cast<welvet::kmeans::OutputMode>(c.output_mode);
+    cfg.activation = static_cast<welvet::Activation>(c.act);
+    welvet::kmeans::Layer layer;
+    auto st =
+        welvet::kmeans::new_configured(cfg, static_cast<welvet::DType>(c.dtype), c.W.data(), &layer);
+    if (!st) {
+      std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message.c_str());
+      return 1;
+    }
+    layer.backend = welvet::Backend::CPUTiled;
+    st = welvet::architecture::bind_kmeans(g, c.coord.z, c.coord.y, c.coord.x, c.coord.l,
+                                           std::move(layer));
+    if (!st) {
+      std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message.c_str());
+      return 1;
+    }
+  }
+  const auto tm1 = std::chrono::steady_clock::now();
+  const int64_t mount_ns =
+      std::chrono::duration_cast<std::chrono::nanoseconds>(tm1 - tm0).count();
+
+  welvet::runtime::forward::Result result;
+  return finish_volume(
+      bench_iters, mount_ns,
+      [&]() { return welvet::runtime::forward::volume_dense(g, input, &result); }, result);
+}
+
