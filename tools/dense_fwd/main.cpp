@@ -4,6 +4,7 @@
 //   WVD3 — Dense forward (see prior); WVD2/WVD1 accepted
 //   WVA1 — architecture topology
 //   WVF1 — volume forward (Dense cells only)
+//   WMV1 — volume MHA forward (mount-all + volume_dense)
 //   WVM1 — MHA ModeSelf forward
 //   WVS1 — SwiGLU forward
 //   WVR1 — RMSNorm forward
@@ -378,10 +379,12 @@ int run_volume(int bench_iters) {
       }
     }
     const auto t1 = std::chrono::steady_clock::now();
-    const int64_t ns =
+    const int64_t mount_ns = 0; // bind interleaved with stdin; Metal WVF1 splits mount/exec
+    const int64_t exec_ns =
         std::chrono::duration_cast<std::chrono::nanoseconds>(t1 - t0).count();
     const int32_t iters32 = static_cast<int32_t>(bench_iters);
-    if (!write_exact("WVB1", 4) || !write_exact(&ns, 1) || !write_exact(&iters32, 1)) {
+    if (!write_exact("WVB2", 4) || !write_exact(&mount_ns, 1) || !write_exact(&exec_ns, 1) ||
+        !write_exact(&iters32, 1)) {
       return 2;
     }
   } else {
@@ -3554,6 +3557,178 @@ int run_mha_normalbp(int bench_iters) {
       !write_exact(&dx_n, 1) || !write_exact(dX.data(), dX.size()) || !write_exact(&dw_n, 1) ||
       !write_exact(dW.data(), dW.size()) || !write_exact(&w_n, 1) ||
       !write_exact(W_after.data(), W_after.size()) || !write_exact(&loss, 1)) {
+    return 2;
+  }
+  return 0;
+}
+
+// WMV1 — Volume MHA forward (bind all cells once → volume_dense). Cell layout = WHV1 minus target/lr.
+int run_volume_mha_fwd(int bench_iters) {
+  int32_t depth = 0, rows = 0, cols = 0, lpc = 0, batch = 0, backend = 0, n_links = 0;
+  if (!read_exact(&depth, 1) || !read_exact(&rows, 1) || !read_exact(&cols, 1) ||
+      !read_exact(&lpc, 1) || !read_exact(&batch, 1) || !read_exact(&backend, 1) ||
+      !read_exact(&n_links, 1)) {
+    std::fprintf(stderr, "welvet_dense_fwd: short WMV1 header\n");
+    return 2;
+  }
+  if (batch <= 0) {
+    std::fprintf(stderr, "welvet_dense_fwd: bad batch\n");
+    return 2;
+  }
+  (void)backend;
+
+  std::vector<int32_t> links(static_cast<std::size_t>(n_links) * 8);
+  if (n_links > 0 && !read_exact(links.data(), links.size())) return 2;
+
+  struct CellInit {
+    bool enabled = false;
+    int seq = 0, d_model = 0, num_heads = 0, num_kv = 0, head_dim = 0, msl = 0;
+    int mask = 0, pos = 0, dtype = 1;
+    welvet::architecture::Coord coord{};
+    std::vector<float> Q, K, V, O;
+  };
+  auto hops = welvet::architecture::hop_order(
+      welvet::architecture::new_grid(depth, rows, cols, lpc));
+  std::vector<CellInit> cells;
+  cells.reserve(hops.size());
+  int first_seq = -1, first_d = -1;
+  for (const auto& coord : hops) {
+    CellInit c;
+    c.coord = coord;
+    int32_t en = 0;
+    if (!read_exact(&en, 1)) return 2;
+    c.enabled = en != 0;
+    if (!c.enabled) {
+      cells.push_back(std::move(c));
+      continue;
+    }
+    int32_t seq = 0, d_model = 0, num_heads = 0, num_kv = 0, head_dim = 0, msl = 0;
+    int32_t mask = 0, pos = 0, dtype = 1;
+    if (!read_exact(&seq, 1) || !read_exact(&d_model, 1) || !read_exact(&num_heads, 1) ||
+        !read_exact(&num_kv, 1) || !read_exact(&head_dim, 1) || !read_exact(&msl, 1) ||
+        !read_exact(&mask, 1) || !read_exact(&pos, 1) || !read_exact(&dtype, 1)) {
+      return 2;
+    }
+    c.seq = seq;
+    c.d_model = d_model;
+    c.num_heads = num_heads;
+    c.num_kv = num_kv;
+    c.head_dim = head_dim;
+    c.msl = msl;
+    c.mask = mask;
+    c.pos = pos;
+    c.dtype = dtype;
+    const int hd = head_dim > 0 ? head_dim : d_model / num_heads;
+    const int kv_heads = num_kv > 0 ? num_kv : num_heads;
+    const int q_dim = num_heads * hd;
+    const int kv_dim = kv_heads * hd;
+    c.Q.resize(static_cast<std::size_t>(q_dim * d_model));
+    c.K.resize(static_cast<std::size_t>(kv_dim * d_model));
+    c.V.resize(static_cast<std::size_t>(kv_dim * d_model));
+    c.O.resize(static_cast<std::size_t>(d_model * q_dim));
+    if (!read_exact(c.Q.data(), c.Q.size()) || !read_exact(c.K.data(), c.K.size()) ||
+        !read_exact(c.V.data(), c.V.size()) || !read_exact(c.O.data(), c.O.size())) {
+      return 2;
+    }
+    if (first_seq < 0) {
+      first_seq = seq;
+      first_d = d_model;
+    }
+    cells.push_back(std::move(c));
+  }
+  if (first_seq < 0) {
+    std::fprintf(stderr, "welvet_dense_fwd: no enabled cells\n");
+    return 1;
+  }
+
+  welvet::TensorF32 input;
+  input.shape = {batch, first_seq, first_d};
+  input.data.resize(static_cast<std::size_t>(batch * first_seq * first_d));
+  if (!read_exact(input.data.data(), input.data.size())) return 2;
+
+  // Mount once: bind every MHA cell (timed), then warm volume_dense (exec timed).
+  const auto tm0 = std::chrono::steady_clock::now();
+  auto g = welvet::architecture::new_grid(depth, rows, cols, lpc);
+  for (int32_t i = 0; i < n_links; ++i) {
+    const int32_t* L = links.data() + static_cast<std::size_t>(i) * 8;
+    auto st = welvet::architecture::set_remote_link(g, L[0], L[1], L[2], L[3], L[4], L[5], L[6],
+                                                    L[7]);
+    if (!st) {
+      std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message.c_str());
+      return 1;
+    }
+  }
+  for (const auto& c : cells) {
+    if (!c.enabled) continue;
+    welvet::mha::Config cfg;
+    cfg.d_model = c.d_model;
+    cfg.num_heads = c.num_heads;
+    cfg.num_kv_heads = c.num_kv;
+    cfg.head_dim = c.head_dim;
+    cfg.max_seq_len = c.msl;
+    cfg.mask = static_cast<welvet::mha::MaskKind>(c.mask);
+    cfg.pos = static_cast<welvet::mha::PosKind>(c.pos);
+    cfg.mode = welvet::mha::AttnMode::Self;
+    cfg.causal = (cfg.mask == welvet::mha::MaskKind::Causal);
+    welvet::mha::Layer layer;
+    auto st = welvet::mha::new_configured(cfg, static_cast<welvet::DType>(c.dtype), c.Q.data(),
+                                          c.K.data(), c.V.data(), c.O.data(), &layer);
+    if (!st) {
+      std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message.c_str());
+      return 1;
+    }
+    layer.backend = welvet::Backend::CPUTiled;
+    st = welvet::architecture::bind_mha(g, c.coord.z, c.coord.y, c.coord.x, c.coord.l,
+                                        std::move(layer));
+    if (!st) {
+      std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message.c_str());
+      return 1;
+    }
+  }
+  const auto tm1 = std::chrono::steady_clock::now();
+  const int64_t mount_ns =
+      std::chrono::duration_cast<std::chrono::nanoseconds>(tm1 - tm0).count();
+
+  welvet::runtime::forward::Result result;
+  auto once = [&]() -> welvet::Status {
+    return welvet::runtime::forward::volume_dense(g, input, &result);
+  };
+
+  if (bench_iters > 0) {
+    for (int i = 0; i < 3; ++i) {
+      auto st = once();
+      if (!st) {
+        std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message.c_str());
+        return 1;
+      }
+    }
+    const auto te0 = std::chrono::steady_clock::now();
+    for (int i = 0; i < bench_iters; ++i) {
+      auto st = once();
+      if (!st) {
+        std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message.c_str());
+        return 1;
+      }
+    }
+    const auto te1 = std::chrono::steady_clock::now();
+    const int64_t exec_ns =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(te1 - te0).count();
+    const int32_t iters32 = static_cast<int32_t>(bench_iters);
+    if (!write_exact("WVB2", 4) || !write_exact(&mount_ns, 1) || !write_exact(&exec_ns, 1) ||
+        !write_exact(&iters32, 1)) {
+      return 2;
+    }
+  } else {
+    auto st = once();
+    if (!st) {
+      std::fprintf(stderr, "welvet_dense_fwd: %s\n", st.message.c_str());
+      return 1;
+    }
+  }
+
+  const int32_t n = static_cast<int32_t>(result.output.data.size());
+  if (!write_magic("WVFO") || !write_exact(&n, 1) ||
+      !write_exact(result.output.data.data(), result.output.data.size())) {
     return 2;
   }
   return 0;
@@ -50178,6 +50353,9 @@ int main(int argc, char** argv) {
   }
   if (std::memcmp(magic, "WHB1", 4) == 0) {
     return run_mha_normalbp(bench_iters);
+  }
+  if (std::memcmp(magic, "WMV1", 4) == 0) {
+    return run_volume_mha_fwd(bench_iters);
   }
   if (std::memcmp(magic, "WHV1", 4) == 0) {
     return run_volume_mha_normalbp(bench_iters);
